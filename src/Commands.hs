@@ -15,9 +15,9 @@ import           Types
 import           Commands.Belongs as CommandModules
 import           Commands.Clean   as CommandModules
 import           Commands.Delete  as CommandModules
+import           Commands.Digest  as CommandModules
 import           Commands.Find    as CommandModules
 import           Commands.Get     as CommandModules
-import           Commands.Test    as CommandModules
 import           Commands.Update  as CommandModules
 import           Commands.Upgrade as CommandModules
 import           Commands.UwU     as CommandModules
@@ -30,9 +30,9 @@ commands showPrivate =
     , Command' updateCmd, Command' upgradeCmd
     , Command' cleanCmd
     , Command' findCmd,   Command' belongsCmd
+    , Command' digestCmd
     ] ++ concat
-    [ [ Command' testCmd
-      , Command' uwuCmd
+    [ [ Command' uwuCmd
       ] | showPrivate ]
 
 findCommand ∷ String → Maybe Command'
