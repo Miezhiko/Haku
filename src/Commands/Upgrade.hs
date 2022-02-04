@@ -1,22 +1,39 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    UnicodeSyntax
+  #-}
+
 module Commands.Upgrade where
 
 import           Types
 import           Utils
 
-upgrade ∷ IO ()
-upgrade =
-  rawAndIgnore "emerge" [ "-avuDN"
-                        , "@world"
-                        , "--backtrack=100"
-                        , "--with-bdeps=y"
-                        , "--quiet-build=n"
-                        ]
+data UpgradeState
+  = UpgradeState
+      { upgrdSelf    :: Bool
+      , upgrdVerbose :: Bool
+      }
 
-upgradeCmd ∷ Command String m
+upgradeOpts ∷ Bool → [OptDescr (UpgradeState → UpgradeState)]
+upgradeOpts _ =
+    [ Option "s" ["self"]     (NoArg (\s → s { upgrdSelf = True })) "upgrade self"
+    , Option "v" ["verbose"]  (NoArg (\s → s { upgrdVerbose = True })) "more things..."
+    ]
+
+upgrade ∷ UpgradeState → IO ()
+upgrade ugrs = if upgrdSelf ugrs
+  then rawAndIgnore "emerge" [ "haku" ]
+  else rawAndIgnore "emerge" [ "-avuDN"
+                             , "@world"
+                             , "--backtrack=100"
+                             , "--with-bdeps=y"
+                             , "--quiet-build=n"
+                             ]
+
+upgradeCmd ∷ Command UpgradeState m
 upgradeCmd = Command { command = ["upgrade"]
                      , description = "Upgrade world"
                      , usage = ("haku " ++)
-                     , state = 𝜀
-                     , options = const 𝜀
-                     , handler = \_ _ → liftIO upgrade }
+                     , state = UpgradeState { upgrdSelf     = False
+                                            , upgrdVerbose  = False }
+                     , options = upgradeOpts
+                     , handler = \ugrs _ → liftIO $ upgrade ugrs }
