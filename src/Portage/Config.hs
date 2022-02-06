@@ -226,6 +226,7 @@ portageConfig hakuCacheHandle = do
       -- if cache is more than one minute old recheck if
       -- shelter hashes changed (update was made and was meaningful)
       currentTime ← getCurrentTime
+      -- getModificationTime returns UTC time (as it's in type)
       changemTime ← getModificationTime hakuCachePath
       let diff = diffUTCTime currentTime changemTime
       if diff > 60 -- conversion functions will treat it as seconds

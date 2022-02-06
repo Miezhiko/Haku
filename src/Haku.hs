@@ -13,8 +13,8 @@ import           Version
 import           Portage.Config      (portageConfig, storeConfig)
 
 import           Data.List
-import           Data.Time.Clock
 import           Data.Time.Format    (defaultTimeLocale, formatTime)
+import           Data.Time.LocalTime (getZonedTime)
 
 import           System.Console.ANSI
 import           System.Environment
@@ -31,7 +31,7 @@ printHelp = do
 hakuLogger ∷ String → IO ()
 hakuLogger msg = do
   setSGR [ SetColor Foreground Vivid Magenta ]
-  putStr ∘ formatTime defaultTimeLocale "%F %T" =<< getCurrentTime
+  putStr ∘ formatTime defaultTimeLocale "%F %T" =<< getZonedTime
   setSGR [ SetColor Foreground Dull Cyan
          , SetConsoleIntensity BoldIntensity ]
   putStr $ " " ++ msg
