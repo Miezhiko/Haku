@@ -1,0 +1,25 @@
+name: Haku
+version: 0.0.1
+license: AGPL3
+
+build-type: Simple
+cabal-version: >= 2.0
+
+Executable haku
+  default-language: Haskell2010
+  Main-Is: Main.hs
+  Other-Modules:
+    Types,
+    Utils,
+    Version,
+    Portage.Config,
+    Commands.Get,
+    Commands.Delete,
+    Commands.Test,
+    Paths_Haku
+  Hs-Source-Dirs: src
+  Build-Depends:
+      base >= 4,
+      process
+ ghc-options:
+    -Wall
