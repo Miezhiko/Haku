@@ -8,7 +8,7 @@ import           System.Console.GetOpt
 
 data DeleteState
   = DeleteState
-      { mpretend :: Bool
+      { mpretend       :: Bool
       , muselessOption :: Bool
       }
 
@@ -23,7 +23,8 @@ deleteCmd = Command
                 command = ["delete"],
                 description = "Delete one or more variants.",
                 usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
-                state = DeleteState { mpretend = False },
+                state = DeleteState { mpretend        = False
+                                    , muselessOption  = False },
                 options = deleteOpts,
                 handler = \rpc dels ds -> do
                             if mpretend dels

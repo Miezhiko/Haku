@@ -20,6 +20,8 @@ Executable haku
   Hs-Source-Dirs: src
   Build-Depends:
       base >= 4,
-      process
+      process,
+      containers,
+      directory
  ghc-options:
     -Wall

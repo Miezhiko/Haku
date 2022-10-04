@@ -19,7 +19,6 @@ raw λ α = rawSystem λ α >>= checkExitCode
 rawAndIgnore ∷ String → [String] → IO ()
 rawAndIgnore λ α = void (rawSystem λ α)
 
--- | Aligns a table of strings.
 align ∷ [[String]] → String
 align ts =  let  maxlengths = map (maximum . map length) (transpose ts)
             in   unlines . map (concat . zipWith formatIn maxlengths) $ ts
