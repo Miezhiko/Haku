@@ -1,12 +1,15 @@
 {-# LANGUAGE GADTs         #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
-module Types where
+module Types
+  ( Command(..)
+  , Command'(..)
+  , module ExportedTpyes
+  ) where
 
-import           Data.IORef
-import           System.Console.GetOpt
-
-import           Portage.Config
+import           Data.IORef            as ExportedTpyes
+import           Portage.Config        as ExportedTpyes
+import           System.Console.GetOpt as ExportedTpyes
 
 data Command a
   = Command

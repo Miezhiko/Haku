@@ -4,14 +4,12 @@ module Main where
 import           Commands.Delete
 import           Commands.Get
 import           Commands.Test
-import           Portage.Config
+
 import           Types
 import           Utils
 import           Version
 
-import           Data.IORef
 import           Data.List
-import           System.Console.GetOpt
 import           System.Environment
 
 commands ∷ Bool → [Command']
@@ -20,9 +18,9 @@ commands showPrivate =
     , Command' deleteCmd
     ] ++ concat
     [
-        [
-          Command' testCmd
-        ]
+      [
+        Command' testCmd
+      ]
     | showPrivate ]
 
 printHelp ∷ IO ()
@@ -58,7 +56,8 @@ handleCommand r cname (Command' c) args =
                    putStrLn (usageInfo (usage c cname) . options c $ False)
 
 processArgs ∷ [String] → IO ()
-processArgs []      =  printHelp
+processArgs []            =  printHelp
+processArgs ["--version"] =  putStrLn showMyV
 processArgs [a]
    | isHelp a       =  printHelp
 processArgs (x:xs)  =  do r <- portageConfig >>= newIORef
@@ -67,6 +66,4 @@ processArgs (x:xs)  =  do r <- portageConfig >>= newIORef
                             Just c  -> handleCommand  r  x        c                    xs
 
 main ∷ IO ()
-main = do
-  args <- getArgs
-  processArgs args
+main = getArgs >>= processArgs

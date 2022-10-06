@@ -1,12 +1,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Commands.Test where
 
-import           Portage.Config
 import           Types
-
-import           Data.IORef
-
-import           System.Console.GetOpt
 
 data TestState
   = TestState
@@ -34,8 +29,8 @@ testCmd = Command
                                   , mupdate  = False
                                   , mlist    = False },
                 options = testOpts,
-                handler = \rpc ms ds ->
+                handler = \rpc _ _ ->
                             readIORef rpc >>= \pc -> do
-                              let m = tree pc
+                              let m = pcTree pc
                               print m
               }

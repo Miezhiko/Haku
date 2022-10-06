@@ -4,7 +4,7 @@ module Commands.Delete where
 import           Types
 import           Utils
 
-import           System.Console.GetOpt
+import qualified Data.Map   as M
 
 data DeleteState
   = DeleteState
@@ -17,6 +17,19 @@ deleteOpts _ =
     [ Option "p" ["pretend"] (NoArg (\s -> s { mpretend = True })) "update variants"
     ]
 
+unmerge ∷ DeleteState → [Atom] → IO ()
+unmerge dels xs =
+  if mpretend dels
+      then rawAndIgnore "emerge" ("-pavC":xs)
+      else rawAndIgnore "emerge" ("-avC":xs)
+
+delete ∷ DeleteState → Tree → [Atom] → IO ()
+delete _ _ []         = putStrLn "specify atom!"
+delete dels tree [x]  = case M.lookup x tree of
+                        Just p  -> unmerge dels [show p]
+                        Nothing -> putStrLn "Atom not found!"
+delete dels _ xs      = unmerge dels xs
+
 deleteCmd ∷ Command DeleteState
 deleteCmd = Command
               {
@@ -26,8 +39,5 @@ deleteCmd = Command
                 state = DeleteState { mpretend        = False
                                     , muselessOption  = False },
                 options = deleteOpts,
-                handler = \rpc dels ds -> do
-                            if mpretend dels
-                              then rawAndIgnore "emerge" ("-pavC":ds)
-                              else rawAndIgnore "emerge" ("-avC":ds)
+                handler = \rpc dels ds -> readIORef rpc >>= \pc -> delete dels (pcTree pc) ds
               }
