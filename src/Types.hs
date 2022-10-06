@@ -8,6 +8,7 @@ module Types
   ) where
 
 import           Data.IORef            as ExportedTpyes
+import           Portage.Version       as ExportedTpyes
 import           Portage.Config        as ExportedTpyes
 import           System.Console.GetOpt as ExportedTpyes
 

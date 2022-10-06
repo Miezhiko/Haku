@@ -1,7 +1,10 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Portage.Config where
 
+import           Portage.Version
+
 import           Data.Functor
+import           Data.List
 import qualified Data.Map           as M
 
 import           System.Directory
@@ -15,12 +18,13 @@ type EnvMap = M.Map String String
 
 data Package
   = Package
-      { category :: String
-      , name     :: String
+      { pCategory :: String
+      , pVersions :: [Version]
+      , pName     :: String
       }
 
 instance Show Package where
-  show (Package c n) = c ++ "/" ++ n
+  show (Package c _ n) = c ++ "/" ++ n
 
 type Atom = String
 type Tree = M.Map Atom Package
@@ -49,6 +53,13 @@ getConfigFile f =  do  (_,r,_) <- readCreateProcessWithExitCode (
                                              "source " ++ f ++ "; set" ) []
                        return (parseEnvMap r)
 
+getVersions ∷ String → String → IO [Version]
+getVersions fp pn = do
+  dirContent <- getFilteredDirectoryContents fp
+  let ebuilds   = filter (isSuffixOf ".ebuild") dirContent
+      versions  = map (getVersion pn) ebuilds
+  return versions
+
 portageConfig ∷ IO PortageConfig
 portageConfig = do
   makeConf <- getConfigFile "/etc/portage/make.conf"
@@ -56,15 +67,21 @@ portageConfig = do
 
   treeCats     <- getFilteredDirectoryContents treePath
   filteredCats <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
-                      $ map (\p -> (treePath </> p, p))
+                      $ map (\c -> (treePath </> c, c))
                             (filter (`notElem` [".git","eclass"]) treeCats)
   catMap <- mapM (\(fcat, cat) -> do
                     packages <- getFilteredDirectoryContents fcat
-                    return $ map (Package cat) packages
+                    packagesFiltered <- filterM (\(fp, _) -> getFileStatus fp <&> isDirectory)
+                                            $ map (\p -> (fcat </> p, p))
+                                                  (filter (`notElem` ["metadata.xml"]) packages)
+                    mapM (\(fp, pn) -> do
+                            versions <- getVersions fp pn
+                            return $ Package cat versions pn
+                         ) packagesFiltered
                  ) filteredCats
 
   let allPkgs     = concat catMap
-      atoms       = map (\p -> (name p, p)) allPkgs
+      atoms       = map (\p -> (pName p, p)) allPkgs
       pkgs        = M.fromList atoms
       categories  = map snd filteredCats
 

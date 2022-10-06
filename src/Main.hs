@@ -3,6 +3,7 @@ module Main where
 
 import           Commands.Delete
 import           Commands.Get
+import           Commands.Find
 import           Commands.Test
 
 import           Types
@@ -15,6 +16,7 @@ import           System.Environment
 commands ∷ Bool → [Command']
 commands showPrivate =
     [ Command' getCmd
+    , Command' findCmd
     , Command' deleteCmd
     ] ++ concat
     [
@@ -55,15 +57,15 @@ handleCommand r cname (Command' c) args =
           _  -> do putStrLn (unlines es)
                    putStrLn (usageInfo (usage c cname) . options c $ False)
 
-processArgs ∷ [String] → IO ()
-processArgs []            =  printHelp
-processArgs ["--version"] =  putStrLn showMyV
-processArgs [a]
-   | isHelp a       =  printHelp
-processArgs (x:xs)  =  do r <- portageConfig >>= newIORef
-                          case findCommand x of
-                            Nothing -> handleCommand  r  "get"  (Command' getCmd)  (x:xs)
-                            Just c  -> handleCommand  r  x        c                    xs
+goWithArguments ∷ [String] → IO ()
+goWithArguments []              =  printHelp
+goWithArguments ["--version"]   =  putStrLn showMyV
+goWithArguments [a] | isHelp a  =  printHelp
+goWithArguments (x:xs) =
+  do r <- portageConfig >>= newIORef
+     case findCommand x of
+      Nothing -> handleCommand  r  "get"  (Command' getCmd)  (x:xs)
+      Just c  -> handleCommand  r  x      c                     xs
 
 main ∷ IO ()
-main = getArgs >>= processArgs
+main = getArgs >>= goWithArguments

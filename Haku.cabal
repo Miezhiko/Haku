@@ -12,9 +12,11 @@ Executable haku
     Types,
     Utils,
     Version,
+    Portage.Version,
     Portage.Config,
     Commands.Get,
     Commands.Delete,
+    Commands.Find,
     Commands.Test,
     Paths_Haku
   Hs-Source-Dirs: src
@@ -24,6 +26,7 @@ Executable haku
       containers,
       directory,
       filepath,
-      unix
+      unix,
+      parsec
  ghc-options:
     -Wall
