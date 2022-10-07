@@ -2,9 +2,11 @@
 module Main where
 
 import           Commands.Delete
-import           Commands.Get
 import           Commands.Find
+import           Commands.Get
 import           Commands.Test
+import           Commands.Update
+import           Commands.Upgrade
 
 import           Types
 import           Utils
@@ -18,6 +20,8 @@ commands showPrivate =
     [ Command' getCmd
     , Command' findCmd
     , Command' deleteCmd
+    , Command' updateCmd
+    , Command' upgradeCmd
     ] ++ concat
     [
       [

@@ -25,6 +25,18 @@ instance Show Version where
 showVersion ∷ Version → String
 showVersion (Version _ _ _ _ rep) = rep
 
+data PackageVersion
+  = PackageVersion
+      { pVersion :: Version
+      , pOverlay :: String
+      }
+
+instance Show PackageVersion where
+  show = showPackageVersion
+
+showPackageVersion ∷ PackageVersion → String
+showPackageVersion (PackageVersion v p) = show v ++ "::" ++ p
+
 parseVersion ∷ String → Either ParseError Version
 parseVersion = parse (readVersion >>= \x -> eof >> return x) "<version number>"
 
@@ -68,10 +80,11 @@ readVersion =  do  (ver,  verr)  <-  readVer
                    let  rep = verr ++ cr ++ sufr ++ revr
                    return (Version ver c suf rev rep)
 
-getVersion ∷ String → String → Version
-getVersion pn ebuild = do
+getVersion ∷ String → String → String → PackageVersion
+getVersion overlay pn ebuild = do
   let noebuild  = take (length ebuild - 7) ebuild
       ver       = drop (length pn + 1) noebuild
-  case parseVersion ver of
-    Left   _ -> error $ "getVersion: version parse error '" ++ ver ++ "'"
-    Right  x ->  x
+      version   = case parseVersion ver of
+                    Left   _ -> error $ "getVersion: version parse error '" ++ ver ++ "'"
+                    Right  x ->  x
+  PackageVersion version overlay

@@ -31,6 +31,6 @@ testCmd = Command
                 options = testOpts,
                 handler = \rpc _ _ ->
                             readIORef rpc >>= \pc -> do
-                              let m = pcTree pc
+                              let m = pcMakeConf pc
                               print m
               }

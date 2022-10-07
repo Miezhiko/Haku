@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.2
+version: 0.0.3
 license: AGPL3
 
 build-type: Simple
@@ -17,6 +17,8 @@ Executable haku
     Commands.Get,
     Commands.Delete,
     Commands.Find,
+    Commands.Update,
+    Commands.Upgrade,
     Commands.Test,
     Paths_Haku
   Hs-Source-Dirs: src
@@ -27,6 +29,7 @@ Executable haku
       directory,
       filepath,
       unix,
-      parsec
+      parsec,
+      split
  ghc-options:
     -Wall

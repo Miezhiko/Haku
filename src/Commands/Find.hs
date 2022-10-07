@@ -18,7 +18,7 @@ findCmd ∷ Command String
 findCmd = Command
               {
                 command = ["find"],
-                description = "Find some",
+                description = "Find some Atom in gentoo tree",
                 usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
                 state = [],
                 options = const [],
