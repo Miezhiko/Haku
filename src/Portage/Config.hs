@@ -27,6 +27,7 @@ data Package
 instance Show Package where
   show (Package c _ n) = c ++ "/" ++ n
 
+-- Atom is category/PN
 type Atom = String
 type Tree = M.Map Atom Package
 
@@ -88,7 +89,7 @@ parseOverlays input = do
   let overlys = filter (not . null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] input
   parsed <- mapM parseOverlay overlys
   let treePkgs = concat $ concatMap fst parsed
-      trees = map (\p -> (pName p, p)) treePkgs
+      trees = map (\p -> (pCategory p ++ "/" ++ pName p, p)) treePkgs
   return $ M.fromList trees
 
 foo ∷ Package → Package → Package
@@ -108,7 +109,7 @@ portageConfig = do
                   Nothing -> return M.empty
 
   let allPkgs     = concat catMap
-      atoms       = map (\p -> (pName p, p)) allPkgs
+      atoms       = map (\p -> (pCategory p ++ "/" ++ pName p, p)) allPkgs
       pkgs        = M.fromList atoms
       categories  = map snd filteredCats
       merged      = M.unionWith foo pkgs overlays

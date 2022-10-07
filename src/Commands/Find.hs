@@ -2,17 +2,16 @@
 module Commands.Find where
 
 import           Types
+import           Utils
 
-import qualified Data.Map as M
-
-find ∷ Tree → [Atom] → IO ()
-find _ []         = putStrLn "specify atom!"
-find tree [x]     = case M.lookup x tree of
-                        Just p  -> do print p
-                                      print (pVersions p)
-                        Nothing -> putStrLn "Atom not found!"
-find tree (x:xs)  = do find tree [x]
-                       find tree xs
+find ∷ PortageConfig → [Atom] → IO ()
+find _ []      = putStrLn "specify atom!"
+find pc [x]    = case findPackage pc x of
+                      Just p  -> do print p
+                                    print (pVersions p)
+                      Nothing -> putStrLn "Atom not found!"
+find pc (x:xs) = do find pc [x]
+                    find pc xs
 
 findCmd ∷ Command String
 findCmd = Command
@@ -22,5 +21,5 @@ findCmd = Command
                 usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
                 state = [],
                 options = const [],
-                handler = \rpc _ ds -> readIORef rpc >>= \pc -> find (pcTree pc) ds
+                handler = \rpc _ ds -> readIORef rpc >>= \pc -> find pc ds
               }

@@ -4,8 +4,6 @@ module Commands.Get where
 import           Types
 import           Utils
 
-import qualified Data.Map   as M
-
 data GetState
   = GetState
       { mpretend :: Bool
@@ -24,12 +22,12 @@ merge gs xs =
       then rawAndIgnore "emerge" ("-pav":xs)
       else rawAndIgnore "emerge" ("-av":xs)
 
-emerge ∷ GetState → Tree → [Atom] → IO ()
-emerge _ _ []       = putStrLn "specify atom!"
-emerge gs tree [x]  = case M.lookup x tree of
+emerge ∷ GetState → PortageConfig → [Atom] → IO ()
+emerge _ _ []     = putStrLn "specify atom!"
+emerge gs pc [x]  = case findPackage pc x of
                         Just p  -> merge gs [show p]
                         Nothing -> putStrLn "Atom not found!"
-emerge gs _ xs      = merge gs xs
+emerge gs _ xs    = merge gs xs
 
 getCmd ∷ Command GetState
 getCmd = Command
@@ -40,5 +38,5 @@ getCmd = Command
                 state = GetState { mpretend = False
                                  , mupdate  = False },
                 options = getOpts,
-                handler = \rpc gs ds -> readIORef rpc >>= \pc -> emerge gs (pcTree pc) ds
+                handler = \rpc gs ds -> readIORef rpc >>= \pc -> emerge gs pc ds
               }

@@ -14,6 +14,7 @@ Executable haku
     Version,
     Portage.Version,
     Portage.Config,
+    Portage.Utils,
     Commands.Get,
     Commands.Delete,
     Commands.Find,

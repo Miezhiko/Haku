@@ -1,5 +1,12 @@
 {-# LANGUAGE UnicodeSyntax #-}
-module Utils where
+module Utils
+  ( module ExportedUtils
+  , align
+  , raw
+  , rawAndIgnore
+  ) where
+
+import           Portage.Utils  as ExportedUtils
 
 import           Data.List
 
