@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.3
+version: 0.0.4
 license: AGPL3
 
 build-type: Simple
@@ -12,9 +12,11 @@ Executable haku
     Types,
     Utils,
     Version,
+    Portage.Helper,
     Portage.Version,
     Portage.Config,
     Portage.Utils,
+    Portage.Ebuild,
     Commands.Get,
     Commands.Delete,
     Commands.Find,

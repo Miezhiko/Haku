@@ -16,11 +16,24 @@ data Suffix
   | P_ Int
   deriving (Eq, Ord)
 
+data Version'
+  = Version' [Int] (Maybe Char) [Suffix] Int
+  deriving (Eq, Ord)
+
 data Version
   = Version [Int] (Maybe Char) [Suffix] Int String
 
 instance Show Version where
   show = showVersion
+
+instance Eq Version where
+  v1 == v2 = projectVersion v1 == projectVersion v2
+
+instance Ord Version where
+  compare v1 v2 = compare (projectVersion v1) (projectVersion v2)
+
+projectVersion :: Version -> Version'
+projectVersion (Version ver c suf rev _) = Version' ver c suf rev
 
 showVersion ∷ Version → String
 showVersion (Version _ _ _ _ rep) = rep
@@ -30,6 +43,12 @@ data PackageVersion
       { pVersion :: Version
       , pOverlay :: String
       }
+
+instance Eq PackageVersion where
+  v1 == v2 = pVersion v1 == pVersion v2
+
+instance Ord PackageVersion where
+  compare v1 v2 = compare (pVersion v1) (pVersion v2)
 
 instance Show PackageVersion where
   show = showPackageVersion

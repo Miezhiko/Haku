@@ -4,12 +4,14 @@ module Utils
   , align
   , raw
   , rawAndIgnore
+  , runIfExists
   ) where
 
-import           Portage.Utils  as ExportedUtils
+import           Portage.Utils    as ExportedUtils
 
 import           Data.List
 
+import           System.Directory (doesFileExist)
 import           System.Exit
 import           System.Process
 
@@ -25,6 +27,11 @@ raw λ α = rawSystem λ α >>= checkExitCode
 
 rawAndIgnore ∷ String → [String] → IO ()
 rawAndIgnore λ α = void (rawSystem λ α)
+
+runIfExists ∷ FilePath → String → [String] → IO ()
+runIfExists ξ λ α =
+  doesFileExist ξ >>= \fe ->
+    when fe $ void (rawSystem λ α)
 
 align ∷ [[String]] → String
 align ts =  let  maxlengths = map (maximum . map length) (transpose ts)

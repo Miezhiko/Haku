@@ -28,14 +28,17 @@ instance Show Package where
   show (Package c _ n) = c ++ "/" ++ n
 
 -- Atom is category/PN
-type Atom = String
-type Tree = M.Map Atom Package
+type Atom     = String
+type Tree     = M.Map Atom Package
+type Overlays = M.Map String (FilePath, [String])
+type OverlayMeta = (String, (FilePath, [String]))
 
 data PortageConfig
   = PortageConfig
       { pcMakeConf   :: EnvMap
       , pcCategories :: [String]
       , pcTree       :: Tree
+      , pcOverlays   :: Overlays
       }
 
 parseEnvMap ∷ String → EnvMap
@@ -62,7 +65,7 @@ getVersions fp pn o = do
       versions  = map (getVersion o pn) ebuilds
   return versions
 
-parseOverlay ∷ FilePath → IO ([[Package]], [(String, String)])
+parseOverlay ∷ FilePath → IO ([[Package]], OverlayMeta)
 parseOverlay treePath = do
   overlayName  <- readFile $ treePath </> "profiles/repo_name"
   treeCats     <- getFilteredDirectoryContents treePath
@@ -79,18 +82,20 @@ parseOverlay treePath = do
                             return $ Package cat versions pn
                          ) packagesFiltered
                  ) filteredCats
-  return (catMap, filteredCats)
+  let cats = map snd filteredCats
+  return (catMap, (overlayName, (treePath, cats)))
 
 splitOnAnyOf ∷ Eq a ⇒ [[a]] → [a] → [[a]]
 splitOnAnyOf ds xs = foldl' (\ys d -> ys >>= splitOn d) [xs] ds
 
-parseOverlays ∷ String → IO Tree
+parseOverlays ∷ String → IO (Tree, [OverlayMeta])
 parseOverlays input = do
   let overlys = filter (not . null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] input
   parsed <- mapM parseOverlay overlys
-  let treePkgs = concat $ concatMap fst parsed
-      trees = map (\p -> (pCategory p ++ "/" ++ pName p, p)) treePkgs
-  return $ M.fromList trees
+  let treePkgs  = concat $ concatMap fst parsed
+      trees     = map (\p -> (pCategory p ++ "/" ++ pName p, p)) treePkgs
+      ovMetas   = map snd parsed
+  return (M.fromList trees, ovMetas)
 
 foo ∷ Package → Package → Package
 foo p1 p2 =
@@ -102,16 +107,18 @@ portageConfig = do
   makeConf <- getConfigFile "/etc/portage/make.conf"
   let treePath = makeConf M.! "PORTDIR"
 
-  (catMap, filteredCats) <- parseOverlay treePath
+  (catMap, (ovName, (_, categories))) <- parseOverlay treePath
 
-  overlays <- case M.lookup "PORTDIR_OVERLAY" makeConf of
+  (ov, met) <- case M.lookup "PORTDIR_OVERLAY" makeConf of
                   Just o  -> parseOverlays o
-                  Nothing -> return M.empty
+                  Nothing -> return (M.empty, [])
 
   let allPkgs     = concat catMap
       atoms       = map (\p -> (pCategory p ++ "/" ++ pName p, p)) allPkgs
       pkgs        = M.fromList atoms
-      categories  = map snd filteredCats
-      merged      = M.unionWith foo pkgs overlays
+      merged      = M.unionWith foo pkgs ov
+      metaList    = (ovName, (treePath, categories)) : met
+      overlays    = M.fromList metaList
 
-  return ( PortageConfig makeConf categories merged )
+  -- | TODO: maybe add new categories from overlays
+  return ( PortageConfig makeConf categories merged overlays )

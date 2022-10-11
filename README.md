@@ -7,9 +7,12 @@ pretending to be a package manager
 Haku v0.0.3
 
 get      Merge one or more variants.  
-find     Find some Atom in gentoo tree
+find     Find some Atom
 delete   Delete one or more variants. 
 update   Update world                 
 upgrade  Upgrade world                
 ```
 
+# Usage
+
+you should have `PORTDIR` and optionally `PORTDIR_OVERLAY` defined in `make.conf` for this to work.
