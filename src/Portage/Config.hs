@@ -2,6 +2,7 @@
 module Portage.Config where
 
 import           Portage.Version
+import           Portage.Package
 
 import           Data.Functor
 import           Data.List
@@ -16,16 +17,6 @@ import           System.Process
 import           Control.Monad
 
 type EnvMap = M.Map String String
-
-data Package
-  = Package
-      { pCategory :: String
-      , pVersions :: [PackageVersion]
-      , pName     :: String
-      }
-
-instance Show Package where
-  show (Package c _ n) = c ++ "/" ++ n
 
 -- Atom is category/PN
 type Atom     = String
@@ -97,8 +88,8 @@ parseOverlays input = do
       ovMetas   = map snd parsed
   return (M.fromList trees, ovMetas)
 
-foo ∷ Package → Package → Package
-foo p1 p2 =
+mergePackages ∷ Package → Package → Package
+mergePackages p1 p2 =
   let versions = pVersions p1 ++ pVersions p2
   in Package (pCategory p1) versions (pName p1)
 
@@ -116,7 +107,7 @@ portageConfig = do
   let allPkgs     = concat catMap
       atoms       = map (\p -> (pCategory p ++ "/" ++ pName p, p)) allPkgs
       pkgs        = M.fromList atoms
-      merged      = M.unionWith foo pkgs ov
+      merged      = M.unionWith mergePackages pkgs ov
       metaList    = (ovName, (treePath, categories)) : met
       overlays    = M.fromList metaList
 

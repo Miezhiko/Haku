@@ -3,6 +3,7 @@ module Portage.Utils where
 
 import           Portage.Config
 import           Portage.Ebuild
+import           Portage.Package
 import           Portage.Version
 
 import           System.FilePath
