@@ -12,6 +12,7 @@ data GetState
       , gbdeps   :: Bool
       , gnewuse  :: Bool
       , gdeep    :: Bool
+      , gverbose :: Bool
       }
 
 getOpts ∷ Bool → [OptDescr (GetState → GetState)]
@@ -21,7 +22,8 @@ getOpts _ =
     , Option "a" ["ask"]        (NoArg (\s -> s { gask = True }))       "ask before emerge"
     , Option "w" ["with-bdeps"] (NoArg (\s -> s { gbdeps = True }))     "with build deps"
     , Option "N" ["newuse"]     (NoArg (\s -> s { gnewuse = True }))    "use new USE"
-    , Option "D" ["deep"]       (NoArg (\s -> s { gdeep = True }))      "deep"
+    , Option "D" ["deep"]       (NoArg (\s -> s { gdeep = True }))      "very deep"
+    , Option "v" ["verbose"]    (NoArg (\s -> s { gverbose = True }))   "verbose output"
     ]
 
 merge ∷ GetState → [Atom] → IO ()
@@ -32,6 +34,7 @@ merge gs xs =
         ++  ["-u" | gupdate gs]
         ++  ["-N" | gnewuse gs]
         ++  ["-D" | gdeep gs]
+        ++  ["-v" | gverbose gs]
         ++  ["--with-bdeps=y" | gbdeps gs]
   in rawAndIgnore "emerge" (opts ++ xs)
 
@@ -58,7 +61,8 @@ getCmd = Command
                                  , gask     = False
                                  , gbdeps   = False
                                  , gnewuse  = False
-                                 , gdeep    = False },
+                                 , gdeep    = False
+                                 , gverbose = False },
                 options = getOpts,
                 handler = getPackage
               }
