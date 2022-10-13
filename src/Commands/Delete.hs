@@ -6,20 +6,22 @@ import           Utils
 
 data DeleteState
   = DeleteState
-      { mpretend       :: Bool
-      , muselessOption :: Bool
+      { dpretend  :: Bool
+      , dask      :: Bool
       }
 
 deleteOpts ∷ Bool → [OptDescr (DeleteState → DeleteState)]
 deleteOpts _ =
-    [ Option "p" ["pretend"] (NoArg (\s -> s { mpretend = True })) "update variants"
+    [ Option "p" ["pretend"]  (NoArg (\s -> s { dpretend = True }))   "update variants"
+    , Option "a" ["ask"]      (NoArg (\s -> s { dask = True }))       "ask before run"
     ]
 
 unmerge ∷ DeleteState → [Atom] → IO ()
 unmerge dels xs =
-  if mpretend dels
-      then rawAndIgnore "emerge" ("-pavC":xs)
-      else rawAndIgnore "emerge" ("-avC":xs)
+  let opts =
+            ["-p" | dpretend dels]
+        ++  ["-a" | dask dels]
+  in rawAndIgnore "emerge" (opts ++ xs)
 
 delete ∷ DeleteState → PortageConfig → [Atom] → IO ()
 delete _ _ []       = putStrLn "specify atom!"
@@ -34,8 +36,8 @@ deleteCmd = Command
                 command = ["delete"],
                 description = "Delete one or more variants.",
                 usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
-                state = DeleteState { mpretend        = False
-                                    , muselessOption  = False },
+                state = DeleteState { dpretend  = False
+                                    , dask      = False },
                 options = deleteOpts,
                 handler = \rpc dels ds -> readIORef rpc >>= \pc -> delete dels pc ds
               }

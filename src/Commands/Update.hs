@@ -15,14 +15,16 @@ data UpdateState
 updateOpts ∷ Bool → [OptDescr (UpdateState → UpdateState)]
 updateOpts _ =
     [ Option "u" ["upgrade"] (NoArg (\s -> s { updUpgrade = True })) "run upgrade after"
+    , Option "m" ["minimal"] (NoArg (\s -> s { updMinimal = True })) "only emerge --sync"
     ]
 
 update ∷ UpdateState → IO ()
 update upds = do
-  runIfExists "/usr/bin/shelter"    "shelter" []
-  runIfExists "/usr/bin/emerge"     "emerge" ["--sync"]
-  runIfExists "/usr/bin/egencache"  "egencache" ["--repo=gentoo", "--update"]
-  runIfExists "/usr/bin/eix-update" "eix-update" []
+  let minimal = updMinimal upds
+  unless minimal $ runIfExists "/usr/bin/shelter" "shelter" []
+  runIfExists "/usr/bin/emerge" "emerge" ["--sync"]
+  unless minimal $ runIfExists "/usr/bin/egencache" "egencache" ["--repo=gentoo", "--update"]
+  unless minimal $ runIfExists "/usr/bin/eix-update" "eix-update" []
   when (updUpgrade upds) $
     rawAndIgnore "emerge" [ "-avuDN"
                           , "@world"

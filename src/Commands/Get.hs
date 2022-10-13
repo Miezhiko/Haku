@@ -6,21 +6,34 @@ import           Utils
 
 data GetState
   = GetState
-      { mpretend :: Bool
-      , mupdate  :: Bool
+      { gpretend :: Bool
+      , gupdate  :: Bool
+      , gask     :: Bool
+      , gbdeps   :: Bool
+      , gnewuse  :: Bool
+      , gdeep    :: Bool
       }
 
 getOpts ∷ Bool → [OptDescr (GetState → GetState)]
 getOpts _ =
-    [ Option "p" ["pretend"] (NoArg (\s -> s { mpretend = True })) "pretend"
-    , Option "u" ["update"] (NoArg (\s -> s { mupdate = True })) "update variants"
+    [ Option "p" ["pretend"]    (NoArg (\s -> s { gpretend = True }))   "pretend"
+    , Option "u" ["update"]     (NoArg (\s -> s { gupdate = True }))    "update variants"
+    , Option "a" ["ask"]        (NoArg (\s -> s { gask = True }))       "ask before emerge"
+    , Option "w" ["with-bdeps"] (NoArg (\s -> s { gbdeps = True }))     "with build deps"
+    , Option "N" ["newuse"]     (NoArg (\s -> s { gnewuse = True }))    "use new USE"
+    , Option "D" ["deep"]       (NoArg (\s -> s { gdeep = True }))      "deep"
     ]
 
 merge ∷ GetState → [Atom] → IO ()
 merge gs xs =
-  if mpretend gs
-      then rawAndIgnore "emerge" ("-pav":xs)
-      else rawAndIgnore "emerge" ("-av":xs)
+  let opts =
+            ["-p" | gpretend gs]
+        ++  ["-a" | gask gs]
+        ++  ["-u" | gupdate gs]
+        ++  ["-N" | gnewuse gs]
+        ++  ["-D" | gdeep gs]
+        ++  ["--with-bdeps=y" | gbdeps gs]
+  in rawAndIgnore "emerge" (opts ++ xs)
 
 emerge ∷ GetState → PortageConfig → [Atom] → IO ()
 emerge _ _ []     = putStrLn "specify atom!"
@@ -29,14 +42,23 @@ emerge gs pc [x]  = case findPackage pc x of
                         Nothing -> putStrLn "Atom not found!"
 emerge gs _ xs    = merge gs xs
 
+getPackage :: IORef PortageConfig -> GetState -> [String] -> IO ()
+getPackage rpc gs ds =
+  readIORef rpc >>= \pc ->
+    emerge gs pc ds
+
 getCmd ∷ Command GetState
 getCmd = Command
               {
                 command = ["get"],
                 description = "Merge one or more variants.",
                 usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
-                state = GetState { mpretend = False
-                                 , mupdate  = False },
+                state = GetState { gpretend = False
+                                 , gupdate  = False
+                                 , gask     = False
+                                 , gbdeps   = False
+                                 , gnewuse  = False
+                                 , gdeep    = False },
                 options = getOpts,
-                handler = \rpc gs ds -> readIORef rpc >>= \pc -> emerge gs pc ds
+                handler = getPackage
               }
