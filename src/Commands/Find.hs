@@ -21,7 +21,7 @@ find pc (x:xs) = do find pc [x]
 findCmd ∷ Command String
 findCmd = Command
               {
-                command = ["find"],
+                command = ["f", "find"],
                 description = "Find some Atom in main tree and overlays",
                 usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
                 state = [],

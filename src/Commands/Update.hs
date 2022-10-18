@@ -36,7 +36,7 @@ update upds = do
 updateCmd ∷ Command UpdateState
 updateCmd = Command
               {
-                command = ["update"],
+                command = ["u", "update"],
                 description = "Update world",
                 usage = ("haku " ++),
                 state = UpdateState { updUpgrade = False
