@@ -107,3 +107,11 @@ getVersion overlay pn ebuild = do
                     Left   _ -> error $ "getVersion: version parse error '" ++ ver ++ "'"
                     Right  x ->  x
   PackageVersion version overlay
+
+getVersionInstalled ∷ String → String → String → PackageVersion
+getVersionInstalled overlay pn path = do
+  let ver       = drop (length pn + 1) path
+      version   = case parseVersion ver of
+                    Left   _ -> error $ "getVersion: version parse error '" ++ ver ++ "'"
+                    Right  x ->  x
+  PackageVersion version overlay

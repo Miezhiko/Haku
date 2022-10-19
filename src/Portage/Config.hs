@@ -1,13 +1,17 @@
 {-# LANGUAGE UnicodeSyntax #-}
-module Portage.Config where
+module Portage.Config
+  ( module Portage.Types.Config
+  , portageConfig
+  ) where
 
-import           Portage.Version
 import           Portage.Package
+import           Portage.Types.Config
+import           Portage.Version
 
 import           Data.Functor
 import           Data.List
 import           Data.List.Split
-import qualified Data.Map           as M
+import qualified Data.Map             as M
 import           Data.Maybe
 
 import           System.Directory
@@ -16,23 +20,6 @@ import           System.Posix.Files
 import           System.Process
 
 import           Control.Monad
-
-type EnvMap = M.Map String String
-
--- Atom is category/PN
-type Atom     = String
-type Tree     = M.Map Atom Package
-type Overlays = M.Map String (FilePath, [(String, [String])])
-type OverlayMeta =  (String, (FilePath, [(String, [String])]))
-
-data PortageConfig
-  = PortageConfig
-      { pcMakeConf   :: EnvMap
-      , pcCategories :: [(String, [String])]
-      , pcTree       :: Tree
-      , pcInstalled  :: Tree
-      , pcOverlays   :: Overlays
-      }
 
 parseEnvMap ∷ String → EnvMap
 parseEnvMap s = M.fromList $
@@ -97,34 +84,39 @@ mergePackages p1 p2 =
   let versions = pVersions p1 ++ pVersions p2
   in Package (pCategory p1) versions (pName p1)
 
-findExact :: [String] -> Maybe String
+findExact ∷ [String] → Maybe String
 findExact []  = Nothing
 findExact [x] = Just x
 findExact xss = Just (snd $ maximum $ [(length xs, xs) | xs <- xss])
 
--- TODO: parse versions
-findPackages :: String -> [String] -> [String] -> [(Atom, Package)]
-findPackages cat versionedPkgs pkgs =
-  let findMap = map (\vpkg ->
-                      let mb = filter (\pkg -> isPrefixOf pkg vpkg) pkgs
-                      in findExact mb
-                    ) versionedPkgs
-      pureMap = catMaybes findMap
-  in map (\pn -> (cat ++ "/" ++ pn, Package cat [] pn)) pureMap
+getPackage ∷ String → String → Maybe String → String → IO (Maybe (Atom, Package))
+getPackage _ _ Nothing _ = return Nothing
+getPackage fcat cat (Just pn) vp = do
+  overlay <- readFile $ fcat </> vp </> "repository"
+  let version = getVersionInstalled overlay pn vp
+  return $ Just (cat ++ "/" ++ pn, Package cat [version] pn)
 
-getInstalledPackages :: FilePath -> [(String, [String])] -> IO Tree
+findPackages ∷ String → String → [String] → [String] → IO [(Atom, Package)]
+findPackages fcat cat versionedPkgs pkgs = do
+  findMap <- mapM (\vpkg ->
+                      let mb = filter (\pkg -> isPrefixOf pkg vpkg) pkgs
+                      in getPackage fcat cat (findExact mb) vpkg
+                  ) versionedPkgs
+  return $ catMaybes findMap
+
+getInstalledPackages ∷ FilePath → [(String, [String])] → IO Tree
 getInstalledPackages pkgdb categories = do
   treeCats      <- getFilteredDirectoryContents pkgdb
   filteredCats  <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
                       $ map (\c -> (pkgdb </> c, c))
                             treeCats
   catMap <- mapM (\(fcat, cat) -> do
-                    packages <- getFilteredDirectoryContents fcat
+                    pkgFiles <- getFilteredDirectoryContents fcat
                     let myCat = find (\(c, _) -> cat == c
                                      ) $ categories
                     case myCat of
-                      Just (_,pkgs)  -> return $ findPackages cat packages pkgs
-                      Nothing        -> return []
+                      Just (_,pkgs) -> findPackages fcat cat pkgFiles pkgs
+                      Nothing       -> return []
                  ) filteredCats
   let bigPackagesMap = concat catMap
   return $ M.fromList bigPackagesMap
