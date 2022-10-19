@@ -1,13 +1,17 @@
 {-# LANGUAGE UnicodeSyntax #-}
-module Portage.Package where
+module Portage.Package
+  ( Package (..)
+  ) where
 
 import           Portage.Version
 
+import           Data.Set
+
 data Package
   = Package
-      { pCategory :: String
-      , pVersions :: [PackageVersion]
-      , pName     :: String
+      { pCategory  :: String
+      , pVersions  :: Set PackageVersion
+      , pName      :: String
       }
 
 instance Show Package where

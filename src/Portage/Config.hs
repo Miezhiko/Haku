@@ -13,6 +13,7 @@ import           Data.List
 import           Data.List.Split
 import qualified Data.Map             as M
 import           Data.Maybe
+import qualified Data.Set             as S
 
 import           System.Directory
 import           System.FilePath
@@ -38,12 +39,12 @@ getConfigFile f =  do  (_,r,_) <- readCreateProcessWithExitCode (
                                              "source " ++ f ++ "; set" ) []
                        return (parseEnvMap r)
 
-getVersions ∷ String → String → String → IO [PackageVersion]
+getVersions ∷ String → String → String → IO (S.Set PackageVersion)
 getVersions fp pn o = do
   dirContent <- getFilteredDirectoryContents fp
   let ebuilds   = filter (isSuffixOf ".ebuild") dirContent
       versions  = map (getVersion o pn) ebuilds
-  return versions
+  return $ S.fromList versions
 
 parseOverlay ∷ FilePath → IO ([Package], OverlayMeta)
 parseOverlay treePath = do
@@ -81,7 +82,7 @@ parseOverlays input = do
 
 mergePackages ∷ Package → Package → Package
 mergePackages p1 p2 =
-  let versions = pVersions p1 ++ pVersions p2
+  let versions  = S.union (pVersions p1) (pVersions p2)
   in Package (pCategory p1) versions (pName p1)
 
 findExact ∷ [String] → Maybe String
@@ -93,16 +94,21 @@ getPackage ∷ String → String → Maybe String → String → IO (Maybe (Atom
 getPackage _ _ Nothing _ = return Nothing
 getPackage fcat cat (Just pn) vp = do
   overlay <- readFile $ fcat </> vp </> "repository"
-  let version = getVersionInstalled overlay pn vp
-  return $ Just (cat ++ "/" ++ pn, Package cat [version] pn)
+  let versions = S.fromList [getVersionInstalled overlay pn vp]
+  return $ Just (cat ++ "/" ++ pn, Package cat versions pn)
 
-findPackages ∷ String → String → [String] → [String] → IO [(Atom, Package)]
+findPackages ∷ String → String → [String] → [String] → IO Tree
 findPackages fcat cat versionedPkgs pkgs = do
-  findMap <- mapM (\vpkg ->
-                      let mb = filter (\pkg -> isPrefixOf pkg vpkg) pkgs
+  l <- mapM (\vpkg -> let mb = filter (`isPrefixOf` vpkg) pkgs
                       in getPackage fcat cat (findExact mb) vpkg
-                  ) versionedPkgs
-  return $ catMaybes findMap
+            ) versionedPkgs
+  return $ M.fromList (catMaybes l)
+
+concatMaps ∷ Tree → [Tree] → Tree
+concatMaps base []     = base
+concatMaps base [x]    = M.unionWith mergePackages base x
+concatMaps base (x:xs) = M.unionWith mergePackages (concatMaps base [x])
+                                                   (concatMaps base xs)
 
 getInstalledPackages ∷ FilePath → [(String, [String])] → IO Tree
 getInstalledPackages pkgdb categories = do
@@ -110,16 +116,15 @@ getInstalledPackages pkgdb categories = do
   filteredCats  <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
                       $ map (\c -> (pkgdb </> c, c))
                             treeCats
-  catMap <- mapM (\(fcat, cat) -> do
+  catMaps <- mapM (\(fcat, cat) -> do
                     pkgFiles <- getFilteredDirectoryContents fcat
                     let myCat = find (\(c, _) -> cat == c
-                                     ) $ categories
+                                     ) categories
                     case myCat of
                       Just (_,pkgs) -> findPackages fcat cat pkgFiles pkgs
-                      Nothing       -> return []
-                 ) filteredCats
-  let bigPackagesMap = concat catMap
-  return $ M.fromList bigPackagesMap
+                      Nothing       -> return M.empty
+                  ) filteredCats
+  return $ concatMaps M.empty catMaps
 
 portageConfig ∷ IO PortageConfig
 portageConfig = do
@@ -138,7 +143,9 @@ portageConfig = do
       metaList    = (ovName, (treePath, categories)) : met
       overlays    = M.fromList metaList
 
-  installed <- getInstalledPackages "/var/db/pkg" categories
+  -- TODO: learn haskell LOL
+  -- https://stackoverflow.com/questions/8716728/resource-exhausted-too-many-open-files
+  -- installed <- getInstalledPackages "/var/db/pkg" categories
+  -- let finalTree = M.unionWith mergePackages merged installed
 
-  -- | TODO: maybe add new categories from overlays
-  return ( PortageConfig makeConf categories merged installed overlays )
+  return ( PortageConfig makeConf categories merged overlays )

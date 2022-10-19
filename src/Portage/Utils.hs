@@ -19,8 +19,8 @@ findPackageByName pc x =
                               Nothing -> False
                  ) $ pcCategories pc
   in case cat of
-      Just (c,_)  -> findPackage pc (c ++ "/" ++ x)
-      Nothing     -> Nothing
+      Just (c,_) -> findPackage pc (c ++ "/" ++ x)
+      Nothing    -> Nothing
 
 findPackage ∷ PortageConfig → String → Maybe Package
 findPackage pc input =
@@ -31,8 +31,8 @@ findPackage pc input =
 findEbuild ∷ PortageConfig → Package → IO Ebuild
 findEbuild pc package =
   let mv = maximum (pVersions package)
-      pv = pVersion mv
-      po = pOverlay mv
+      pv = pvVersion mv
+      po = pvOverlay mv
       pn = pName package
       pp = pCategory package </> pn
       p  = pn ++ "-" ++ show pv ++ ".ebuild"

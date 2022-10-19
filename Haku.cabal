@@ -12,6 +12,7 @@ Executable haku
     Types,
     Utils,
     Version,
+    Portage.Types.Version,
     Portage.Types.Config,
     Portage.Helper,
     Portage.Version,

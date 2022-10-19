@@ -18,6 +18,5 @@ data PortageConfig
       { pcMakeConf   :: EnvMap
       , pcCategories :: [(String, [String])]
       , pcTree       :: Tree
-      , pcInstalled  :: Tree
       , pcOverlays   :: Overlays
       }
