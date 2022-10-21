@@ -4,20 +4,21 @@ module Portage.Config
   , portageConfig
   ) where
 
-import           Portage.Types.Package
-import           Portage.Types.Config
 import           Portage.Helper
+import           Portage.Types.Config
+import           Portage.Types.Package
 import           Portage.Version
 
 import           Data.Functor
 import           Data.List
 import           Data.List.Split
-import qualified Data.Map             as M
+import qualified Data.Map              as M
 import           Data.Maybe
-import qualified Data.Set             as S
+import qualified Data.Set              as S
 
 import           System.Directory
 import           System.FilePath
+import qualified System.IO.Strict      as Strict
 import           System.Posix.Files
 import           System.Process
 
@@ -49,7 +50,7 @@ getVersions fp pn o = do
 
 parseOverlay ∷ FilePath → IO ([Package], OverlayMeta)
 parseOverlay treePath = do
-  overlayName  <- rstrip <$> readFileStrict (treePath </> "profiles/repo_name")
+  overlayName  <- rstrip <$> readFile (treePath </> "profiles/repo_name")
   treeCats     <- getFilteredDirectoryContents treePath
   filteredCats <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
                       $ map (\c -> (treePath </> c, c))
@@ -94,11 +95,11 @@ findExact xss = Just (snd $ maximum $ [(length xs, xs) | xs <- xss])
 getPackage ∷ String → String → Maybe String → String → IO (Maybe (Atom, Package))
 getPackage _ _ Nothing _ = return Nothing
 getPackage fcat cat (Just pn) vp = do
-  overlay <- rstrip <$> readFileStrict (fcat </> vp </> "repository")
-  let versions = S.fromList [getVersionInstalled overlay pn vp]
+  overlay <- rstrip <$> Strict.readFile (fcat </> vp </> "repository")
+  let versions = S.singleton (getVersionInstalled overlay pn vp)
   return $ Just (cat ++ "/" ++ pn, Package cat versions pn)
 
-concatPackageGroups :: [(Atom, Package)] -> [(Atom, Package)]
+concatPackageGroups ∷ [(Atom, Package)] → [(Atom, Package)]
 concatPackageGroups [] = []
 concatPackageGroups [(a, p)] = [(a, p)]
 concatPackageGroups xs =

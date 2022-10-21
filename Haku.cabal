@@ -38,6 +38,7 @@ Executable haku
       unix,
       parsec,
       split,
-      text
+      text,
+      strict
  ghc-options:
     -Wall
