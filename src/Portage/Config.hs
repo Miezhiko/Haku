@@ -98,12 +98,27 @@ getPackage fcat cat (Just pn) vp = do
   let versions = S.fromList [getVersionInstalled overlay pn vp]
   return $ Just (cat ++ "/" ++ pn, Package cat versions pn)
 
+concatPackageGroups :: [(Atom, Package)] -> [(Atom, Package)]
+concatPackageGroups [] = []
+concatPackageGroups [(a, p)] = [(a, p)]
+concatPackageGroups xs =
+  let headTuple = head xs
+      anyAtom   = fst headTuple
+      firstPkg  = snd headTuple
+      anyCat    = pCategory firstPkg
+      anyName   = pName firstPkg
+      versions  = S.fromList $ concatMap (\(_, pp) -> S.toList (pVersions pp)) xs
+  in [(anyAtom, Package anyCat versions anyName)]
+
 findPackages ∷ String → String → [String] → [String] → IO Tree
 findPackages fcat cat versionedPkgs pkgs = do
   l <- mapM (\vpkg -> let mb = filter (`isPrefixOf` vpkg) pkgs
                       in getPackage fcat cat (findExact mb) vpkg
             ) versionedPkgs
-  return $ M.fromList (catMaybes l)
+  let srt = sortBy (\(a, _) (b, _) -> compare a b) (catMaybes l)
+      grp = groupBy (\(a, _) (b, _) -> a == b) srt
+      gmp = concatMap concatPackageGroups grp
+  return $ M.fromList gmp
 
 concatMaps ∷ Tree → [Tree] → Tree
 concatMaps base []     = base
