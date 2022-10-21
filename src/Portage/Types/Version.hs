@@ -55,8 +55,8 @@ instance Show PackageVersion where
   show = showPackageVersion
 
 showPackageVersion ∷ PackageVersion → String
-showPackageVersion (PackageVersion v p True)  = show v ++ "::" ++ p ++ " [Installed]"
-showPackageVersion (PackageVersion v p False) = show v ++ "::" ++ p
+showPackageVersion (PackageVersion v ov True)  = show v ++ "::" ++ ov ++ " [Installed]"
+showPackageVersion (PackageVersion v ov False) = show v ++ "::" ++ ov
 
 parseVersion ∷ String → Either ParseError Version
 parseVersion = parse (readVersion >>= \x -> eof >> return x) "<version number>"

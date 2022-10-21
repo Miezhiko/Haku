@@ -49,7 +49,7 @@ getVersions fp pn o = do
 
 parseOverlay ∷ FilePath → IO ([Package], OverlayMeta)
 parseOverlay treePath = do
-  overlayName  <- readFileStrict $ treePath </> "profiles/repo_name"
+  overlayName  <- rstrip <$> readFileStrict (treePath </> "profiles/repo_name")
   treeCats     <- getFilteredDirectoryContents treePath
   filteredCats <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
                       $ map (\c -> (treePath </> c, c))
@@ -94,7 +94,7 @@ findExact xss = Just (snd $ maximum $ [(length xs, xs) | xs <- xss])
 getPackage ∷ String → String → Maybe String → String → IO (Maybe (Atom, Package))
 getPackage _ _ Nothing _ = return Nothing
 getPackage fcat cat (Just pn) vp = do
-  overlay <- readFileStrict $ fcat </> vp </> "repository"
+  overlay <- rstrip <$> readFileStrict (fcat </> vp </> "repository")
   let versions = S.fromList [getVersionInstalled overlay pn vp]
   return $ Just (cat ++ "/" ++ pn, Package cat versions pn)
 
@@ -145,6 +145,6 @@ portageConfig = do
       overlays    = M.fromList metaList
 
   installed <- getInstalledPackages "/var/db/pkg" categories
-  let finalTree = M.unionWith mergePackages merged installed
+  let finalTree = M.unionWith mergePackages installed merged
 
   return ( PortageConfig makeConf categories finalTree overlays )
