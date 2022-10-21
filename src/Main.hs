@@ -7,6 +7,7 @@ import           Commands.Get
 import           Commands.Test
 import           Commands.Update
 import           Commands.Upgrade
+import           Commands.Clean
 
 import           Types
 import           Utils
@@ -22,6 +23,7 @@ commands showPrivate =
     , Command' deleteCmd
     , Command' updateCmd
     , Command' upgradeCmd
+    , Command' cleanCmd
     ] ++ concat
     [
       [

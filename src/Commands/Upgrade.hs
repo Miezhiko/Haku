@@ -5,7 +5,7 @@ import           Types
 import           Utils
 
 upgrade ∷ IO ()
-upgrade = do
+upgrade =
   rawAndIgnore "emerge" [ "-avuDN"
                         , "@world"
                         , "--backtrack=100"
