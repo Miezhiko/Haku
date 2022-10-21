@@ -1,9 +1,9 @@
 {-# LANGUAGE UnicodeSyntax #-}
-module Portage.Package
+module Portage.Types.Package
   ( Package (..)
   ) where
 
-import           Portage.Version
+import           Portage.Types.Version
 
 import           Data.Set
 

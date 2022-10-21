@@ -1,7 +1,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Portage.Types.Config where
 
-import           Portage.Package
+import           Portage.Types.Package
 
 import qualified Data.Map        as M
 

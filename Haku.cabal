@@ -13,10 +13,10 @@ Executable haku
     Utils,
     Version,
     Portage.Types.Version,
+    Portage.Types.Package,
     Portage.Types.Config,
     Portage.Helper,
     Portage.Version,
-    Portage.Package,
     Portage.Config,
     Portage.Utils,
     Portage.Ebuild,
@@ -36,6 +36,7 @@ Executable haku
       filepath,
       unix,
       parsec,
-      split
+      split,
+      text
  ghc-options:
     -Wall

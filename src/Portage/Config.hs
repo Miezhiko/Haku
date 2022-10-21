@@ -4,8 +4,9 @@ module Portage.Config
   , portageConfig
   ) where
 
-import           Portage.Package
+import           Portage.Types.Package
 import           Portage.Types.Config
+import           Portage.Helper
 import           Portage.Version
 
 import           Data.Functor
@@ -48,7 +49,7 @@ getVersions fp pn o = do
 
 parseOverlay ∷ FilePath → IO ([Package], OverlayMeta)
 parseOverlay treePath = do
-  overlayName  <- readFile $ treePath </> "profiles/repo_name"
+  overlayName  <- readFileStrict $ treePath </> "profiles/repo_name"
   treeCats     <- getFilteredDirectoryContents treePath
   filteredCats <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
                       $ map (\c -> (treePath </> c, c))
@@ -93,7 +94,7 @@ findExact xss = Just (snd $ maximum $ [(length xs, xs) | xs <- xss])
 getPackage ∷ String → String → Maybe String → String → IO (Maybe (Atom, Package))
 getPackage _ _ Nothing _ = return Nothing
 getPackage fcat cat (Just pn) vp = do
-  overlay <- readFile $ fcat </> vp </> "repository"
+  overlay <- readFileStrict $ fcat </> vp </> "repository"
   let versions = S.fromList [getVersionInstalled overlay pn vp]
   return $ Just (cat ++ "/" ++ pn, Package cat versions pn)
 
@@ -143,9 +144,7 @@ portageConfig = do
       metaList    = (ovName, (treePath, categories)) : met
       overlays    = M.fromList metaList
 
-  -- TODO: learn haskell LOL
-  -- https://stackoverflow.com/questions/8716728/resource-exhausted-too-many-open-files
-  -- installed <- getInstalledPackages "/var/db/pkg" categories
-  -- let finalTree = M.unionWith mergePackages merged installed
+  installed <- getInstalledPackages "/var/db/pkg" categories
+  let finalTree = M.unionWith mergePackages merged installed
 
-  return ( PortageConfig makeConf categories merged overlays )
+  return ( PortageConfig makeConf categories finalTree overlays )

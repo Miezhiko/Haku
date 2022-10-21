@@ -3,13 +3,13 @@ module Portage.Utils where
 
 import           Portage.Config
 import           Portage.Ebuild
-import           Portage.Package
+import           Portage.Types.Package
 import           Portage.Version
 
 import           System.FilePath
 
 import           Data.List
-import qualified Data.Map        as M
+import qualified Data.Map              as M
 
 findPackageByName ∷ PortageConfig → String → Maybe Package
 findPackageByName pc x =

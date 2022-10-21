@@ -1,4 +1,3 @@
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Portage.Version
