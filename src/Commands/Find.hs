@@ -4,15 +4,16 @@ module Commands.Find where
 import           Types
 import           Utils
 
-removeJunk :: String -> String
-removeJunk xs = [ x | x <- xs, x /= '\"' ]
+maybePrint ∷ Maybe Ebuild → IO ()
+maybePrint Nothing    = putStrLn "no ebuild found"
+maybePrint (Just eb)  = putStrLn $ eDescription eb
 
 find ∷ PortageConfig → [Atom] → IO ()
 find _ []      = putStrLn "specify atom!"
 find pc [x]    = case findPackage pc x of
                       Just p  -> do print p
-                                    eb <- findEbuild pc p
-                                    putStrLn $ removeJunk (eDescription eb)
+                                    mbeb <- findEbuild pc p
+                                    maybePrint mbeb
                                     print (pVersions p)
                       Nothing -> putStrLn "Atom not found!"
 find pc (x:xs) = do find pc [x]

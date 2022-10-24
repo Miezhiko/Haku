@@ -4,7 +4,6 @@ module Portage.Ebuild where
 import           Portage.Helper
 
 import qualified Data.Map      as M
-import           Data.Maybe
 
 data Ebuild
   = Ebuild
@@ -26,6 +25,9 @@ data Ebuild
       }
   deriving (Eq, Show)
 
+removeJunk :: String -> String
+removeJunk xs = [ x | x <- xs, x /= '\"' ]
+
 stringSeq ∷ String → b → b
 stringSeq []      c =  c
 stringSeq (_:xs)  c =  stringSeq xs c
@@ -35,7 +37,7 @@ strictReadFile f  =   do  ff <- readFile f
                           ff `stringSeq` return ff
 
 (!.) ∷ M.Map String String → String → String
-m !. k = fromMaybe "" (M.lookup k m)
+m !. k = maybe "" removeJunk (M.lookup k m)
 
 getEbuild ∷ FilePath → IO Ebuild
 getEbuild f = do

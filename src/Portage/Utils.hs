@@ -10,6 +10,7 @@ import           System.FilePath
 
 import           Data.List
 import qualified Data.Map              as M
+import qualified Data.Set              as S
 
 findPackageByName ∷ PortageConfig → String → Maybe Package
 findPackageByName pc x =
@@ -28,13 +29,21 @@ findPackage pc input =
     then M.lookup input (pcTree pc)
     else findPackageByName pc input
 
-findEbuild ∷ PortageConfig → Package → IO Ebuild
-findEbuild pc package =
-  let mv = maximum (pVersions package)
+-- TODO: no pattern matching over sets?
+findMaxVersion ∷ S.Set PackageVersion → PortageConfig → Package → IO (Maybe Ebuild)
+findMaxVersion versions pc package =
+  let mv = maximum versions
       pv = pvVersion mv
       po = pvOverlay mv
       pn = pName package
       pp = pCategory package </> pn
       p  = pn ++ "-" ++ show pv ++ ".ebuild"
       (ovp, _cats) = pcOverlays pc M.! po
-  in getEbuild $ ovp </> pp </> p
+  in Just <$> getEbuild (ovp </> pp </> p)
+
+findEbuild ∷ PortageConfig → Package → IO (Maybe Ebuild)
+findEbuild pc package =
+  let versions = pVersions package
+  in if S.null versions
+      then return Nothing
+      else findMaxVersion versions pc package
