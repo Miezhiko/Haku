@@ -14,6 +14,7 @@ import           Data.List
 import           Data.List.Split
 import qualified Data.Map              as M
 import           Data.Maybe
+import           Data.Ord              (comparing)
 import qualified Data.Set              as S
 
 import           System.Directory
@@ -90,7 +91,7 @@ mergePackages p1 p2 =
 findExact ∷ [String] → Maybe String
 findExact []  = Nothing
 findExact [x] = Just x
-findExact xss = Just (snd $ maximum $ [(length xs, xs) | xs <- xss])
+findExact xss = Just (maximumBy (comparing length) xss)
 
 getPackage ∷ String → String → Maybe String → String → IO (Maybe (Atom, Package))
 getPackage _ _ Nothing _ = return Nothing
@@ -148,7 +149,7 @@ portageConfig = do
   makeConf <- getConfigFile "/etc/portage/make.conf"
   let treePath = makeConf M.! "PORTDIR"
 
-  (catMap, (ovName, (_, categories))) <- parseOverlay treePath
+  (catMap, (ovName, (_, categoriesMain))) <- parseOverlay treePath
 
   (ov, met) <- case M.lookup "PORTDIR_OVERLAY" makeConf of
                   Just o  -> parseOverlays o
@@ -157,7 +158,12 @@ portageConfig = do
   let atoms       = map (\p -> (pCategory p ++ "/" ++ pName p, p)) catMap
       pkgs        = M.fromList atoms
       merged      = M.unionWith mergePackages pkgs ov
-      metaList    = (ovName, (treePath, categories)) : met
+      metaList    = (ovName, (treePath, categoriesMain)) : met
+      -- Please rewrite it for me, I just wanted to group category / packages lists
+      catMeta     = concatMap (\(_, (_, ct)) -> ct)                           metaList
+      srtMeta     = sortBy    (\(a, _) (b, _) -> compare a b)                 catMeta
+      grpMeta     = groupBy   (\(a, _) (b, _) -> a == b)                      srtMeta
+      categories  = map       (\xs -> (fst $ head xs, map (concat . snd) xs)) grpMeta
       overlays    = M.fromList metaList
 
   installed <- getInstalledPackages "/var/db/pkg" categories
