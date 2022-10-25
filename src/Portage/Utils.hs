@@ -41,9 +41,10 @@ findMaxVersion versions pc package =
       p  = pn ++ "-" ++ show pv ++ ".ebuild"
       (ovp, _cats) = pcOverlays pc M.! po
       ep = ovp </> pp </> p
-  in doesFileExist ep
-      >>= \f -> if f then Just <$> getEbuild ep
-                     else return Nothing
+  in doesFileExist ep >>= parse ep
+ where parse ∷ String → Bool → IO (Maybe Ebuild)
+       parse e True  = Just <$> getEbuild e
+       parse _ False = return Nothing
 
 findEbuild ∷ PortageConfig → Package → IO (Maybe Ebuild)
 findEbuild pc package =
