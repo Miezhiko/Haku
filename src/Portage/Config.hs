@@ -12,7 +12,6 @@ import           Portage.Version
 import           Data.Function
 import           Data.Functor
 import           Data.List
-import           Data.List.Split
 import qualified Data.Map              as M
 import           Data.Maybe
 import           Data.Ord              (comparing)
@@ -73,9 +72,6 @@ parseOverlay treePath = do
       cpkg = map snd catMap
   return (pkgs, (overlayName, (treePath, cpkg)))
 
-splitOnAnyOf ∷ Eq a ⇒ [[a]] → [a] → [[a]]
-splitOnAnyOf ds xs = foldl' (\ys d -> ys >>= splitOn d) [xs] ds
-
 parseOverlays ∷ String → IO (Tree, [OverlayMeta])
 parseOverlays input = do
   let overlys = filter (not . null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] input
@@ -90,10 +86,10 @@ mergePackages p1 p2 =
   let versions  = S.union (pVersions p1) (pVersions p2)
   in Package (pCategory p1) versions (pName p1)
 
-findExact ∷ [String] → Maybe String
-findExact []  = Nothing
-findExact [x] = Just x
-findExact xss = Just (maximumBy (comparing length) xss)
+findExactMax ∷ [String] → Maybe String
+findExactMax []  = Nothing
+findExactMax [x] = Just x
+findExactMax xss = Just (maximumBy (comparing length) xss)
 
 getPackage ∷ String → String → Maybe String → String → IO (Maybe (Atom, Package))
 getPackage _ _ Nothing _ = return Nothing
@@ -117,7 +113,7 @@ concatPackageGroups xs =
 findPackages ∷ String → String → [String] → [String] → IO Tree
 findPackages fcat cat versionedPkgs pkgs = do
   l <- mapM (\vpkg -> let mb = filter (`isPrefixOf` vpkg) pkgs
-                      in getPackage fcat cat (findExact mb) vpkg
+                      in getPackage fcat cat (findExactMax mb) vpkg
             ) versionedPkgs
   let srt = sortBy (\(a, _) (b, _) -> compare a b) (catMaybes l)
       grp = groupBy (\(a, _) (b, _) -> a == b) srt

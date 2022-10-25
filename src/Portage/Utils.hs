@@ -6,6 +6,7 @@ import           Portage.Ebuild
 import           Portage.Types.Package
 import           Portage.Version
 
+import           System.Directory
 import           System.FilePath
 
 import           Data.List
@@ -39,7 +40,10 @@ findMaxVersion versions pc package =
       pp = pCategory package </> pn
       p  = pn ++ "-" ++ show pv ++ ".ebuild"
       (ovp, _cats) = pcOverlays pc M.! po
-  in Just <$> getEbuild (ovp </> pp </> p)
+      ep = ovp </> pp </> p
+  in doesFileExist ep
+      >>= \f -> if f then Just <$> getEbuild ep
+                     else return Nothing
 
 findEbuild ∷ PortageConfig → Package → IO (Maybe Ebuild)
 findEbuild pc package =
