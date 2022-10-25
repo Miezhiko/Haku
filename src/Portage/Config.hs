@@ -9,6 +9,7 @@ import           Portage.Types.Config
 import           Portage.Types.Package
 import           Portage.Version
 
+import           Data.Function
 import           Data.Functor
 import           Data.List
 import           Data.List.Split
@@ -23,6 +24,7 @@ import qualified System.IO.Strict      as Strict
 import           System.Posix.Files
 import           System.Process
 
+import           Control.Arrow
 import           Control.Monad
 
 parseEnvMap ∷ String → EnvMap
@@ -159,12 +161,12 @@ portageConfig = do
       pkgs        = M.fromList atoms
       merged      = M.unionWith mergePackages pkgs ov
       metaList    = (ovName, (treePath, categoriesMain)) : met
-      -- Please rewrite it for me, I just wanted to group category / packages lists
-      catMeta     = concatMap (\(_, (_, ct)) -> ct)                           metaList
-      srtMeta     = sortBy    (\(a, _) (b, _) -> compare a b)                 catMeta
-      grpMeta     = groupBy   (\(a, _) (b, _) -> a == b)                      srtMeta
-      categories  = map       (\xs -> (fst $ head xs, map (concat . snd) xs)) grpMeta
       overlays    = M.fromList metaList
+      categories  = map (fst . head &&& map (concat . snd)) 
+                      . groupBy ((==) `on` fst)
+                      . sortBy (comparing fst)
+                      . concatMap (snd . snd)
+                      $ metaList
 
   installed <- getInstalledPackages "/var/db/pkg" categories
   let finalTree = M.unionWith mergePackages installed merged
