@@ -162,7 +162,7 @@ portageConfig = do
       merged      = M.unionWith mergePackages pkgs ov
       metaList    = (ovName, (treePath, categoriesMain)) : met
       overlays    = M.fromList metaList
-      categories  = map (fst . head &&& map (concat . snd)) 
+      categories  = map (fst . head &&& concatMap snd) 
                       . groupBy ((==) `on` fst)
                       . sortBy (comparing fst)
                       . concatMap (snd . snd)
