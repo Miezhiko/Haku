@@ -3,7 +3,7 @@ module Portage.Types.Config where
 
 import           Portage.Types.Package
 
-import qualified Data.Map        as M
+import qualified Data.Map              as M
 
 type EnvMap = M.Map String String
 
