@@ -32,6 +32,7 @@ stringSeq ∷ String → b → b
 stringSeq []      c =  c
 stringSeq (_:xs)  c =  stringSeq xs c
 
+-- TODO: maybe use Strict.readFile instead
 strictReadFile ∷ FilePath → IO String
 strictReadFile f  =   do  ff <- readFile f
                           ff `stringSeq` return ff
@@ -41,7 +42,7 @@ m !. k = maybe "" removeJunk (M.lookup k m)
 
 getEbuild ∷ FilePath → IO Ebuild
 getEbuild f = do
-  e <- fmap lines (strictReadFile f)
+  e <- lines <$> strictReadFile f
   let em = readStringMap e
   return (Ebuild  (em !. "DEPEND")
                   (em !. "RDEPEND")
