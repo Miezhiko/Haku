@@ -3,16 +3,7 @@
 # Haku
 pretending to be a package manager
 
-```bash
-Haku v0.0.8
-
-get        Merge one or more variants.             
-f, find    Find some Atom in main tree and overlays
-delete     Delete one or more variants.            
-u, update  Update world                            
-upgrade    Upgrade world                           
-clean      Clean world                 
-```
+<img src="https://cdn.discordapp.com/attachments/249111029668249601/1034735991845552138/unknown.png">
 
 # Usage
 

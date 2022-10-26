@@ -39,7 +39,7 @@ maybePrintFind (p,Just eb) = do
 
 findAction ∷ IORef PortageConfig → FindState → [String] → IO ()
 findAction _ _ [] = putStrLn "you should specify what to search!"
-findAction rpc fs [x] = readIORef rpc >>= \pc -> do
+findAction rpc fs [x] = readIORef rpc >>= \pc ->
   if fndAll fs
     then do
       let tree = pcTree pc
