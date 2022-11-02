@@ -23,7 +23,7 @@ updateOpts _ =
 update ∷ IORef PortageConfig → UpdateState → [String] → IO ()
 update rpc upds _ = do
   unless minimal $ runIfExists "/usr/bin/shelter" "shelter" []
-  raw "emerge" ["--sync"]
+  rawAndIgnore "emerge" ["--sync"]
   unless minimal $ runIfExists "/usr/bin/egencache" "egencache" ["--repo=gentoo", "--update"]
   unless minimal $ runIfExists "/usr/bin/eix-update" "eix-update" []
   when (updStore upds) $

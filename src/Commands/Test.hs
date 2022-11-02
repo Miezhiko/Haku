@@ -23,7 +23,7 @@ testCmd ∷ Command String
 testCmd = Command
               {
                 command = ["test"],
-                description = "Merge one or more variants.",
+                description = "Test command, what it does is always different",
                 usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
                 state = [],
                 options = const [],

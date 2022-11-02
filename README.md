@@ -1,7 +1,7 @@
 [![Haskell CI](https://github.com/Miezhiko/Haku/actions/workflows/haskell.yml/badge.svg)](https://github.com/Miezhiko/Haku/actions/workflows/haskell.yml)
 
 # Haku
-pretending to be a package manager
+Portage helper, not replacing portage itself but partially replacing eix, equery and more maybe.
 
 <img src="https://cdn.discordapp.com/attachments/249111029668249601/1034735991845552138/unknown.png">
 

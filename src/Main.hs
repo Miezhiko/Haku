@@ -44,6 +44,11 @@ printCommands = align . map printCommand
   where printCommand (Command' cmd) =
           [intercalate ", " (command cmd), "  ", description cmd]
 
+isVersion ∷ String → Bool
+isVersion "-v"        =  True
+isVersion "--version" =  True
+isVersion _           =  False
+
 isHelp ∷ String → Bool
 isHelp "-?"     =  True
 isHelp "-h"     =  True
@@ -66,9 +71,9 @@ handleCommand r cname (Command' c) args =
                    putStrLn (usageInfo (usage c cname) . options c $ False)
 
 goWithArguments ∷ [String] → IO ()
-goWithArguments []              =  printHelp
-goWithArguments ["--version"]   =  putStrLn showMyV
-goWithArguments [a] | isHelp a  =  printHelp
+goWithArguments []                =  printHelp
+goWithArguments [a] | isVersion a =  putStrLn showMyV
+goWithArguments [a] | isHelp a    =  printHelp
 goWithArguments (x:xs) =
   do r <- portageConfig >>= newIORef
      case findCommand x of
