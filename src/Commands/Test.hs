@@ -25,7 +25,7 @@ testCmd = Command
                 command = ["test"],
                 description = "Test command, what it does is always different",
                 usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
-                state = [],
-                options = const [],
+                state = 𝜀,
+                options = const 𝜀,
                 handler = test
               }

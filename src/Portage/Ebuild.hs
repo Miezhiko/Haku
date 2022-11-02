@@ -3,7 +3,7 @@ module Portage.Ebuild where
 
 import           Portage.Helper
 
-import qualified Data.Map      as M
+import qualified Data.Map       as M
 
 data Ebuild
   = Ebuild
@@ -25,7 +25,7 @@ data Ebuild
       }
   deriving (Eq, Show)
 
-removeJunk :: String -> String
+removeJunk ∷ String → String
 removeJunk xs = [ x | x <- xs, x /= '\"' ]
 
 stringSeq ∷ String → b → b

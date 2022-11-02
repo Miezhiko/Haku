@@ -1,6 +1,8 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Portage.Utils where
 
+import           Prelude.Unicode
+
 import           Portage.Config
 import           Portage.Ebuild
 import           Portage.Types.Package
@@ -26,7 +28,7 @@ findPackageByName pc x =
 
 findPackage ∷ PortageConfig → String → Maybe Package
 findPackage pc input =
-  if '/' `elem` input
+  if '/' ∈ input
     then M.lookup input (pcTree pc)
     else findPackageByName pc input
 

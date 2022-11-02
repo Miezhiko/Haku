@@ -19,13 +19,10 @@ import           System.Environment
 
 commands ∷ Bool → [Command']
 commands showPrivate =
-    [ Command' getCmd
-    , Command' findCmd
-    , Command' deleteCmd
-    , Command' updateCmd
-    , Command' upgradeCmd
+    [ Command' getCmd,    Command' deleteCmd
+    , Command' updateCmd, Command' upgradeCmd
     , Command' cleanCmd
-    , Command' belongsCmd
+    , Command' findCmd,   Command' belongsCmd
     ] ++ concat
     [
       [
@@ -40,7 +37,7 @@ findCommand ∷ String → Maybe Command'
 findCommand x = lookup x [ (n,c') | c'@(Command' c) <- commands True, n <- command c ]
 
 printCommands ∷ [Command'] → String
-printCommands = align . map printCommand
+printCommands = align ∘ map printCommand
   where printCommand (Command' cmd) =
           [intercalate ", " (command cmd), "  ", description cmd]
 
@@ -62,13 +59,13 @@ isHelps _     =  False
 handleCommand ∷ IORef PortageConfig → String → Command' → [String] → IO ()
 handleCommand r cname (Command' c) args =
     if isHelps args
-      then putStrLn (usageInfo (usage c cname) . options c $ False)
+      then putStrLn (usageInfo (usage c cname) ∘ options c $ False)
       else
         let (fs,n,es) = getOpt Permute (options c True) args
         in case es of
           [] -> handler c r (foldl (flip ($)) (state c) fs) n
           _  -> do putStrLn (unlines es)
-                   putStrLn (usageInfo (usage c cname) . options c $ False)
+                   putStrLn (usageInfo (usage c cname) ∘ options c $ False)
 
 goWithArguments ∷ [String] → IO ()
 goWithArguments []                =  printHelp

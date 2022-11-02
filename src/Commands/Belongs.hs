@@ -24,15 +24,15 @@ onlyInstalled p =
 findContent ∷ FilePath → String → IO Bool
 findContent f x = do
   content <- lines <$> Strict.readFile f
-  return $ any (\l -> let splt = filter (not . null) $ splitOn " " l
+  return $ any (\l -> let splt = filter (not ∘ null) $ splitOn " " l
                       in case splt of
                          []       -> False
                          [_]      -> False
-                         (t:fn:_) -> (t == "obj" || t == "sym") && (fn == x)
+                         (t:fn:_) -> (t == "obj" ∨ t == "sym") ∧ (fn == x)
                ) content
 
 findVersions ∷ Package → [PackageVersion] → String → IO [String]
-findVersions _ [] _ = return []
+findVersions _ [] _ = return 𝜀
 findVersions package [x] f =
   let path = constInstalledPath </> pCategory package
                                 </> pName package ++ "-" ++ show (pvVersion x)
@@ -42,8 +42,8 @@ findVersions package [x] f =
        parse e target True  =
          findContent e target >>= \found ->
           if found then return [show package, show x]
-                   else return []
-       parse _ _ False = return []
+                   else return 𝜀
+       parse _ _ False = return 𝜀
 findVersions package (x:xs) f = do
   f1 <- findVersions package [x] f
   case f1 of
@@ -77,7 +77,7 @@ belongsCmd = Command
                 command = ["b", "belongs"],
                 description = "Find owner-package for some file",
                 usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
-                state = [],
-                options = const [],
+                state = 𝜀,
+                options = const 𝜀,
                 handler = belongs
               }

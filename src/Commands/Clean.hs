@@ -13,7 +13,7 @@ cleanCmd = Command
                 command = ["clean"],
                 description = "Clean world",
                 usage = ("haku " ++),
-                state = [],
-                options = const [],
+                state = 𝜀,
+                options = const 𝜀,
                 handler = clean
               }

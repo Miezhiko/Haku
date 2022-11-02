@@ -12,17 +12,18 @@ import           Portage.Config        as ExportedTpyes
 import           Portage.Ebuild        as ExportedTpyes
 import           Portage.Types.Package as ExportedTpyes
 import           Portage.Version       as ExportedTpyes
+import           Prelude.Unicode       as ExportedTpyes
 import           System.Console.GetOpt as ExportedTpyes
 
-data Command a
+data Command τ
   = Command
       { command     :: [String]
       , description :: String
       , usage       :: String -> String
-      , state       :: a
-      , options     :: Bool -> [OptDescr (a -> a)]
-      , handler     :: IORef PortageConfig -> a -> [String] -> IO ()
+      , state       :: τ
+      , options     :: Bool -> [OptDescr (τ -> τ)]
+      , handler     :: IORef PortageConfig -> τ -> [String] -> IO ()
       }
 
 data Command'
-  = forall a. Command' (Command a)
+  = forall τ. Command' (Command τ)

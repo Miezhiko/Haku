@@ -19,7 +19,7 @@ upgradeCmd = Command
                 command = ["upgrade"],
                 description = "Upgrade world",
                 usage = ("haku " ++),
-                state = [],
-                options = const [],
+                state = 𝜀,
+                options = const 𝜀,
                 handler = \_ _ _ -> upgrade
               }

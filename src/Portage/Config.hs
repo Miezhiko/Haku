@@ -13,6 +13,8 @@ import           Portage.Types.Config
 import           Portage.Types.Package
 import           Portage.Version
 
+import           Prelude.Unicode
+
 import           Data.Binary
 import qualified Data.ByteString.Lazy  as BL
 import           Data.Function
@@ -42,7 +44,7 @@ parseEnvMap s = M.fromList $
          stripQuotes x              =  x
 
 getFilteredDirectoryContents ∷ FilePath → IO [FilePath]
-getFilteredDirectoryContents fp = filter (`notElem` [".",".."]) <$> getDirectoryContents fp
+getFilteredDirectoryContents fp = filter (∉ [".",".."]) <$> getDirectoryContents fp
 
 getConfigFile ∷ FilePath → IO EnvMap
 getConfigFile f =  do  (_,r,_) <- readCreateProcessWithExitCode (
@@ -63,12 +65,12 @@ parseOverlay treePath = do
   treeCats     <- getFilteredDirectoryContents treePath
   filteredCats <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
                       $ map (\c -> (treePath </> c, c))
-                            (filter (`notElem` [".git","eclass","metadata","profiles"]) treeCats)
+                            (filter (∉ [".git","eclass","metadata","profiles"]) treeCats)
   catMap <- mapM (\(fcat, cat) -> do
                     packages <- getFilteredDirectoryContents fcat
                     packagesFiltered <- filterM (\(fp, _) -> getFileStatus fp <&> isDirectory)
                                             $ map (\p -> (fcat </> p, p))
-                                                  (filter (`notElem` ["metadata.xml"]) packages)
+                                                  (filter (∉ ["metadata.xml"]) packages)
                     parsed <- mapM (\(fp, pn) -> do
                                 versions <- getVersions fp pn overlayName
                                 return $ Package cat versions pn
@@ -81,7 +83,7 @@ parseOverlay treePath = do
 
 parseOverlays ∷ String → IO (Tree, [OverlayMeta])
 parseOverlays input = do
-  let overlys = filter (not . null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] input
+  let overlys = filter (not ∘ null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] input
   parsed <- mapM parseOverlay overlys
   let treePkgs  = concatMap fst parsed
       trees     = map (\p -> (pCategory p ++ "/" ++ pName p, p)) treePkgs
@@ -106,7 +108,7 @@ getPackage fcat cat (Just pn) vp = do
   return $ Just (cat ++ "/" ++ pn, Package cat versions pn)
 
 concatPackageGroups ∷ [(Atom, Package)] → [(Atom, Package)]
-concatPackageGroups [] = []
+concatPackageGroups [] = 𝜀
 concatPackageGroups [(a, p)] = [(a, p)]
 concatPackageGroups xs =
   let headTuple = head xs
@@ -150,7 +152,7 @@ getInstalledPackages pkgdb categories = do
   return $ concatMaps M.empty catMaps
 
 storeConfig ∷ PortageConfig → IO ()
-storeConfig = BL.writeFile constHakuCache . encode
+storeConfig = BL.writeFile constHakuCache ∘ encode
 
 restoreConfig ∷ IO PortageConfig
 restoreConfig = decode <$> BL.readFile constHakuCache
@@ -164,17 +166,17 @@ loadPortageConfig = do
 
   (ov, met) <- case M.lookup "PORTDIR_OVERLAY" makeConf of
                   Just o  -> parseOverlays o
-                  Nothing -> return (M.empty, [])
+                  Nothing -> return (M.empty, 𝜀)
 
   let atoms       = map (\p -> (pCategory p ++ "/" ++ pName p, p)) catMap
       pkgs        = M.fromList atoms
       merged      = M.unionWith mergePackages pkgs ov
       metaList    = (ovName, (treePath, categoriesMain)) : met
       overlays    = M.fromList metaList
-      categories  = map (fst . head &&& concatMap snd) 
-                      . groupBy ((==) `on` fst)
-                      . sortBy (comparing fst)
-                      . concatMap (snd . snd)
+      categories  = map (fst ∘ head &&& concatMap snd) 
+                      ∘ groupBy ((==) `on` fst)
+                      ∘ sortBy (comparing fst)
+                      ∘ concatMap (snd ∘ snd)
                       $ metaList
 
   installed <- getInstalledPackages constInstalledPath categories
@@ -194,7 +196,7 @@ portageConfig = do
       currentTime <- getCurrentTime
       changeTime <- getModificationTime constHakuCache
       let diff = diffUTCTime currentTime changeTime
-      if diff > (10 * 60) -- Conversion functions will treat it as seconds
+      if diff > (10 × 60) -- Conversion functions will treat it as seconds
         then loadPortageConfig
         else restoreConfig
     else loadPortageConfig
