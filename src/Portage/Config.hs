@@ -6,6 +6,8 @@ module Portage.Config
   , storeConfig
   ) where
 
+import           Constants
+
 import           Portage.Helper
 import           Portage.Types.Config
 import           Portage.Types.Package
@@ -148,14 +150,14 @@ getInstalledPackages pkgdb categories = do
   return $ concatMaps M.empty catMaps
 
 storeConfig ∷ PortageConfig → IO ()
-storeConfig = BL.writeFile "/etc/haku.cache" . encode
+storeConfig = BL.writeFile constHakuCache . encode
 
 restoreConfig ∷ IO PortageConfig
-restoreConfig = decode <$> BL.readFile "/etc/haku.cache"
+restoreConfig = decode <$> BL.readFile constHakuCache
 
 loadPortageConfig ∷ IO PortageConfig
 loadPortageConfig = do
-  makeConf <- getConfigFile "/etc/portage/make.conf"
+  makeConf <- getConfigFile constMakeConfPath
   let treePath = makeConf M.! "PORTDIR"
 
   (catMap, (ovName, (_, categoriesMain))) <- parseOverlay treePath
@@ -175,7 +177,7 @@ loadPortageConfig = do
                       . concatMap (snd . snd)
                       $ metaList
 
-  installed <- getInstalledPackages "/var/db/pkg" categories
+  installed <- getInstalledPackages constInstalledPath categories
   let finalTree = M.unionWith mergePackages installed merged
       config = PortageConfig makeConf categories finalTree overlays
 
@@ -185,12 +187,12 @@ loadPortageConfig = do
 
 portageConfig ∷ IO PortageConfig
 portageConfig = do
-  cacheExists <- doesFileExist "/etc/haku.cache"
+  cacheExists <- doesFileExist constHakuCache
   if cacheExists
     then do
-      t <- getCurrentTime
-      changeTime <- getModificationTime "/etc/haku.cache"
-      let diff = diffUTCTime t changeTime
+      currentTime <- getCurrentTime
+      changeTime <- getModificationTime constHakuCache
+      let diff = diffUTCTime currentTime changeTime
       if diff > (10 * 60)
         then loadPortageConfig
         else restoreConfig

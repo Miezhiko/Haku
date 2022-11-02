@@ -1,6 +1,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Commands.Belongs where
 
+import           Constants
 import           Types
 
 import           Data.List.Split
@@ -33,9 +34,9 @@ findContent f x = do
 findVersions ∷ Package → [PackageVersion] → String → IO [String]
 findVersions _ [] _ = return []
 findVersions package [x] f =
-  let path = "/var/db/pkg" </> pCategory package
-                           </> pName package ++ "-" ++ show (pvVersion x)
-                           </> "CONTENTS"
+  let path = constInstalledPath </> pCategory package
+                                </> pName package ++ "-" ++ show (pvVersion x)
+                                </> "CONTENTS"
   in doesFileExist path >>= parse path f
  where parse ∷ String → String → Bool → IO [String]
        parse e target True  =

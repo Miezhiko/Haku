@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.14
+version: 0.0.15
 license: AGPL-3
 
 build-type: Simple
@@ -10,6 +10,7 @@ Executable haku
   Main-Is: Main.hs
   Other-Modules:
     Types,
+    Constants,
     Utils,
     Version,
     Portage.Types.Version,
