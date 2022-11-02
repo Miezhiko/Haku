@@ -190,10 +190,11 @@ portageConfig = do
   cacheExists <- doesFileExist constHakuCache
   if cacheExists
     then do
+      -- todo: maybe some other checks to see if tree should be updated
       currentTime <- getCurrentTime
       changeTime <- getModificationTime constHakuCache
       let diff = diffUTCTime currentTime changeTime
-      if diff > (10 * 60)
+      if diff > (10 * 60) -- Conversion functions will treat it as seconds
         then loadPortageConfig
         else restoreConfig
     else loadPortageConfig
