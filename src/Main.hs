@@ -1,14 +1,14 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Main where
 
+import           Commands.Belongs
+import           Commands.Clean
 import           Commands.Delete
 import           Commands.Find
 import           Commands.Get
 import           Commands.Test
 import           Commands.Update
 import           Commands.Upgrade
-import           Commands.Clean
-import           Commands.Belongs
 
 import           Types
 import           Utils

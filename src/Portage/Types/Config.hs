@@ -1,8 +1,12 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE UnicodeSyntax #-}
 module Portage.Types.Config where
 
 import           Portage.Types.Package
 
+import           GHC.Generics          (Generic)
+
+import           Data.Binary
 import qualified Data.Map              as M
 
 type EnvMap = M.Map String String
@@ -20,3 +24,6 @@ data PortageConfig
       , pcTree       :: Tree
       , pcOverlays   :: Overlays
       }
+  deriving (Generic)
+
+instance Binary PortageConfig

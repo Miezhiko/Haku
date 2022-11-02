@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.13
+version: 0.0.14
 license: AGPL-3
 
 build-type: Simple
@@ -41,6 +41,9 @@ Executable haku
       split,
       text,
       strict,
-      ansi-terminal
+      ansi-terminal,
+      binary,
+      bytestring,
+      time
  ghc-options:
     -Wall

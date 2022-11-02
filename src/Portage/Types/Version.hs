@@ -1,9 +1,13 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE UnicodeSyntax #-}
 
 module Portage.Types.Version where
 
+import           GHC.Generics                  (Generic)
+
 import           Data.Bifunctor
+import           Data.Binary
 import           Data.List
 
 import           Text.ParserCombinators.Parsec
@@ -14,7 +18,9 @@ data Suffix
   | Pre Int
   | RC Int
   | P_ Int
-  deriving (Eq, Ord)
+  deriving (Eq, Generic, Ord)
+
+instance Binary Suffix
 
 data Version'
   = Version' [Int] (Maybe Char) [Suffix] Int
@@ -22,6 +28,9 @@ data Version'
 
 data Version
   = Version [Int] (Maybe Char) [Suffix] Int String
+  deriving (Generic)
+
+instance Binary Version
 
 instance Show Version where
   show = showVersion
@@ -44,6 +53,9 @@ data PackageVersion
       , pvOverlay   :: String
       , pvInstalled :: Bool
       }
+  deriving (Generic)
+
+instance Binary PackageVersion
 
 instance Eq PackageVersion where
   v1 == v2 = pvVersion v1 == pvVersion v2
