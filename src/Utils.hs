@@ -26,7 +26,7 @@ raw ∷ String → [String] → IO ()
 raw λ α = rawSystem λ α >>= checkExitCode
 
 rawAndIgnore ∷ String → [String] → IO ()
-rawAndIgnore λ α = void (rawSystem λ α)
+rawAndIgnore = (void .) . rawSystem
 
 runIfExists ∷ FilePath → String → [String] → IO ()
 runIfExists ξ λ α =
@@ -34,7 +34,7 @@ runIfExists ξ λ α =
     when fe $ void (rawSystem λ α)
 
 align ∷ [[String]] → String
-align ts =  let  maxlengths = map (maximum . map length) (transpose ts)
-            in   unlines . map (concat . zipWith formatIn maxlengths) $ ts
+align ts =  let maxlengths = map (maximum . map length) (transpose ts)
+            in  unlines . map (concat . zipWith formatIn maxlengths) $ ts
   where  formatIn ∷ Int → String → String
          formatIn n s = s ++ replicate (n - length s) ' '

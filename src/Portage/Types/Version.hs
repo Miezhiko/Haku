@@ -109,5 +109,5 @@ readVersion =  do  (ver,  verr)  <-  readVer
                    (c,    cr  )  <-  readC
                    (suf,  sufr)  <-  readSufs
                    (rev,  revr)  <-  readRev
-                   let  rep = verr ++ cr ++ sufr ++ revr
+                   let rep = verr ++ cr ++ sufr ++ revr
                    return (Version ver c suf rev rep)

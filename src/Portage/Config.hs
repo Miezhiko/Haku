@@ -101,7 +101,7 @@ parseOverlays input = do
 
 mergePackages ∷ Package → Package → Package
 mergePackages p1 p2 =
-  let versions  = S.union (pVersions p1) (pVersions p2)
+  let versions = S.union (pVersions p1) (pVersions p2)
   in Package (pCategory p1) versions (pName p1)
 
 findExactMax ∷ [String] → Maybe String
@@ -125,7 +125,7 @@ concatPackageGroups xs =
       firstPkg  = snd headTuple
       anyCat    = pCategory firstPkg
       anyName   = pName firstPkg
-      versions  = S.fromList $ concatMap (\(_, pp) -> S.toList (pVersions pp)) xs
+      versions  = S.fromList (S.toList ∘ pVersions ∘ snd =<< xs)
   in [(anyAtom, Package anyCat versions anyName)]
 
 findPackages ∷ String → String → [String] → [String] → IO Tree
@@ -161,10 +161,10 @@ getInstalledPackages pkgdb categories = do
   return $ concatMaps M.empty catMaps
 
 storeConfig ∷ PortageConfig → IO ()
-storeConfig = BL.writeFile constHakuCache ∘ encode
+storeConfig = (getHakuCachePath >>=) ∘ flip BL.writeFile ∘ encode
 
 restoreConfig ∷ IO PortageConfig
-restoreConfig = decode <$> BL.readFile constHakuCache
+restoreConfig = (decode <$>) ∘ BL.readFile =<< getHakuCachePath
 
 loadPortageConfig ∷ IO PortageConfig
 loadPortageConfig = do
@@ -191,20 +191,22 @@ loadPortageConfig = do
 
   installed <- getInstalledPackages constInstalledPath categories
   let finalTree = M.unionWith mergePackages installed merged
-      config = PortageConfig makeConf categories eclasses finalTree overlays
+      config    = PortageConfig makeConf categories eclasses finalTree overlays
 
+  -- always cache parsed config
   storeConfig config
 
   return config
 
 portageConfig ∷ IO PortageConfig
 portageConfig = do
-  cacheExists <- doesFileExist constHakuCache
+  hakuCachePath <- getHakuCachePath
+  cacheExists <- doesFileExist hakuCachePath
   if cacheExists
     then do
       -- todo: maybe some other checks to see if tree should be updated
       currentTime <- getCurrentTime
-      changeTime <- getModificationTime constHakuCache
+      changeTime <- getModificationTime hakuCachePath
       let diff = diffUTCTime currentTime changeTime
       if diff > (10 × 60) -- Conversion functions will treat it as seconds
         then loadPortageConfig
