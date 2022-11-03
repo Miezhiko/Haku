@@ -3,14 +3,15 @@ module Portage.Ebuild where
 
 import           Portage.Helper
 
+import           Data.List
 import qualified Data.Map       as M
 
 data Ebuild
   = Ebuild
-      { eDepend      :: String
-      , eRdepend     :: String
+      { eDepend      :: [String]
+      , eRdepend     :: [String]
       , eSlot        :: String
-      , eSrc_uri     :: String
+      , eSrc_uri     :: [String]
       , eRestrict    :: [String]
       , eHomepage    :: String
       , eLicense     :: String
@@ -18,9 +19,8 @@ data Ebuild
       , eKeywords    :: [String]
       , eInherited   :: [String]
       , eIuse        :: [String]
-      , eCdepend     :: String
-      , ePdepend     :: String
-      , eProvide     :: String
+      , eCdepend     :: [String]
+      , ePdepend     :: [String]
       , eEapi        :: String
       }
   deriving (Eq, Show)
@@ -44,18 +44,22 @@ getEbuild ∷ FilePath → IO Ebuild
 getEbuild f = do
   e <- lines <$> strictReadFile f
   let em = readStringMap e
-  return (Ebuild  (em !. "DEPEND")
-                  (em !. "RDEPEND")
+      inh = find (`isPrefixOf` "inherit ") e
+      inherts = case inh of
+                  Just s  -> drop 8 s
+                  Nothing -> []
+  return (Ebuild  (words (em !. "DEPEND"))
+                  (words (em !. "RDEPEND"))
                   (em !. "SLOT")
-                  (em !. "SRC_URI")
-                  [em !. "RESTRICT"]
+                  (words (em !. "SRC_URI"))
+                  (words (em !. "RESTRICT"))
                   (em !. "HOMEPAGE")
                   (em !. "LICENSE")
                   (em !. "DESCRIPTION")
-                  [em !. "KEYWORDS"]
-                  [] -- inherit
-                  [em !. "IUSE"]
-                  (em !. "CDEPEND")
-                  (em !. "PDEPEND")
-                  (em !. "PROVIDE")
-                  (em !. "EAPI"))
+                  (words (em !. "KEYWORDS"))
+                  (words inherts)
+                  (words (em !. "IUSE"))
+                  (words (em !. "CDEPEND"))
+                  (words (em !. "PDEPEND"))
+                  (em !. "EAPI")
+         )

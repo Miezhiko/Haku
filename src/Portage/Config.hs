@@ -59,7 +59,7 @@ getVersions fp pn o = do
       versions  = map (getVersion o pn) ebuilds
   return $ S.fromList versions
 
-parseOverlay ∷ FilePath → IO ([Package], OverlayMeta)
+parseOverlay ∷ FilePath → IO (([Package], [String]), OverlayMeta)
 parseOverlay treePath = do
   overlayName  <- rstrip <$> readFile (treePath </> "profiles/repo_name")
   treeCats     <- getFilteredDirectoryContents treePath
@@ -79,13 +79,22 @@ parseOverlay treePath = do
                  ) filteredCats -- [[package], a]
   let pkgs = concatMap fst catMap
       cpkg = map snd catMap
-  return (pkgs, (overlayName, (treePath, cpkg)))
+      ecls = "eclass" ∈ treeCats
+
+  eclasses <- if ecls
+    then getFilteredDirectoryContents $ treePath </> "eclass"
+    else return 𝜀
+
+  let packagesEclasses = (pkgs, eclasses)
+      overlayMeta = (overlayName, (treePath, cpkg))
+
+  return (packagesEclasses, overlayMeta)
 
 parseOverlays ∷ String → IO (Tree, [OverlayMeta])
 parseOverlays input = do
   let overlys = filter (not ∘ null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] input
   parsed <- mapM parseOverlay overlys
-  let treePkgs  = concatMap fst parsed
+  let treePkgs  = concatMap (fst . fst) parsed
       trees     = map (\p -> (pCategory p ++ "/" ++ pName p, p)) treePkgs
       ovMetas   = map snd parsed
   return (M.fromList trees, ovMetas)
@@ -162,7 +171,8 @@ loadPortageConfig = do
   makeConf <- getConfigFile constMakeConfPath
   let treePath = makeConf M.! "PORTDIR"
 
-  (catMap, (ovName, (_, categoriesMain))) <- parseOverlay treePath
+  ((catMap, eclasses), (ovName, (_, categoriesMain)))
+    <- parseOverlay treePath
 
   (ov, met) <- case M.lookup "PORTDIR_OVERLAY" makeConf of
                   Just o  -> parseOverlays o
@@ -181,7 +191,7 @@ loadPortageConfig = do
 
   installed <- getInstalledPackages constInstalledPath categories
   let finalTree = M.unionWith mergePackages installed merged
-      config = PortageConfig makeConf categories finalTree overlays
+      config = PortageConfig makeConf categories eclasses finalTree overlays
 
   storeConfig config
 

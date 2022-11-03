@@ -26,4 +26,4 @@ data Command τ
       }
 
 data Command'
-  = forall τ. Command' (Command τ)
+  = ∀ τ. Command' (Command τ)

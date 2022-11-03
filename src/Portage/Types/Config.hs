@@ -21,6 +21,7 @@ data PortageConfig
   = PortageConfig
       { pcMakeConf   :: EnvMap
       , pcCategories :: [(String, [String])]
+      , pcEclasses   :: [String]
       , pcTree       :: Tree
       , pcOverlays   :: Overlays
       }
