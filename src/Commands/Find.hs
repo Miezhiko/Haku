@@ -33,7 +33,7 @@ maybePrintFind (p,Just eb) = do
   setSGR [SetColor Foreground Vivid Blue]
   putStrLn $ eDescription eb
   setSGR [SetColor Foreground Vivid Red]
-  print (pVersions p)
+  prettyPrintVersions $ pVersions p
   putStrLn []
   setSGR [Reset]
 
@@ -55,7 +55,7 @@ findAction rpc fs [x] = readIORef rpc >>= \pc ->
                         setSGR [SetColor Foreground Vivid Blue]
                         maybePrint mbeb
                         setSGR [SetColor Foreground Vivid Red]
-                        print (pVersions p)
+                        prettyPrintVersions $ pVersions p
                         setSGR [Reset]
           Nothing -> putStrLn "Atom not found!"
 findAction pc fs (x:xs) = do findAction pc fs [x]
