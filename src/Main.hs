@@ -9,6 +9,7 @@ import           Commands.Get
 import           Commands.Test
 import           Commands.Update
 import           Commands.Upgrade
+import           Commands.UwU
 
 import           Types
 import           Utils
@@ -24,9 +25,8 @@ commands showPrivate =
     , Command' cleanCmd
     , Command' findCmd,   Command' belongsCmd
     ] ++ concat
-    [
-      [
-        Command' testCmd
+    [ [ Command' testCmd
+      , Command' uwuCmd
       ]
     | showPrivate ]
 
