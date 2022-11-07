@@ -1,6 +1,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Commands.Delete where
 
+import           Constants         (costSudoPath)
 import           Types
 import           Utils
 
@@ -22,12 +23,17 @@ deleteOpts _ =
 {- HLINT ignore "Redundant <$>" -}
 unmerge ∷ DeleteState → [Atom] → IO ()
 unmerge dels xs =
-  let opts = ["-C"]
-             ["-p" | dpretend dels]
+  let pretend = dpretend dels
+      opts = ["-C"]
+          ++ ["-p" | pretend]
           ++ ["-a" | dask dels]
   in (== 0) <$> getRealUserID >>= \root ->
-      if root then rawAndIgnore "emerge" (opts ++ xs)
-              else rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
+      if root || pretend
+        then rawAndIgnore "emerge" (opts ++ xs)
+        else doesFileExist costSudoPath >>= \sudoExists ->
+              if sudoExists
+                then rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
+                else putStrLn "should run as root or have sudo installed"
 
 delete ∷ DeleteState → PortageConfig → [Atom] → IO ()
 delete _ _ []       = putStrLn "specify atom!"

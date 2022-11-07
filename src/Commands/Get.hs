@@ -1,6 +1,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Commands.Get where
 
+import           Constants         (costSudoPath)
 import           Types
 import           Utils
 
@@ -32,17 +33,21 @@ getOpts _ =
 {- HLINT ignore "Redundant <$>" -}
 merge ∷ GetState → [Atom] → IO ()
 merge gs xs =
-  let opts =
-            ["-p" | gpretend gs]
-        ++  ["-a" | gask gs]
-        ++  ["-u" | gupdate gs]
-        ++  ["-N" | gnewuse gs]
-        ++  ["-D" | gdeep gs]
-        ++  ["-v" | gverbose gs]
-        ++  ["--with-bdeps=y" | gbdeps gs]
+  let pretend = gpretend gs
+      opts = ["-p" | pretend]
+        ++   ["-a" | gask gs]
+        ++   ["-u" | gupdate gs]
+        ++   ["-N" | gnewuse gs]
+        ++   ["-D" | gdeep gs]
+        ++   ["-v" | gverbose gs]
+        ++   ["--with-bdeps=y" | gbdeps gs]
   in (== 0) <$> getRealUserID >>= \root ->
-      if root then rawAndIgnore "emerge" (opts ++ xs)
-              else rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
+      if root || pretend
+        then rawAndIgnore "emerge" (opts ++ xs)
+        else doesFileExist costSudoPath >>= \sudoExists ->
+              if sudoExists
+                then rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
+                else putStrLn "should run as root or have sudo installed"
 
 emerge ∷ GetState → PortageConfig → [Atom] → IO ()
 emerge _ _ []     = putStrLn "specify atom!"
