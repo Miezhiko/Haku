@@ -4,10 +4,13 @@ module Commands.Delete where
 import           Types
 import           Utils
 
+import           System.Directory  (doesFileExist)
+import           System.Posix.User (getRealUserID)
+
 data DeleteState
   = DeleteState
-      { dpretend  :: Bool
-      , dask      :: Bool
+      { dpretend :: Bool
+      , dask     :: Bool
       }
 
 deleteOpts ∷ Bool → [OptDescr (DeleteState → DeleteState)]
@@ -16,12 +19,15 @@ deleteOpts _ =
     , Option "a" ["ask"]      (NoArg (\s -> s { dask = True }))       "ask before run"
     ]
 
+{- HLINT ignore "Redundant <$>" -}
 unmerge ∷ DeleteState → [Atom] → IO ()
 unmerge dels xs =
-  let opts =
-            ["-p" | dpretend dels]
-        ++  ["-a" | dask dels]
-  in rawAndIgnore "emerge" (opts ++ xs)
+  let opts = ["-C"]
+             ["-p" | dpretend dels]
+          ++ ["-a" | dask dels]
+  in (== 0) <$> getRealUserID >>= \root ->
+      if root then rawAndIgnore "emerge" (opts ++ xs)
+              else rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
 
 delete ∷ DeleteState → PortageConfig → [Atom] → IO ()
 delete _ _ []       = putStrLn "specify atom!"

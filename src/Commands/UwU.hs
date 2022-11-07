@@ -14,8 +14,7 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
     rawAndIgnore "shelter" 𝜀
     rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
     rawAndIgnore "eix-update" 𝜀
-    rawAndIgnore "emerge" [ "-avuDN"
-                          , "@world"
+    rawAndIgnore "emerge" [ "-avuDN", "@world"
                           , "--backtrack=100"
                           , "--with-bdeps=y"
                           , "--quiet-build=n"
@@ -26,9 +25,7 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
         rawAndIgnore "sudo" ["shelter"]
         rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
         rawAndIgnore "sudo" ["eix-update"]
-        rawAndIgnore "sudo" [ "emerge"
-                            , "-avuDN"
-                            , "@world"
+        rawAndIgnore "sudo" [ "emerge", "-avuDN", "@world"
                             , "--backtrack=100"
                             , "--with-bdeps=y"
                             , "--quiet-build=n"

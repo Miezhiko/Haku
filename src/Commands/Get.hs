@@ -4,6 +4,9 @@ module Commands.Get where
 import           Types
 import           Utils
 
+import           System.Directory  (doesFileExist)
+import           System.Posix.User (getRealUserID)
+
 data GetState
   = GetState
       { gpretend :: Bool
@@ -26,6 +29,7 @@ getOpts _ =
     , Option "v" ["verbose"]    (NoArg (\s -> s { gverbose = True }))   "verbose output"
     ]
 
+{- HLINT ignore "Redundant <$>" -}
 merge ∷ GetState → [Atom] → IO ()
 merge gs xs =
   let opts =
@@ -36,7 +40,9 @@ merge gs xs =
         ++  ["-D" | gdeep gs]
         ++  ["-v" | gverbose gs]
         ++  ["--with-bdeps=y" | gbdeps gs]
-  in rawAndIgnore "emerge" (opts ++ xs)
+  in (== 0) <$> getRealUserID >>= \root ->
+      if root then rawAndIgnore "emerge" (opts ++ xs)
+              else rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
 
 emerge ∷ GetState → PortageConfig → [Atom] → IO ()
 emerge _ _ []     = putStrLn "specify atom!"
@@ -45,7 +51,7 @@ emerge gs pc [x]  = case findPackage pc x of
                         Nothing -> putStrLn "Atom not found!"
 emerge gs _ xs    = merge gs xs
 
-getPackage :: IORef PortageConfig -> GetState -> [String] -> IO ()
+getPackage ∷ IORef PortageConfig → GetState → [String] → IO ()
 getPackage rpc gs ds =
   readIORef rpc >>= \pc ->
     emerge gs pc ds
