@@ -30,9 +30,6 @@ commands showPrivate =
       ]
     | showPrivate ]
 
-printHelp ∷ IO ()
-printHelp = putStrLn $ showMyV ++ "\n\n" ++ printCommands (commands False)
-
 findCommand ∷ String → Maybe Command'
 findCommand x = lookup x [ (n,c') | c'@(Command' c) <- commands True, n <- command c ]
 
@@ -40,6 +37,10 @@ printCommands ∷ [Command'] → String
 printCommands = align ∘ map printCommand
   where printCommand (Command' cmd) =
           [intercalate ", " (command cmd), "  ", description cmd]
+
+printHelp ∷ IO ()
+printHelp = putStrLn $ showMyV ++ "\n\n"
+                               ++ printCommands (commands False)
 
 isVersion ∷ String → Bool
 isVersion "-v"        =  True

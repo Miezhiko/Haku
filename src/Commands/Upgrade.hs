@@ -14,12 +14,9 @@ upgrade =
                         ]
 
 upgradeCmd ∷ Command String
-upgradeCmd = Command
-              {
-                command = ["upgrade"],
-                description = "Upgrade world",
-                usage = ("haku " ++),
-                state = 𝜀,
-                options = const 𝜀,
-                handler = \_ _ _ -> upgrade
-              }
+upgradeCmd = Command { command = ["upgrade"]
+                     , description = "Upgrade world"
+                     , usage = ("haku " ++)
+                     , state = 𝜀
+                     , options = const 𝜀
+                     , handler = \_ _ _ -> upgrade }

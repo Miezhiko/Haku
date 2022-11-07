@@ -1,7 +1,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Commands.Delete where
 
-import           Constants         (costSudoPath)
+import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
@@ -30,7 +30,7 @@ unmerge dels xs =
   in (== 0) <$> getRealUserID >>= \root ->
       if root || pretend
         then rawAndIgnore "emerge" (opts ++ xs)
-        else doesFileExist costSudoPath >>= \sudoExists ->
+        else doesFileExist cosntSudoPath >>= \sudoExists ->
               if sudoExists
                 then rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
                 else putStrLn "should run as root or have sudo installed"
@@ -44,12 +44,10 @@ delete dels _ xs    = unmerge dels xs
 
 deleteCmd ∷ Command DeleteState
 deleteCmd = Command
-              {
-                command = ["delete"],
-                description = "Delete one or more variants.",
-                usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
-                state = DeleteState { dpretend  = False
-                                    , dask      = False },
-                options = deleteOpts,
-                handler = \rpc dels ds -> readIORef rpc >>= \pc -> delete dels pc ds
-              }
+            { command = ["delete"]
+            , description = "Delete one or more variants."
+            , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
+            , state = DeleteState { dpretend  = False
+                                  , dask      = False }
+            , options = deleteOpts
+            , handler = \rpc dels ds -> readIORef rpc >>= \pc -> delete dels pc ds }

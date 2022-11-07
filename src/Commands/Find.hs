@@ -63,12 +63,10 @@ findAction pc fs (x:xs) = do findAction pc fs [x]
 
 findCmd ∷ Command FindState
 findCmd = Command
-              {
-                command = ["f", "find"],
-                description = "Find some Atom in main tree and overlays",
-                usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
-                state = FindState { fndExact = False
-                                  , fndAll = False },
-                options = findOpts,
-                handler = findAction
-              }
+          { command = ["f", "find"]
+          , description = "Find some Atom in main tree and overlays"
+          , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
+          , state = FindState { fndExact = False
+                              , fndAll = False }
+          , options = findOpts
+          , handler = findAction }

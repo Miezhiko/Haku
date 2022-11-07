@@ -1,7 +1,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Commands.UwU where
 
-import           Constants         (costSudoPath)
+import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
@@ -20,7 +20,7 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
                           , "--with-bdeps=y"
                           , "--quiet-build=n"
                           ]
-  else doesFileExist costSudoPath >>= \sudoExists ->
+  else doesFileExist cosntSudoPath >>= \sudoExists ->
     if sudoExists
       then do
         rawAndIgnore "sudo" ["shelter"]

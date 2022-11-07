@@ -72,12 +72,10 @@ belongs pc z (x:xs) = do belongs pc z [x]
                          belongs pc z xs
 
 belongsCmd ∷ Command String
-belongsCmd = Command
-              {
-                command = ["b", "belongs"],
-                description = "Find owner-package for some file",
-                usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
-                state = 𝜀,
-                options = const 𝜀,
-                handler = belongs
-              }
+belongsCmd =
+  Command { command = ["b", "belongs"]
+          , description = "Find owner-package for some file"
+          , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
+          , state = 𝜀
+          , options = const 𝜀
+          , handler = belongs }

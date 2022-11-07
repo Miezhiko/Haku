@@ -1,7 +1,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Commands.Get where
 
-import           Constants         (costSudoPath)
+import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
@@ -44,7 +44,7 @@ merge gs xs =
   in (== 0) <$> getRealUserID >>= \root ->
       if root || pretend
         then rawAndIgnore "emerge" (opts ++ xs)
-        else doesFileExist costSudoPath >>= \sudoExists ->
+        else doesFileExist cosntSudoPath >>= \sudoExists ->
               if sudoExists
                 then rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
                 else putStrLn "should run as root or have sudo installed"
@@ -63,17 +63,15 @@ getPackage rpc gs ds =
 
 getCmd ∷ Command GetState
 getCmd = Command
-              {
-                command = ["get"],
-                description = "Merge one or more variants.",
-                usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>",
-                state = GetState { gpretend = False
-                                 , gupdate  = False
-                                 , gask     = False
-                                 , gbdeps   = False
-                                 , gnewuse  = False
-                                 , gdeep    = False
-                                 , gverbose = False },
-                options = getOpts,
-                handler = getPackage
-              }
+          { command = ["get"]
+          , description = "Merge one or more variants."
+          , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
+          , state = GetState { gpretend = False
+                              , gupdate  = False
+                              , gask     = False
+                              , gbdeps   = False
+                              , gnewuse  = False
+                              , gdeep    = False
+                              , gverbose = False }
+          , options = getOpts
+          , handler = getPackage }

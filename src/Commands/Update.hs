@@ -42,13 +42,11 @@ update rpc upds _ = do
 
 updateCmd ∷ Command UpdateState
 updateCmd = Command
-              {
-                command = ["u", "update"],
-                description = "Update world",
-                usage = ("haku " ++),
-                state = UpdateState { updUpgrade  = False
-                                    , updMinimal  = False
-                                    , updStore    = False },
-                options = updateOpts,
-                handler = update
-              }
+            { command = ["u", "update"]
+            , description = "Update world"
+            , usage = ("haku " ++)
+            , state = UpdateState { updUpgrade  = False
+                                  , updMinimal  = False
+                                  , updStore    = False }
+            , options = updateOpts
+            , handler = update }
