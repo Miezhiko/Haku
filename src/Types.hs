@@ -25,5 +25,4 @@ data Command τ
       , handler     :: IORef PortageConfig -> τ -> [String] -> IO ()
       }
 
-data Command'
-  = ∀ τ. Command' (Command τ)
+data Command' = ∀ τ. Command' (Command τ)

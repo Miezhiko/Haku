@@ -15,15 +15,17 @@ type EnvMap = M.Map String String
 type Atom     = String
 type Tree     = M.Map Atom Package
 type Overlays = M.Map String (FilePath, [(String, [String])])
-type OverlayMeta =  (String, (FilePath, [(String, [String])]))
+type OverlayMeta = (String, (FilePath, [(String, [String])]))
+type ShelterHashes = M.Map FilePath (Maybe String)
 
 data PortageConfig
   = PortageConfig
-      { pcMakeConf   :: EnvMap
-      , pcCategories :: [(String, [String])]
-      , pcEclasses   :: [String]
-      , pcTree       :: Tree
-      , pcOverlays   :: Overlays
+      { pcMakeConf      :: EnvMap
+      , pcCategories    :: [(String, [String])]
+      , pcEclasses      :: [String]
+      , pcTree          :: Tree
+      , pcOverlays      :: Overlays
+      , pcShelterHashes :: ShelterHashes
       }
   deriving (Generic)
 

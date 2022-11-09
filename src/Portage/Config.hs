@@ -7,11 +7,14 @@ module Portage.Config
   ) where
 
 import           Constants
+import           Hacks
+import           Paths
 
-import           Portage.Helper
 import           Portage.Types.Config
 import           Portage.Types.Package
 import           Portage.Version
+
+import           Shelter.Hashes
 
 import           Prelude.Unicode
 
@@ -190,13 +193,25 @@ loadPortageConfig = do
                       $ metaList
 
   installed <- getInstalledPackages constInstalledPath categories
+  shelterHashes <- getShelterHashes
+
   let finalTree = M.unionWith mergePackages installed merged
-      config    = PortageConfig makeConf categories eclasses finalTree overlays
+      config    = PortageConfig makeConf categories eclasses finalTree overlays shelterHashes
 
   -- always cache parsed config
   storeConfig config
 
   return config
+
+updateWithMaybeShelter ∷ PortageConfig → Maybe ShelterConfig → IO PortageConfig
+updateWithMaybeShelter _ Nothing = loadPortageConfig
+updateWithMaybeShelter binaryParsedConfig (Just shelter) =
+    if isPortageConfigIsInSync binaryParsedConfig shelter
+      then return binaryParsedConfig
+      else loadPortageConfig
+
+maybeUpdateConfig ∷ IO PortageConfig
+maybeUpdateConfig = (getShelterConfig >>=) . updateWithMaybeShelter =<< restoreConfig
 
 portageConfig ∷ IO PortageConfig
 portageConfig = do
@@ -204,11 +219,12 @@ portageConfig = do
   cacheExists <- doesFileExist hakuCachePath
   if cacheExists
     then do
-      -- todo: maybe some other checks to see if tree should be updated
+      -- if cache is more than one minute old recheck if
+      -- shelter hashes changed (update was made and was meaningful)
       currentTime <- getCurrentTime
-      changeTime <- getModificationTime hakuCachePath
-      let diff = diffUTCTime currentTime changeTime
-      if diff > (10 × 60) -- Conversion functions will treat it as seconds
-        then loadPortageConfig
+      changemTime <- getModificationTime hakuCachePath
+      let diff = diffUTCTime currentTime changemTime
+      if diff > 60 -- conversion functions will treat it as seconds
+        then maybeUpdateConfig
         else restoreConfig
     else loadPortageConfig

@@ -27,8 +27,7 @@ commands showPrivate =
     ] ++ concat
     [ [ Command' testCmd
       , Command' uwuCmd
-      ]
-    | showPrivate ]
+      ] | showPrivate ]
 
 findCommand ∷ String → Maybe Command'
 findCommand x = lookup x [ (n,c') | c'@(Command' c) <- commands True, n <- command c ]

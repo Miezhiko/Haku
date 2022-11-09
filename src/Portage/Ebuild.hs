@@ -1,7 +1,7 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Portage.Ebuild where
 
-import           Portage.Helper
+import           Hacks
 
 import           Data.List
 import qualified Data.Map       as M

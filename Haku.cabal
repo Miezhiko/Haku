@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.20
+version: 0.0.21
 license: AGPL-3
 
 build-type: Simple
@@ -11,12 +11,17 @@ Executable haku
   Other-Modules:
     Types,
     Constants,
+    Hacks,
+    Paths,
     Utils,
     Version,
+    Shelter.Types,
+    Shelter.Trim,
+    Shelter.Hashes,
+    Shelter.Checker,
     Portage.Types.Version,
     Portage.Types.Package,
     Portage.Types.Config,
-    Portage.Helper,
     Portage.Version,
     Portage.Config,
     Portage.Utils,
@@ -47,6 +52,8 @@ Executable haku
       binary,
       bytestring,
       time,
-      base-unicode-symbols
+      base-unicode-symbols,
+      yaml,
+      aeson
  ghc-options:
     -Wall

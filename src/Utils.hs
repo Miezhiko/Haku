@@ -1,15 +1,13 @@
 {-# LANGUAGE UnicodeSyntax #-}
 module Utils
   ( module ExportedUtils
-  , align
   , raw
   , rawAndIgnore
   , runIfExists
   ) where
 
+import           Hacks            as ExportedUtils
 import           Portage.Utils    as ExportedUtils
-
-import           Data.List
 
 import           System.Directory (doesFileExist)
 import           System.Exit
@@ -32,9 +30,3 @@ runIfExists ∷ FilePath → String → [String] → IO ()
 runIfExists ξ λ α =
   doesFileExist ξ >>= \fe ->
     when fe $ void (rawSystem λ α)
-
-align ∷ [[String]] → String
-align ts =  let maxlengths = map (maximum . map length) (transpose ts)
-            in  unlines . map (concat . zipWith formatIn maxlengths) $ ts
-  where  formatIn ∷ Int → String → String
-         formatIn n s = s ++ replicate (n - length s) ' '

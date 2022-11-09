@@ -24,7 +24,7 @@ b, belongs  Find owner-package for some file
 # Design
 
 Pretty fast by itself because it's lazy and [haskell thunks](https://wiki.haskell.org/Thunk) give own benefits.
-Currently using binary serialization of parsed config / tree / overlays, will be updated if config or tree changes (not fully done).
+Currently using binary serialization of parsed config / tree / overlays, will be updated if config or tree changes (has synergy with [Shelter](https://github.com/Miezhiko/Shelter)).
 Just using `emerge` for many commands and I don't have plans to recode everything, only some stuff to be more handy for myself.
 
 # WORK IN PROGRESS
