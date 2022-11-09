@@ -13,6 +13,9 @@ uwu ∷ IORef PortageConfig → String → [String] → IO ()
 uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
   if root then do
     rawAndIgnore "shelter" 𝜀
+    portageConfig >>= \newConfig -> do
+      -- writeIORef rpc newConfig
+      storeConfig newConfig
     rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
     rawAndIgnore "eix-update" 𝜀
     rawAndIgnore "emerge" [ "-avuDN", "@world"
@@ -23,6 +26,7 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
   else doesFileExist cosntSudoPath >>= \sudoExists ->
     if sudoExists
       then do
+        putStrLn "running with sudo (not recommended)"
         rawAndIgnore "sudo" ["shelter"]
         rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
         rawAndIgnore "sudo" ["eix-update"]
