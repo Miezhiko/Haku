@@ -24,7 +24,7 @@ raw ∷ String → [String] → IO ()
 raw λ α = rawSystem λ α >>= checkExitCode
 
 rawAndIgnore ∷ String → [String] → IO ()
-rawAndIgnore = (void .) . rawSystem
+rawAndIgnore = void .: rawSystem
 
 runIfExists ∷ FilePath → String → [String] → IO ()
 runIfExists ξ λ α =

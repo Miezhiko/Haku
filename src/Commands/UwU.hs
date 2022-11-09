@@ -13,9 +13,12 @@ uwu ∷ IORef PortageConfig → String → [String] → IO ()
 uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
   if root then do
     rawAndIgnore "shelter" 𝜀
-    portageConfig >>= \newConfig -> do
+    -- TODO: this is broken because file is busy
+    -- maybe should use context with file handle
+    -- and put PortageConfig inside context
+    --portageConfig >>= \newConfig -> do
       -- writeIORef rpc newConfig
-      storeConfig newConfig
+      --storeConfig newConfig
     rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
     rawAndIgnore "eix-update" 𝜀
     rawAndIgnore "emerge" [ "-avuDN", "@world"

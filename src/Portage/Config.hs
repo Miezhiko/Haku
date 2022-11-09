@@ -204,14 +204,14 @@ loadPortageConfig = do
   return config
 
 updateWithMaybeShelter ∷ PortageConfig → Maybe ShelterConfig → IO PortageConfig
-updateWithMaybeShelter _ Nothing = loadPortageConfig
-updateWithMaybeShelter binaryParsedConfig (Just shelter) =
-    if isPortageConfigIsInSync binaryParsedConfig shelter
-      then return binaryParsedConfig
-      else loadPortageConfig
+updateWithMaybeShelter binaryParsedConfig (Just shelter)
+  | isPortageConfigIsInSync binaryParsedConfig shelter
+    = return binaryParsedConfig
+updateWithMaybeShelter _ _ = loadPortageConfig
 
 maybeUpdateConfig ∷ IO PortageConfig
-maybeUpdateConfig = (getShelterConfig >>=) . updateWithMaybeShelter =<< restoreConfig
+maybeUpdateConfig = (getShelterConfig >>=)
+                  . updateWithMaybeShelter =<< restoreConfig
 
 portageConfig ∷ IO PortageConfig
 portageConfig = do
