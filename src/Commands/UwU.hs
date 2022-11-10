@@ -1,4 +1,8 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    FlexibleContexts
+  , UnicodeSyntax
+  #-}
+
 module Commands.UwU where
 
 import           Constants         (cosntSudoPath)
@@ -13,12 +17,6 @@ uwu ∷ IORef PortageConfig → String → [String] → IO ()
 uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
   if root then do
     rawAndIgnore "shelter" 𝜀
-    -- TODO: this is broken because file is busy
-    -- maybe should use context with file handle
-    -- and put PortageConfig inside context
-    --portageConfig >>= \newConfig -> do
-      -- writeIORef rpc newConfig
-      --storeConfig newConfig
     rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
     rawAndIgnore "eix-update" 𝜀
     rawAndIgnore "emerge" [ "-avuDN", "@world"
@@ -40,10 +38,16 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
                             ]
       else putStrLn "should run as root or have sudo installed"
 
+owo ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
+    IORef PortageConfig → String → [String] → m ()
+owo rpc c xs = do
+  liftIO $ uwu rpc c xs
+  void portageConfig
+
 uwuCmd ∷ Command String m
 uwuCmd = Command { command = ["uwu"]
                  , description = "Update and upgrade the world (alias)"
                  , usage = ("haku " ++)
                  , state = 𝜀
                  , options = const 𝜀
-                 , handler = liftMyAss uwu }
+                 , handler = owo }

@@ -1,10 +1,12 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    FlexibleContexts
+  , UnicodeSyntax
+  #-}
+
 module Commands.Update where
 
 import           Types
 import           Utils
-
-import           Control.Monad
 
 data UpdateState
   = UpdateState
@@ -20,19 +22,15 @@ updateOpts _ =
     , Option "s" ["store"]   (NoArg (\s -> s { updStore = True }))   "store new config after update"
     ]
 
-update ∷ IORef PortageConfig → UpdateState → [String] → IO ()
-update rpc upds _ = do
+update ∷ HakuEnv → IORef PortageConfig → UpdateState → [String] → IO ()
+update env rpc upds _ = do
   rawAndIgnore "emerge" ["--sync"]
   unless minimal $ do
     runIfExists "/usr/bin/egencache" "egencache" ["--repo=gentoo", "--update"]
     runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
-  -- TODO
-  {-
-  when (updStore upds) $
-    portageConfig >>= \newConfig -> do
-      writeIORef rpc newConfig
-      storeConfig newConfig
-  -}
+  when (updStore upds) $ do
+    pc <- runReaderT portageConfig env
+    writeIORef rpc pc
   when (updUpgrade upds) $
     rawAndIgnore "emerge" [ "-avuDN"
                           , "@world"
@@ -43,6 +41,11 @@ update rpc upds _ = do
  where minimal ∷ Bool
        minimal = updMinimal upds
 
+updateMyAss ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
+            IORef PortageConfig → UpdateState → [String] → m ()
+updateMyAss rpc c xs =
+  ask >>= \env -> liftIO $ update env rpc c xs
+
 updateCmd ∷ Command UpdateState m
 updateCmd = Command
             { command = ["u", "update"]
@@ -52,4 +55,4 @@ updateCmd = Command
                                   , updMinimal  = False
                                   , updStore    = False }
             , options = updateOpts
-            , handler = liftMyAss update }
+            , handler = updateMyAss }

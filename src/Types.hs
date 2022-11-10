@@ -33,7 +33,7 @@ data Command τ m
                  IORef PortageConfig -> τ -> [String] -> m ()
       }
 
-liftMyAss ∷ MonadIO m ⇒ (a → b → c → IO ()) → a → b → c → m ()
+liftMyAss ∷ MonadIO m ⇒ (α → β → γ → IO ()) → α → β → γ → m ()
 liftMyAss io rpc t xs = liftIO $ io rpc t xs
 
 data Command'
