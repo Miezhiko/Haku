@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.23
+version: 0.0.24
 license: AGPL-3
 
 build-type: Simple
@@ -19,6 +19,7 @@ Executable haku
     Shelter.Trim,
     Shelter.Hashes,
     Shelter.Checker,
+    Portage.Types.Env,
     Portage.Types.Version,
     Portage.Types.Package,
     Portage.Types.Config,
@@ -54,6 +55,8 @@ Executable haku
       time,
       base-unicode-symbols,
       yaml,
-      aeson
+      aeson,
+      mtl,
+      lifted-async
  ghc-options:
     -Wall

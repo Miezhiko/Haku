@@ -1,4 +1,7 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    Safe
+  , UnicodeSyntax
+  #-}
 module Hacks where
 
 import           Data.Bifunctor

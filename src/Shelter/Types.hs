@@ -1,5 +1,7 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    DeriveGeneric
+  , UnicodeSyntax
+  #-}
 
 module Shelter.Types
   ( ShelterConfig

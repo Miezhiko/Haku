@@ -1,5 +1,7 @@
-{-# LANGUAGE GADTs         #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    GADTs
+  , UnicodeSyntax
+  #-}
 
 module Types
   ( Command (..)
@@ -10,6 +12,7 @@ module Types
 import           Data.IORef            as ExportedTpyes
 import           Portage.Config        as ExportedTpyes
 import           Portage.Ebuild        as ExportedTpyes
+import           Portage.Types.Env     as ExportedTpyes
 import           Portage.Types.Package as ExportedTpyes
 import           Portage.Version       as ExportedTpyes
 import           Prelude.Unicode       as ExportedTpyes
@@ -25,4 +28,5 @@ data Command τ
       , handler     :: IORef PortageConfig -> τ -> [String] -> IO ()
       }
 
-data Command' = ∀ τ. Command' (Command τ)
+data Command'
+  = ∀ τ. Command' (Command τ)

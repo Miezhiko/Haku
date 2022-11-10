@@ -1,4 +1,7 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    UnicodeSyntax
+  #-}
+
 module Utils
   ( module ExportedUtils
   , raw

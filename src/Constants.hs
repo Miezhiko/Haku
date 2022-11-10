@@ -1,4 +1,7 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    Safe
+  , UnicodeSyntax
+  #-}
 module Constants where
 
 constMakeConfPath ∷ String

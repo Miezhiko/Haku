@@ -1,5 +1,14 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    FlexibleContexts
+  , UnicodeSyntax
+  #-}
+
 module Main where
+
+import           Paths
+import           Types
+import           Utils
+import           Version
 
 import           Commands.Belongs
 import           Commands.Clean
@@ -11,12 +20,12 @@ import           Commands.Update
 import           Commands.Upgrade
 import           Commands.UwU
 
-import           Types
-import           Utils
-import           Version
-
 import           Data.List
+
 import           System.Environment
+
+import           Control.Concurrent.Async.Lifted.Safe
+import           Control.Monad.Reader
 
 commands ∷ Bool → [Command']
 commands showPrivate =
@@ -67,13 +76,30 @@ handleCommand r cname (Command' c) args =
           _  -> do putStrLn (unlines es)
                    putStrLn (usageInfo (usage c cname) ∘ options c $ False)
 
+hakuLog ∷ (MonadReader HakuEnv m, MonadIO m)
+             ⇒ String
+             → m ()
+hakuLog msg = liftIO . flip logger msg =<< ask
+
 goWithArguments ∷ [String] → IO ()
 goWithArguments []                =  printHelp
 goWithArguments [a] | isVersion a =  putStrLn showMyV
 goWithArguments [a] | isHelp a    =  printHelp
-goWithArguments (x:xs) =
-  do r <- portageConfig >>= newIORef
-     case findCommand x of
+goWithArguments (x:xs) = getHakuCachePath >>= \hakuCachePath ->
+  withBinaryFile hakuCachePath ReadWriteMode $ \h -> do
+    let env = HakuEnv
+          { handle = h
+          , logger = putStrLn
+          }
+    (pc,_) <- runReaderT
+      (concurrently
+        portageConfig
+        (hakuLog "reading config")
+      )
+      env
+    --r <- portageConfig >>= newIORef
+    r <- newIORef pc
+    case findCommand x of
       Nothing -> handleCommand  r  "get"  (Command' getCmd)  (x:xs)
       Just c  -> handleCommand  r  x      c                     xs
 

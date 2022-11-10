@@ -26,10 +26,13 @@ update rpc upds _ = do
   unless minimal $ do
     runIfExists "/usr/bin/egencache" "egencache" ["--repo=gentoo", "--update"]
     runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
+  -- TODO
+  {-
   when (updStore upds) $
     portageConfig >>= \newConfig -> do
       writeIORef rpc newConfig
       storeConfig newConfig
+  -}
   when (updUpgrade upds) $
     rawAndIgnore "emerge" [ "-avuDN"
                           , "@world"

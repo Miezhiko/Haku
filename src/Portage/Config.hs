@@ -1,4 +1,7 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    FlexibleContexts
+  , UnicodeSyntax
+  #-}
 module Portage.Config
   ( module Portage.Types.Config
   , portageConfig
@@ -11,6 +14,7 @@ import           Hacks
 import           Paths
 
 import           Portage.Types.Config
+import           Portage.Types.Env
 import           Portage.Types.Package
 import           Portage.Version
 
@@ -37,6 +41,7 @@ import           System.Process
 
 import           Control.Arrow
 import           Control.Monad
+import           Control.Monad.Reader
 
 parseEnvMap ∷ String → EnvMap
 parseEnvMap s = M.fromList $
@@ -163,14 +168,18 @@ getInstalledPackages pkgdb categories = do
                   ) filteredCats
   return $ concatMaps M.empty catMaps
 
-storeConfig ∷ PortageConfig → IO ()
-storeConfig = (getHakuCachePath >>=) ∘ flip BL.writeFile ∘ encode
+storeConfig ∷ Handle -> PortageConfig → IO ()
+storeConfig h cfg = do
+  let encoded = encode cfg
+  BL.hPut h encoded
 
-restoreConfig ∷ IO PortageConfig
-restoreConfig = (decode <$>) ∘ BL.readFile =<< getHakuCachePath
+restoreConfig ∷ Handle -> IO PortageConfig
+restoreConfig h = do
+  cfgB <- BL.hGetContents h
+  return $ decode cfgB
 
-loadPortageConfig ∷ IO PortageConfig
-loadPortageConfig = do
+loadPortageConfig ∷ Handle -> IO PortageConfig
+loadPortageConfig cacheHandle = do
   makeConf <- getConfigFile constMakeConfPath
   let treePath = makeConf M.! "PORTDIR"
 
@@ -199,32 +208,35 @@ loadPortageConfig = do
       config    = PortageConfig makeConf categories eclasses finalTree overlays shelterHashes
 
   -- always cache parsed config
-  storeConfig config
+  storeConfig cacheHandle config
 
   return config
 
-updateWithMaybeShelter ∷ PortageConfig → Maybe ShelterConfig → IO PortageConfig
-updateWithMaybeShelter binaryParsedConfig (Just shelter)
+updateWithMaybeShelter ∷ Handle -> PortageConfig → Maybe ShelterConfig → IO PortageConfig
+updateWithMaybeShelter _ binaryParsedConfig (Just shelter)
   | isPortageConfigIsInSync binaryParsedConfig shelter
     = return binaryParsedConfig
-updateWithMaybeShelter _ _ = loadPortageConfig
+updateWithMaybeShelter h _ _ = loadPortageConfig h
 
-maybeUpdateConfig ∷ IO PortageConfig
-maybeUpdateConfig = (getShelterConfig >>=)
-                  . updateWithMaybeShelter =<< restoreConfig
+maybeUpdateConfig ∷ Handle -> IO PortageConfig
+maybeUpdateConfig h = (getShelterConfig >>=)
+                    . updateWithMaybeShelter h =<< restoreConfig h
 
-portageConfig ∷ IO PortageConfig
+portageConfig ∷ (MonadReader HakuEnv m, MonadIO m)
+       ⇒ m PortageConfig
 portageConfig = do
-  hakuCachePath <- getHakuCachePath
-  cacheExists <- doesFileExist hakuCachePath
+  hakuCachePath <- liftIO getHakuCachePath
+  cacheExists   <- liftIO $ doesFileExist hakuCachePath
+  hakuEnv       <- ask
+  let h = handle hakuEnv
   if cacheExists
     then do
       -- if cache is more than one minute old recheck if
       -- shelter hashes changed (update was made and was meaningful)
-      currentTime <- getCurrentTime
-      changemTime <- getModificationTime hakuCachePath
+      currentTime <- liftIO getCurrentTime
+      changemTime <- liftIO $ getModificationTime hakuCachePath
       let diff = diffUTCTime currentTime changemTime
       if diff > 60 -- conversion functions will treat it as seconds
-        then maybeUpdateConfig
-        else restoreConfig
-    else loadPortageConfig
+        then liftIO $ maybeUpdateConfig h
+        else liftIO $ restoreConfig h
+    else liftIO $ loadPortageConfig h

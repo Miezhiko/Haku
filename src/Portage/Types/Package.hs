@@ -1,9 +1,11 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    DeriveGeneric
+  , UnicodeSyntax
+  #-}
 module Portage.Types.Package
   ( Package (..)
-  , prettyShowVersions
   , prettyPrintVersions
+  , prettyShowVersions
   ) where
 
 import           Portage.Types.Version

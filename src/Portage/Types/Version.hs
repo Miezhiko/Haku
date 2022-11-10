@@ -1,6 +1,8 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    DeriveGeneric
+  , TupleSections
+  , UnicodeSyntax
+  #-}
 
 module Portage.Types.Version where
 

@@ -1,5 +1,7 @@
-{-# LANGUAGE LambdaCase    #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    LambdaCase
+  , UnicodeSyntax
+  #-}
 
 module Shelter.Checker
   ( ShelterConfig

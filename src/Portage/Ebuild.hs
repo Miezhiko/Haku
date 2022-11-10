@@ -1,10 +1,12 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    UnicodeSyntax
+  #-}
 module Portage.Ebuild where
 
 import           Hacks
 
 import           Data.List
-import qualified Data.Map       as M
+import qualified Data.Map  as M
 
 data Ebuild
   = Ebuild
