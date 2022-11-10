@@ -42,7 +42,7 @@ delete dels pc [x]  = case findPackage pc x of
                         Nothing -> putStrLn "Atom not found!"
 delete dels _ xs    = unmerge dels xs
 
-deleteCmd ∷ Command DeleteState
+deleteCmd ∷ Command DeleteState m
 deleteCmd = Command
             { command = ["delete"]
             , description = "Delete one or more variants."
@@ -50,4 +50,5 @@ deleteCmd = Command
             , state = DeleteState { dpretend  = False
                                   , dask      = False }
             , options = deleteOpts
-            , handler = \rpc dels ds -> readIORef rpc >>= \pc -> delete dels pc ds }
+            , handler = \rpc dels ds -> liftIO (readIORef rpc) >>= \pc ->
+                                liftIO $ delete dels pc ds }

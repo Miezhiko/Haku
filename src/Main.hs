@@ -25,7 +25,6 @@ import           Data.List
 import           System.Environment
 
 import           Control.Concurrent.Async.Lifted.Safe
-import           Control.Monad.Reader
 
 commands ∷ Bool → [Command']
 commands showPrivate =
@@ -65,14 +64,19 @@ isHelps ∷ [String] → Bool
 isHelps (x:_) =  isHelp x
 isHelps _     =  False
 
-handleCommand ∷ IORef PortageConfig → String → Command' → [String] → IO ()
-handleCommand r cname (Command' c) args =
+handleCommand ∷ IORef PortageConfig → String → Command' → [String] → HakuEnv -> IO ()
+handleCommand r cname (Command' c) args env =
     if isHelps args
       then putStrLn (usageInfo (usage c cname) ∘ options c $ False)
       else
         let (fs,n,es) = getOpt Permute (options c True) args
         in case es of
-          [] -> handler c r (foldl (flip ($)) (state c) fs) n
+          [] -> do void $ runReaderT
+                    (concurrently
+                      (handler c r (foldl (flip ($)) (state c) fs) n)
+                      (hakuLog ("running " ++ cname))
+                    ) env
+                   putStrLn "OK"
           _  -> do putStrLn (unlines es)
                    putStrLn (usageInfo (usage c cname) ∘ options c $ False)
 
@@ -97,11 +101,10 @@ goWithArguments (x:xs) = getHakuCachePath >>= \hakuCachePath ->
         (hakuLog "reading config")
       )
       env
-    --r <- portageConfig >>= newIORef
     r <- newIORef pc
     case findCommand x of
-      Nothing -> handleCommand  r  "get"  (Command' getCmd)  (x:xs)
-      Just c  -> handleCommand  r  x      c                     xs
+      Nothing -> handleCommand  r  "get"  (Command' getCmd)  (x:xs) env
+      Just c  -> handleCommand  r  x      c                     xs  env
 
 main ∷ IO ()
 main = getArgs >>= goWithArguments

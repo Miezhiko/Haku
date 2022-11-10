@@ -19,11 +19,11 @@ test rpc _ _ = readIORef rpc >>= \pc -> do
                               ) tree
   for_ packagesWithEbuilds maybePrintTest
 
-testCmd ∷ Command String
+testCmd ∷ Command String m
 testCmd = Command
           { command = ["test"]
           , description = "Test command, what it does is always different"
           , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
           , state = 𝜀
           , options = const 𝜀
-          , handler = test }
+          , handler = liftMyAss test }

@@ -40,10 +40,10 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
                             ]
       else putStrLn "should run as root or have sudo installed"
 
-uwuCmd ∷ Command String
+uwuCmd ∷ Command String m
 uwuCmd = Command { command = ["uwu"]
                  , description = "Update and upgrade the world (alias)"
                  , usage = ("haku " ++)
                  , state = 𝜀
                  , options = const 𝜀
-                 , handler = uwu }
+                 , handler = liftMyAss uwu }

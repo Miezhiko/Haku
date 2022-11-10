@@ -43,7 +43,7 @@ update rpc upds _ = do
  where minimal ∷ Bool
        minimal = updMinimal upds
 
-updateCmd ∷ Command UpdateState
+updateCmd ∷ Command UpdateState m
 updateCmd = Command
             { command = ["u", "update"]
             , description = "Update world"
@@ -52,4 +52,4 @@ updateCmd = Command
                                   , updMinimal  = False
                                   , updStore    = False }
             , options = updateOpts
-            , handler = update }
+            , handler = liftMyAss update }

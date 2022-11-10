@@ -61,7 +61,7 @@ findAction rpc fs [x] = readIORef rpc >>= \pc ->
 findAction pc fs (x:xs) = do findAction pc fs [x]
                              findAction pc fs xs
 
-findCmd ∷ Command FindState
+findCmd ∷ Command FindState m
 findCmd = Command
           { command = ["f", "find"]
           , description = "Find some Atom in main tree and overlays"
@@ -69,4 +69,4 @@ findCmd = Command
           , state = FindState { fndExact = False
                               , fndAll = False }
           , options = findOpts
-          , handler = findAction }
+          , handler = liftMyAss findAction }

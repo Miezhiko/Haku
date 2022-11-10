@@ -16,10 +16,10 @@ clean _ _ _ = (== 0) <$> getRealUserID >>= \r ->
               if sudoExists then rawAndIgnore "sudo" [ "emerge", "--depclean" ]
                             else putStrLn "should run as root or have sudo installed"
 
-cleanCmd ∷ Command String
+cleanCmd ∷ Command String m
 cleanCmd = Command { command = ["clean"]
                    , description = "Clean world"
                    , usage = ("haku " ++)
                    , state = 𝜀
                    , options = const 𝜀
-                   , handler = clean }
+                   , handler = liftMyAss clean }

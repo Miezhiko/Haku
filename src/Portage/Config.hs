@@ -168,17 +168,13 @@ getInstalledPackages pkgdb categories = do
                   ) filteredCats
   return $ concatMaps M.empty catMaps
 
-storeConfig ∷ Handle -> PortageConfig → IO ()
-storeConfig h cfg = do
-  let encoded = encode cfg
-  BL.hPut h encoded
+storeConfig ∷ Handle → PortageConfig → IO ()
+storeConfig h = BL.hPut h ∘ encode
 
-restoreConfig ∷ Handle -> IO PortageConfig
-restoreConfig h = do
-  cfgB <- BL.hGetContents h
-  return $ decode cfgB
+restoreConfig ∷ Handle → IO PortageConfig
+restoreConfig h = decode <$> BL.hGetContents h
 
-loadPortageConfig ∷ Handle -> IO PortageConfig
+loadPortageConfig ∷ Handle → IO PortageConfig
 loadPortageConfig cacheHandle = do
   makeConf <- getConfigFile constMakeConfPath
   let treePath = makeConf M.! "PORTDIR"
@@ -212,23 +208,22 @@ loadPortageConfig cacheHandle = do
 
   return config
 
-updateWithMaybeShelter ∷ Handle -> PortageConfig → Maybe ShelterConfig → IO PortageConfig
-updateWithMaybeShelter _ binaryParsedConfig (Just shelter)
+updateWithMaybeShelter ∷ Handle → Maybe ShelterConfig → PortageConfig → IO PortageConfig
+updateWithMaybeShelter _ (Just shelter) binaryParsedConfig
   | isPortageConfigIsInSync binaryParsedConfig shelter
     = return binaryParsedConfig
 updateWithMaybeShelter h _ _ = loadPortageConfig h
 
-maybeUpdateConfig ∷ Handle -> IO PortageConfig
-maybeUpdateConfig h = (getShelterConfig >>=)
-                    . updateWithMaybeShelter h =<< restoreConfig h
+maybeUpdateConfig ∷ Handle → IO PortageConfig
+maybeUpdateConfig h = getShelterConfig >>= \shelter ->
+  restoreConfig h >>= updateWithMaybeShelter h shelter
 
 portageConfig ∷ (MonadReader HakuEnv m, MonadIO m)
-       ⇒ m PortageConfig
+                    ⇒ m PortageConfig
 portageConfig = do
   hakuCachePath <- liftIO getHakuCachePath
   cacheExists   <- liftIO $ doesFileExist hakuCachePath
   hakuEnv       <- ask
-  let h = handle hakuEnv
   if cacheExists
     then do
       -- if cache is more than one minute old recheck if
@@ -237,6 +232,6 @@ portageConfig = do
       changemTime <- liftIO $ getModificationTime hakuCachePath
       let diff = diffUTCTime currentTime changemTime
       if diff > 60 -- conversion functions will treat it as seconds
-        then liftIO $ maybeUpdateConfig h
-        else liftIO $ restoreConfig h
-    else liftIO $ loadPortageConfig h
+        then liftIO $ maybeUpdateConfig (handle hakuEnv)
+        else liftIO $ restoreConfig (handle hakuEnv)
+    else liftIO $ loadPortageConfig (handle hakuEnv)

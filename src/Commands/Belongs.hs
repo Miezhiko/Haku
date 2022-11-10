@@ -71,11 +71,11 @@ belongs rpc _ [x] = readIORef rpc >>= \pc -> do
 belongs pc z (x:xs) = do belongs pc z [x]
                          belongs pc z xs
 
-belongsCmd ∷ Command String
+belongsCmd ∷ Command String m
 belongsCmd =
   Command { command = ["b", "belongs"]
           , description = "Find owner-package for some file"
           , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
           , state = 𝜀
           , options = const 𝜀
-          , handler = belongs }
+          , handler = liftMyAss belongs }

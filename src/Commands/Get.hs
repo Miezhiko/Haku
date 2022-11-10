@@ -61,7 +61,7 @@ getPackage rpc gs ds =
   readIORef rpc >>= \pc ->
     emerge gs pc ds
 
-getCmd ∷ Command GetState
+getCmd ∷ Command GetState m
 getCmd = Command
           { command = ["get"]
           , description = "Merge one or more variants."
@@ -74,4 +74,4 @@ getCmd = Command
                               , gdeep    = False
                               , gverbose = False }
           , options = getOpts
-          , handler = getPackage }
+          , handler = liftMyAss getPackage }

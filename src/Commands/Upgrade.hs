@@ -13,10 +13,10 @@ upgrade =
                         , "--quiet-build=n"
                         ]
 
-upgradeCmd ∷ Command String
+upgradeCmd ∷ Command String m
 upgradeCmd = Command { command = ["upgrade"]
                      , description = "Upgrade world"
                      , usage = ("haku " ++)
                      , state = 𝜀
                      , options = const 𝜀
-                     , handler = \_ _ _ -> upgrade }
+                     , handler = \_ _ _ -> liftIO upgrade }
