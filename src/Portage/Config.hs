@@ -10,17 +10,14 @@ module Portage.Config
   ) where
 
 import           Constants
+import           Env
 import           Hacks
 import           Paths
 
 import           Portage.Types.Config
-import           Portage.Types.Env
 import           Portage.Types.Package
 import           Portage.Version
-
 import           Shelter.Hashes
-
-import           Prelude.Unicode
 
 import           Data.Binary
 import qualified Data.ByteString.Lazy  as BL
@@ -201,12 +198,12 @@ loadPortageConfig cacheHandle = do
   shelterHashes <- getShelterHashes
 
   let finalTree = M.unionWith mergePackages installed merged
-      config    = PortageConfig makeConf categories eclasses finalTree overlays shelterHashes
+      myConfig  = PortageConfig makeConf categories eclasses finalTree overlays shelterHashes
 
   -- always cache parsed config
-  storeConfig cacheHandle config
+  storeConfig cacheHandle myConfig
 
-  return config
+  return myConfig
 
 updateWithMaybeShelter ∷ Handle → Maybe ShelterConfig → PortageConfig → IO PortageConfig
 updateWithMaybeShelter _ (Just shelter) binaryParsedConfig
@@ -218,20 +215,18 @@ maybeUpdateConfig ∷ Handle → IO PortageConfig
 maybeUpdateConfig h = getShelterConfig >>= \shelter ->
   restoreConfig h >>= updateWithMaybeShelter h shelter
 
-portageConfig ∷ (MonadReader HakuEnv m, MonadIO m)
-                    ⇒ m PortageConfig
-portageConfig = do
-  hakuCachePath <- liftIO getHakuCachePath
-  cacheExists   <- liftIO $ doesFileExist hakuCachePath
-  hakuEnv       <- ask
+portageConfig ∷ Handle → IO PortageConfig
+portageConfig hakuCacheHandle = do
+  hakuCachePath <- getHakuCachePath
+  cacheExists   <- doesFileExist hakuCachePath
   if cacheExists
     then do
       -- if cache is more than one minute old recheck if
       -- shelter hashes changed (update was made and was meaningful)
-      currentTime <- liftIO getCurrentTime
-      changemTime <- liftIO $ getModificationTime hakuCachePath
+      currentTime <- getCurrentTime
+      changemTime <- getModificationTime hakuCachePath
       let diff = diffUTCTime currentTime changemTime
       if diff > 60 -- conversion functions will treat it as seconds
-        then liftIO $ maybeUpdateConfig (handle hakuEnv)
-        else liftIO $ restoreConfig (handle hakuEnv)
-    else liftIO $ loadPortageConfig (handle hakuEnv)
+        then liftIO $ maybeUpdateConfig hakuCacheHandle
+        else liftIO $ restoreConfig hakuCacheHandle
+    else liftIO $ loadPortageConfig hakuCacheHandle

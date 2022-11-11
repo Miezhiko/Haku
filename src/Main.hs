@@ -10,6 +10,8 @@ import           Types
 import           Utils
 import           Version
 
+import           Portage.Config                       (portageConfig)
+
 import           Commands.Belongs
 import           Commands.Clean
 import           Commands.Delete
@@ -64,21 +66,20 @@ isHelps ∷ [String] → Bool
 isHelps (x:_) =  isHelp x
 isHelps _     =  False
 
-handleCommand ∷ IORef PortageConfig → String → Command' → [String] → HakuEnv -> IO ()
-handleCommand r cname (Command' c) args env =
-    if isHelps args
-      then putStrLn (usageInfo (usage c cname) ∘ options c $ False)
-      else
-        let (fs,n,es) = getOpt Permute (options c True) args
-        in case es of
-          [] -> do void $ runReaderT
-                    (concurrently
-                      (handler c r (foldl (flip ($)) (state c) fs) n)
-                      (hakuLog ("running " ++ cname))
-                    ) env
-                   putStrLn "OK"
-          _  -> do putStrLn (unlines es)
-                   putStrLn (usageInfo (usage c cname) ∘ options c $ False)
+handleCommand ∷ String → Command' → [String] → HakuEnv → IO ()
+handleCommand cname (Command' c) args env =
+  if isHelps args
+    then putStrLn (usageInfo (usage c cname) ∘ options c $ False)
+    else
+      let (fs,n,es) = getOpt Permute (options c True) args
+      in case es of
+        [] -> void $ runReaderT
+                  (concurrently
+                    (handler c (foldl (flip ($)) (state c) fs) n)
+                    (hakuLog ("running " ++ cname))
+                  ) env
+        _  -> putStrLn (unlines es)
+           >> putStrLn (usageInfo (usage c cname) ∘ options c $ False)
 
 hakuLog ∷ (MonadReader HakuEnv m, MonadIO m)
              ⇒ String
@@ -91,20 +92,15 @@ goWithArguments [a] | isVersion a =  putStrLn showMyV
 goWithArguments [a] | isHelp a    =  printHelp
 goWithArguments (x:xs) = getHakuCachePath >>= \hakuCachePath ->
   withBinaryFile hakuCachePath ReadWriteMode $ \h -> do
+    gentooConfig <- portageConfig h >>= newIORef
     let env = HakuEnv
           { handle = h
           , logger = putStrLn
+          , config = gentooConfig
           }
-    (pc,_) <- runReaderT
-      (concurrently
-        portageConfig
-        (hakuLog "reading config")
-      )
-      env
-    r <- newIORef pc
     case findCommand x of
-      Nothing -> handleCommand  r  "get"  (Command' getCmd)  (x:xs) env
-      Just c  -> handleCommand  r  x      c                     xs  env
+      Nothing -> handleCommand  "get"  (Command' getCmd)  (x:xs) env
+      Just c  -> handleCommand  x      c                     xs  env
 
 main ∷ IO ()
 main = getArgs >>= goWithArguments

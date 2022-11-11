@@ -1,4 +1,8 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    FlexibleContexts
+  , UnicodeSyntax
+  #-}
+
 module Commands.Delete where
 
 import           Constants         (cosntSudoPath)
@@ -42,6 +46,12 @@ delete dels pc [x]  = case findPackage pc x of
                         Nothing -> putStrLn "Atom not found!"
 delete dels _ xs    = unmerge dels xs
 
+deleteM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
+             DeleteState → [String] → m ()
+deleteM dels xs = asks config >>= \cfg -> do
+  pc <- liftIO $ readIORef cfg
+  liftIO $ delete dels pc xs
+
 deleteCmd ∷ Command DeleteState m
 deleteCmd = Command
             { command = ["delete"]
@@ -50,5 +60,4 @@ deleteCmd = Command
             , state = DeleteState { dpretend  = False
                                   , dask      = False }
             , options = deleteOpts
-            , handler = \rpc dels ds -> liftIO (readIORef rpc) >>= \pc ->
-                                liftIO $ delete dels pc ds }
+            , handler = deleteM }

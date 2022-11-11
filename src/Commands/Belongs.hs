@@ -1,4 +1,8 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    FlexibleContexts
+  , UnicodeSyntax
+  #-}
+
 module Commands.Belongs where
 
 import           Constants
@@ -71,6 +75,11 @@ belongs rpc _ [x] = readIORef rpc >>= \pc -> do
 belongs pc z (x:xs) = do belongs pc z [x]
                          belongs pc z xs
 
+belongsM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
+              String → [String] → m ()
+belongsM s xs = asks config >>= \cfg ->
+  liftIO $ belongs cfg s xs
+
 belongsCmd ∷ Command String m
 belongsCmd =
   Command { command = ["b", "belongs"]
@@ -78,4 +87,4 @@ belongsCmd =
           , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
           , state = 𝜀
           , options = const 𝜀
-          , handler = liftMyAss belongs }
+          , handler = belongsM }

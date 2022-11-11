@@ -8,6 +8,8 @@ module Commands.Update where
 import           Types
 import           Utils
 
+import           Portage.Config (portageConfig)
+
 data UpdateState
   = UpdateState
       { updUpgrade :: Bool
@@ -22,14 +24,14 @@ updateOpts _ =
     , Option "s" ["store"]   (NoArg (\s -> s { updStore = True }))   "store new config after update"
     ]
 
-update ∷ HakuEnv → IORef PortageConfig → UpdateState → [String] → IO ()
-update env rpc upds _ = do
+update ∷ Handle → IORef PortageConfig → UpdateState → [String] → IO ()
+update h rpc upds _ = do
   rawAndIgnore "emerge" ["--sync"]
   unless minimal $ do
     runIfExists "/usr/bin/egencache" "egencache" ["--repo=gentoo", "--update"]
     runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
   when (updStore upds) $ do
-    pc <- runReaderT portageConfig env
+    pc <- portageConfig h
     writeIORef rpc pc
   when (updUpgrade upds) $
     rawAndIgnore "emerge" [ "-avuDN"
@@ -42,9 +44,10 @@ update env rpc upds _ = do
        minimal = updMinimal upds
 
 updateMyAss ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
-            IORef PortageConfig → UpdateState → [String] → m ()
-updateMyAss rpc c xs =
-  ask >>= \env -> liftIO $ update env rpc c xs
+                   UpdateState → [String] → m ()
+updateMyAss us xs = ask >>= \env ->
+   liftIO $ update (handle env)
+                   (config env) us xs
 
 updateCmd ∷ Command UpdateState m
 updateCmd = Command

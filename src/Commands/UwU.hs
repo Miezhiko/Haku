@@ -9,6 +9,8 @@ import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
+import           Portage.Config    (portageConfig)
+
 import           System.Directory  (doesFileExist)
 import           System.Posix.User (getRealUserID)
 
@@ -39,10 +41,10 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
       else putStrLn "should run as root or have sudo installed"
 
 owo ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
-    IORef PortageConfig → String → [String] → m ()
-owo rpc c xs = do
-  liftIO $ uwu rpc c xs
-  void portageConfig
+          String → [String] → m ()
+owo c xs = ask >>= \env -> do
+  liftIO $ uwu (config env) c xs
+  void $ liftIO ( portageConfig (handle env) )
 
 uwuCmd ∷ Command String m
 uwuCmd = Command { command = ["uwu"]

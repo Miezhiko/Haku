@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.25
+version: 0.0.26
 license: AGPL-3
 
 build-type: Simple
@@ -13,13 +13,13 @@ Executable haku
     Constants,
     Hacks,
     Paths,
+    Env,
     Utils,
     Version,
     Shelter.Types,
     Shelter.Trim,
     Shelter.Hashes,
     Shelter.Checker,
-    Portage.Types.Env,
     Portage.Types.Version,
     Portage.Types.Package,
     Portage.Types.Config,

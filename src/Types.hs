@@ -13,28 +13,24 @@ module Types
   ) where
 
 import           Control.Monad.Reader  as ExportedTpyes
-import           Data.IORef            as ExportedTpyes
-import           Portage.Config        as ExportedTpyes
+import           Env                   as ExportedTpyes
 import           Portage.Ebuild        as ExportedTpyes
-import           Portage.Types.Env     as ExportedTpyes
 import           Portage.Types.Package as ExportedTpyes
 import           Portage.Version       as ExportedTpyes
-import           Prelude.Unicode       as ExportedTpyes
 import           System.Console.GetOpt as ExportedTpyes
 
 data Command τ m
   = Command
-      { command :: [String]
+      { command     :: [String]
       , description :: String
-      , usage :: String -> String
-      , state :: τ
-      , options :: Bool -> [OptDescr (τ -> τ)]
-      , handler :: (MonadReader HakuEnv m, MonadIO m) =>
-                 IORef PortageConfig -> τ -> [String] -> m ()
+      , usage       :: String -> String
+      , state       :: τ
+      , options     :: Bool -> [OptDescr (τ -> τ)]
+      , handler     :: (MonadReader HakuEnv m, MonadIO m) => τ -> [String] -> m ()
       }
 
-liftMyAss ∷ MonadIO m ⇒ (α → β → γ → IO ()) → α → β → γ → m ()
-liftMyAss io rpc t xs = liftIO $ io rpc t xs
+liftMyAss ∷ MonadIO m ⇒ (α → β → IO ()) → α → β → m ()
+liftMyAss io t xs = liftIO $ io t xs
 
 data Command'
   = ∀ τ. Command' (Command τ (ReaderT HakuEnv IO))

@@ -1,4 +1,8 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    FlexibleContexts
+  , UnicodeSyntax
+  #-}
+
 module Commands.Test where
 
 import           Types
@@ -19,6 +23,11 @@ test rpc _ _ = readIORef rpc >>= \pc -> do
                               ) tree
   for_ packagesWithEbuilds maybePrintTest
 
+testM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
+            String → [String] → m ()
+testM s xs = asks config >>= \cfg ->
+  liftIO $ test cfg s xs
+
 testCmd ∷ Command String m
 testCmd = Command
           { command = ["test"]
@@ -26,4 +35,4 @@ testCmd = Command
           , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
           , state = 𝜀
           , options = const 𝜀
-          , handler = liftMyAss test }
+          , handler = testM }

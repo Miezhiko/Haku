@@ -1,4 +1,8 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    FlexibleContexts
+  , UnicodeSyntax
+  #-}
+
 module Commands.Get where
 
 import           Constants         (cosntSudoPath)
@@ -56,10 +60,11 @@ emerge gs pc [x]  = case findPackage pc x of
                         Nothing -> putStrLn "Atom not found!"
 emerge gs _ xs    = merge gs xs
 
-getPackage ∷ IORef PortageConfig → GetState → [String] → IO ()
-getPackage rpc gs ds =
-  readIORef rpc >>= \pc ->
-    emerge gs pc ds
+getPackageM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
+                   GetState → [String] → m ()
+getPackageM gs xs = asks config >>= \cfg -> do
+  pc <- liftIO $ readIORef cfg
+  liftIO $ emerge gs pc xs
 
 getCmd ∷ Command GetState m
 getCmd = Command
@@ -74,4 +79,4 @@ getCmd = Command
                               , gdeep    = False
                               , gverbose = False }
           , options = getOpts
-          , handler = liftMyAss getPackage }
+          , handler = getPackageM }

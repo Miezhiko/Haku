@@ -1,4 +1,8 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    FlexibleContexts
+  , UnicodeSyntax
+  #-}
+
 module Commands.Find where
 
 import           Types
@@ -61,6 +65,11 @@ findAction rpc fs [x] = readIORef rpc >>= \pc ->
 findAction pc fs (x:xs) = do findAction pc fs [x]
                              findAction pc fs xs
 
+findM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
+            FindState → [String] → m ()
+findM fs xs = asks config >>= \cfg ->
+  liftIO $ findAction cfg fs xs
+
 findCmd ∷ Command FindState m
 findCmd = Command
           { command = ["f", "find"]
@@ -69,4 +78,4 @@ findCmd = Command
           , state = FindState { fndExact = False
                               , fndAll = False }
           , options = findOpts
-          , handler = liftMyAss findAction }
+          , handler = findM }

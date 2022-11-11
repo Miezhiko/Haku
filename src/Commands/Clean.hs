@@ -1,4 +1,7 @@
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    UnicodeSyntax
+  #-}
+
 module Commands.Clean where
 
 import           Constants         (cosntSudoPath)
@@ -9,8 +12,8 @@ import           System.Directory  (doesFileExist)
 import           System.Posix.User (getRealUserID)
 
 {- HLINT ignore "Redundant <$>" -}
-clean ∷ IORef PortageConfig → String → [String] → IO ()
-clean _ _ _ = (== 0) <$> getRealUserID >>= \r ->
+clean ∷ String → [String] → IO ()
+clean _ _ = (== 0) <$> getRealUserID >>= \r ->
   if r then rawAndIgnore "emerge" [ "--depclean" ]
        else doesFileExist cosntSudoPath >>= \sudoExists ->
               if sudoExists then rawAndIgnore "sudo" [ "emerge", "--depclean" ]
