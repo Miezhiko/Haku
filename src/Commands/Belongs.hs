@@ -75,8 +75,7 @@ belongs _ [x] rpc = readIORef rpc >>= \pc -> do
 belongs z (x:xs) pc = belongs z [x] pc
                    >> belongs z xs pc
 
-belongsM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
-              String → [String] → m ()
+belongsM ∷ HakuMonad m ⇒ String → [String] → m ()
 belongsM s xs = liftIO ∘ belongs s xs =<< asks config
 
 belongsCmd ∷ Command String m

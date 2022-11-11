@@ -53,15 +53,14 @@ merge gs xs =
                 then rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
                 else putStrLn "should run as root or have sudo installed"
 
-emerge ∷ GetState → [Atom] -> PortageConfig -> IO ()
+emerge ∷ GetState → [Atom] → PortageConfig → IO ()
 emerge _ [] _     = putStrLn "specify atom!"
 emerge gs [x] pc  = case findPackage pc x of
                         Just p  -> merge gs [show p]
                         Nothing -> putStrLn "Atom not found!"
 emerge gs xs _    = merge gs xs
 
-getPackageM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
-                   GetState → [String] → m ()
+getPackageM ∷ HakuMonad m ⇒ GetState → [String] → m ()
 getPackageM gs xs =
   liftIO ∘ ( (liftIO ∘ emerge gs xs) <=< readIORef
            ) =<< asks config

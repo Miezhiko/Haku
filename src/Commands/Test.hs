@@ -23,8 +23,7 @@ test _ _ rpc = readIORef rpc >>= \pc -> do
                               ) tree
   for_ packagesWithEbuilds maybePrintTest
 
-testM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
-            String → [String] → m ()
+testM ∷ HakuMonad m ⇒ String → [String] → m ()
 testM s xs = liftIO ∘ test s xs =<< asks config
 
 testCmd ∷ Command String m

@@ -43,8 +43,7 @@ update h rpc upds _ = do
  where minimal ∷ Bool
        minimal = updMinimal upds
 
-updateMyAss ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
-                   UpdateState → [String] → m ()
+updateMyAss ∷ HakuMonad m ⇒ UpdateState → [String] → m ()
 updateMyAss us xs = ask >>= \env ->
    liftIO $ update (handle env)
                    (config env) us xs

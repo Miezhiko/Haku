@@ -46,8 +46,7 @@ delete dels [x] pc  = case findPackage pc x of
                         Nothing -> putStrLn "Atom not found!"
 delete dels xs _    = unmerge dels xs
 
-deleteM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
-             DeleteState → [String] → m ()
+deleteM ∷ HakuMonad m ⇒ DeleteState → [String] → m ()
 deleteM dels xs =
   liftIO ∘ ( (liftIO ∘ delete dels xs) <=< readIORef
            ) =<< asks config

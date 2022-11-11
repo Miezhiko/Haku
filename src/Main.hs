@@ -66,9 +66,7 @@ isHelps ∷ [String] → Bool
 isHelps (x:_) =  isHelp x
 isHelps _     =  False
 
-hakuLog ∷ (MonadReader HakuEnv m, MonadIO m)
-             ⇒ String
-             → m ()
+hakuLog ∷ HakuMonad m ⇒ String → m ()
 hakuLog msg = liftIO . flip logger msg =<< ask
 
 handleCommand ∷ String → Command' → [String] → HakuEnv → IO ()

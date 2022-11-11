@@ -40,8 +40,7 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
                             ]
       else putStrLn "should run as root or have sudo installed"
 
-owo ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
-          String → [String] → m ()
+owo ∷ HakuMonad m ⇒ String → [String] → m ()
 owo c xs = ask >>= \env -> do
   liftIO $ uwu (config env) c xs
   void $ liftIO ( portageConfig (handle env) )
