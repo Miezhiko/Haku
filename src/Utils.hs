@@ -31,5 +31,5 @@ rawAndIgnore = void .: rawSystem
 
 runIfExists ∷ FilePath → String → [String] → IO ()
 runIfExists ξ λ α =
-  doesFileExist ξ >>= \fe ->
+  doesFileExist ξ >>= \fe →
     when fe $ void (rawSystem λ α)

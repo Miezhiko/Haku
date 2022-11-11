@@ -43,7 +43,7 @@ ymlDecode ∷ FromJSON iFromJSONable ⇒ FilePath → IO iFromJSONable
 ymlDecode = decodeThrow <=< BS.readFile
 
 getShelterConfig ∷ IO (Maybe ShelterConfig)
-getShelterConfig = getShelterConfPath >>= \shelterCfgPath ->
-  doesFileExist shelterCfgPath >>= \shelterCfgExists ->
+getShelterConfig = getShelterConfPath >>= \shelterCfgPath →
+  doesFileExist shelterCfgPath >>= \shelterCfgExists →
     if shelterCfgExists then ymlDecode shelterCfgPath
                         else return Nothing

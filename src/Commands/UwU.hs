@@ -16,7 +16,7 @@ import           System.Posix.User (getRealUserID)
 
 {- HLINT ignore "Redundant <$>" -}
 uwu ∷ IORef PortageConfig → String → [String] → IO ()
-uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
+uwu _ _ _ = (== 0) <$> getRealUserID >>= \root →
   if root then do
     rawAndIgnore "shelter" 𝜀
     rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
@@ -26,7 +26,7 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
                           , "--with-bdeps=y"
                           , "--quiet-build=n"
                           ]
-  else doesFileExist cosntSudoPath >>= \sudoExists ->
+  else doesFileExist cosntSudoPath >>= \sudoExists →
     if sudoExists
       then do
         putStrLn "running with sudo (not recommended)"
@@ -41,7 +41,7 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root ->
       else putStrLn "should run as root or have sudo installed"
 
 owo ∷ HakuMonad m ⇒ String → [String] → m ()
-owo c xs = ask >>= \env -> do
+owo c xs = ask >>= \env → do
   liftIO $ uwu (config env) c xs
   void $ liftIO ( portageConfig (handle env) )
 

@@ -14,6 +14,7 @@ module Types
   ) where
 
 import           Control.Monad.Reader  as ExportedTpyes
+import           Control.Monad.Unicode as ExportedTpyes
 import           Env                   as ExportedTpyes
 import           Portage.Ebuild        as ExportedTpyes
 import           Portage.Types.Package as ExportedTpyes

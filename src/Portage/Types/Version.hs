@@ -73,7 +73,7 @@ showPackageVersion (PackageVersion v ov True)  = show v ++ "::" ++ ov ++ " [Inst
 showPackageVersion (PackageVersion v ov False) = show v ++ "::" ++ ov
 
 parseVersion ∷ String → Either ParseError Version
-parseVersion = parse (readVersion >>= \x -> eof >> return x) "<version number>"
+parseVersion = parse (readVersion >>= \x → eof >> return x) "<version number>"
 
 readVer      ∷  CharParser st ([Int],          String)
 readNum      ∷  CharParser st (Int,            String)
@@ -84,13 +84,13 @@ readSufs     ∷  CharParser st ([Suffix],       String)
 readRev      ∷  CharParser st (Int,            String)
 
 readVer      =  fmap (second (intercalate ".") . unzip) (sepBy1 readNum (char '.'))
-readNum      =  do  ds <- many1 digit
+readNum      =  do  ds ← many1 digit
                     case read ds of
-                      n -> return (n,ds)
-readC        =  option (Nothing,  "")  (fmap (\x -> (Just x, [x])) letter)
-readSuf      =  do  _       <- char '_'
-                    (f,sr)  <- readSufType
-                    (n,nr)  <- option (0, "") readNum
+                      n → return (n,ds)
+readC        =  option (Nothing,  "")  (fmap (\x → (Just x, [x])) letter)
+readSuf      =  do  _       ← char '_'
+                    (f,sr)  ← readSufType
+                    (n,nr)  ← option (0, "") readNum
                     return (f n,"_" ++ sr ++ nr)
 
 readSufType  =  choice [ fmap (Alpha,)  (try $ string "alpha")
@@ -101,15 +101,15 @@ readSufType  =  choice [ fmap (Alpha,)  (try $ string "alpha")
                        ]
 
 readSufs     =  fmap ( second concat . unzip ) (many readSuf)
-readRev      =  option (0,        "")  (  do  rr      <- string "-r"
-                                              (n,nr)  <- readNum
+readRev      =  option (0,        "")  (  do  rr      ← string "-r"
+                                              (n,nr)  ← readNum
                                               return (n,rr ++ nr)
                                        )
 
 readVersion ∷ CharParser st Version
-readVersion =  do  (ver,  verr)  <-  readVer
-                   (c,    cr  )  <-  readC
-                   (suf,  sufr)  <-  readSufs
-                   (rev,  revr)  <-  readRev
+readVersion =  do  (ver,  verr)  ←  readVer
+                   (c,    cr  )  ←  readC
+                   (suf,  sufr)  ←  readSufs
+                   (rev,  revr)  ←  readRev
                    let rep = verr ++ cr ++ sufr ++ revr
                    return (Version ver c suf rev rep)

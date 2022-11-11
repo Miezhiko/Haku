@@ -27,12 +27,12 @@ onlyInstalled p =
 
 findContent ∷ FilePath → String → IO Bool
 findContent f x = do
-  content <- lines <$> Strict.readFile f
-  return $ any (\l -> let splt = filter (not ∘ null) $ splitOn " " l
+  content ← lines <$> Strict.readFile f
+  return $ any (\l → let splt = filter (not ∘ null) $ splitOn " " l
                       in case splt of
-                         []       -> False
-                         [_]      -> False
-                         (t:fn:_) -> (t == "obj" ∨ t == "sym") ∧ (fn == x)
+                         []       → False
+                         [_]      → False
+                         (t:fn:_) → (t == "obj" ∨ t == "sym") ∧ (fn == x)
                ) content
 
 findVersions ∷ Package → [PackageVersion] → String → IO [String]
@@ -44,15 +44,15 @@ findVersions package [x] f =
   in doesFileExist path >>= parse path f
  where parse ∷ String → String → Bool → IO [String]
        parse e target True  =
-         findContent e target >>= \found ->
+         findContent e target >>= \found →
           if found then return [show package, show x]
                    else return 𝜀
        parse _ _ False = return 𝜀
 findVersions package (x:xs) f = do
-  f1 <- findVersions package [x] f
+  f1 ← findVersions package [x] f
   case f1 of
-    [] -> findVersions package xs f
-    ff -> return ff
+    [] → findVersions package xs f
+    ff → return ff
 
 findBelongs ∷ String → Package → IO [String]
 findBelongs f package = do
@@ -61,28 +61,31 @@ findBelongs f package = do
 
 belongs ∷ String → [String] → IORef PortageConfig → IO ()
 belongs _ [] _ = putStrLn "you should specify what to search!"
-belongs _ [x] rpc = readIORef rpc >>= \pc -> do
+belongs _ [x] rpc = readIORef rpc >>= \pc → do
   let tree      = pcTree pc
       installed = M.mapMaybe onlyInstalled tree
-  foundPackages <- concat <$> mapM (findBelongs x) installed
+  foundPackages ← concat <$> mapM (findBelongs x) installed
   case foundPackages of
-    (p:vv:_)  -> do setSGR [SetColor Foreground Dull Green]
-                    putStrLn p
-                    setSGR [SetColor Foreground Vivid Red]
-                    putStrLn vv
-                    setSGR [Reset]
-    _         -> putStrLn "nothing found for this one"
+    (p:vv:_) → do setSGR [ SetColor Foreground Dull Green
+                         , SetConsoleIntensity BoldIntensity
+                         , SetUnderlining SingleUnderline ]
+                  putStrLn p
+                  setSGR [ SetColor Foreground Vivid Red
+                         , SetUnderlining NoUnderline ]
+                  putStrLn vv
+                  setSGR [ Reset ]
+    _ → putStrLn "nothing found for this one"
 belongs z (x:xs) pc = belongs z [x] pc
                    >> belongs z xs pc
 
 belongsM ∷ HakuMonad m ⇒ String → [String] → m ()
-belongsM s xs = liftIO ∘ belongs s xs =<< asks config
+belongsM s xs = liftIO ∘ belongs s xs =≪ asks config
 
 belongsCmd ∷ Command String m
 belongsCmd =
   Command { command = ["b", "belongs"]
           , description = "Find owner-package for some file"
-          , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
+          , usage = \c → "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
           , state = 𝜀
           , options = const 𝜀
           , handler = belongsM }

@@ -42,17 +42,17 @@ readIfSucc γ args =
 
 checkForExistingHash ∷ String → IO Bool
 checkForExistingHash shelterHash = do
-  currentBranch <- readProcess "git" ["rev-parse", "--abbrev-ref", "HEAD"] []
+  currentBranch ← readProcess "git" ["rev-parse", "--abbrev-ref", "HEAD"] []
   -- note that this can be slow actually, maybe there is better way to do it
-  rlm <- readIfSucc "git" ["ls-remote", "origin", trim currentBranch]
+  rlm ← readIfSucc "git" ["ls-remote", "origin", trim currentBranch]
   case rlm of
-    Nothing  -> return False
-    Just rlc -> let remoteHash = head (splitOn "\t" rlc)
+    Nothing  → return False
+    Just rlc → let remoteHash = head (splitOn "\t" rlc)
                 in return $ remoteHash == shelterHash
 
 checkForHash ∷ Maybe String → IO Bool
 checkForHash Nothing     = do
-  currentHash <- readProcess "git" ["log", "-n", "1"
+  currentHash ← readProcess "git" ["log", "-n", "1"
                                    , "--pretty=format:%H"
                                    ] []
   checkForExistingHash (trim currentHash)

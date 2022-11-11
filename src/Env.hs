@@ -14,6 +14,6 @@ import           System.IO            as ExportedTpyes
 data HakuEnv
   = HakuEnv
       { handle :: Handle
-      , logger :: String -> IO ()
+      , logger :: String → IO ()
       , config :: IORef PortageConfig
       }

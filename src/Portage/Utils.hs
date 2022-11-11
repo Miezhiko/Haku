@@ -21,13 +21,13 @@ import qualified Data.Set              as S
 findPackageByName ∷ PortageConfig → String → Maybe Package
 findPackageByName pc x =
   let tree = pcTree pc
-      cat = find (\(c, _) -> case M.lookup (c ++ "/" ++ x) tree of
-                              Just _  -> True
-                              Nothing -> False
+      cat = find (\(c, _) → case M.lookup (c ++ "/" ++ x) tree of
+                              Just _  → True
+                              Nothing → False
                  ) $ pcCategories pc
   in case cat of
-      Just (c,_) -> findPackage pc (c ++ "/" ++ x)
-      Nothing    -> Nothing
+      Just (c,_) → findPackage pc (c ++ "/" ++ x)
+      Nothing    → Nothing
 
 findPackage ∷ PortageConfig → String → Maybe Package
 findPackage pc input =

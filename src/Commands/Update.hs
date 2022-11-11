@@ -19,9 +19,9 @@ data UpdateState
 
 updateOpts ∷ Bool → [OptDescr (UpdateState → UpdateState)]
 updateOpts _ =
-    [ Option "u" ["upgrade"] (NoArg (\s -> s { updUpgrade = True })) "run upgrade after"
-    , Option "m" ["minimal"] (NoArg (\s -> s { updMinimal = True })) "only emerge --sync"
-    , Option "s" ["store"]   (NoArg (\s -> s { updStore = True }))   "store new config after update"
+    [ Option "u" ["upgrade"] (NoArg (\s → s { updUpgrade = True })) "run upgrade after"
+    , Option "m" ["minimal"] (NoArg (\s → s { updMinimal = True })) "only emerge --sync"
+    , Option "s" ["store"]   (NoArg (\s → s { updStore = True }))   "store new config after update"
     ]
 
 update ∷ Handle → IORef PortageConfig → UpdateState → [String] → IO ()
@@ -31,7 +31,7 @@ update h rpc upds _ = do
     runIfExists "/usr/bin/egencache" "egencache" ["--repo=gentoo", "--update"]
     runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
   when (updStore upds) $ do
-    pc <- portageConfig h
+    pc ← portageConfig h
     writeIORef rpc pc
   when (updUpgrade upds) $
     rawAndIgnore "emerge" [ "-avuDN"
@@ -44,7 +44,7 @@ update h rpc upds _ = do
        minimal = updMinimal upds
 
 updateMyAss ∷ HakuMonad m ⇒ UpdateState → [String] → m ()
-updateMyAss us xs = ask >>= \env ->
+updateMyAss us xs = ask >>= \env →
    liftIO $ update (handle env)
                    (config env) us xs
 

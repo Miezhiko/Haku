@@ -19,4 +19,4 @@ upgradeCmd = Command { command = ["upgrade"]
                      , usage = ("haku " ++)
                      , state = 𝜀
                      , options = const 𝜀
-                     , handler = \_ _ -> liftIO upgrade }
+                     , handler = \_ _ → liftIO upgrade }

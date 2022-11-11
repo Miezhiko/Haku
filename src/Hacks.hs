@@ -34,7 +34,7 @@ align ts =  let maxlengths = map (maximum ∘ map length) (transpose ts)
          formatIn n s = s ++ replicate (n - length s) ' '
 
 ifM ∷ Monad m ⇒ m Bool → m α → m α → m α
-ifM b t f = do bb <- b; if bb then t else f
+ifM b t f = do bb ← b; if bb then t else f
 
 anyM ∷ Monad m ⇒ (α → m Bool) → [α] → m Bool
 anyM p = foldr ((||^) ∘ p) (pure False)
