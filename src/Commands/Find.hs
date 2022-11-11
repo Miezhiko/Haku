@@ -41,9 +41,9 @@ maybePrintFind (p,Just eb) = do
   putStrLn []
   setSGR [Reset]
 
-findAction ∷ IORef PortageConfig → FindState → [String] → IO ()
-findAction _ _ [] = putStrLn "you should specify what to search!"
-findAction rpc fs [x] = readIORef rpc >>= \pc ->
+findAction ∷ FindState → [String] → IORef PortageConfig → IO ()
+findAction _ [] _     = putStrLn "you should specify what to search!"
+findAction fs [x] rpc = readIORef rpc >>= \pc ->
   if fndAll fs
     then do
       let tree = pcTree pc
@@ -62,13 +62,12 @@ findAction rpc fs [x] = readIORef rpc >>= \pc ->
                         prettyPrintVersions $ pVersions p
                         setSGR [Reset]
           Nothing -> putStrLn "Atom not found!"
-findAction pc fs (x:xs) = do findAction pc fs [x]
-                             findAction pc fs xs
+findAction fs (x:xs) pc = findAction fs [x] pc
+                       >> findAction fs xs pc
 
 findM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
             FindState → [String] → m ()
-findM fs xs = asks config >>= \cfg ->
-  liftIO $ findAction cfg fs xs
+findM fs xs = liftIO ∘ findAction fs xs =<< asks config
 
 findCmd ∷ Command FindState m
 findCmd = Command

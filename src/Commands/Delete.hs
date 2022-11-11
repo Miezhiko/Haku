@@ -39,18 +39,18 @@ unmerge dels xs =
                 then rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
                 else putStrLn "should run as root or have sudo installed"
 
-delete ∷ DeleteState → PortageConfig → [Atom] → IO ()
-delete _ _ []       = putStrLn "specify atom!"
-delete dels pc [x]  = case findPackage pc x of
+delete ∷ DeleteState → [Atom] → PortageConfig → IO ()
+delete _ [] _       = putStrLn "specify atom!"
+delete dels [x] pc  = case findPackage pc x of
                         Just p  -> unmerge dels [show p]
                         Nothing -> putStrLn "Atom not found!"
-delete dels _ xs    = unmerge dels xs
+delete dels xs _    = unmerge dels xs
 
 deleteM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
              DeleteState → [String] → m ()
-deleteM dels xs = asks config >>= \cfg -> do
-  pc <- liftIO $ readIORef cfg
-  liftIO $ delete dels pc xs
+deleteM dels xs =
+  liftIO ∘ ( (liftIO ∘ delete dels xs) <=< readIORef
+           ) =<< asks config
 
 deleteCmd ∷ Command DeleteState m
 deleteCmd = Command

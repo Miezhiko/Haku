@@ -59,9 +59,9 @@ findBelongs f package = do
   let versions = S.toList $ pVersions package
   findVersions package versions f
 
-belongs ∷ IORef PortageConfig → String → [String] → IO ()
-belongs _ _ [] = putStrLn "you should specify what to search!"
-belongs rpc _ [x] = readIORef rpc >>= \pc -> do
+belongs ∷ String → [String] → IORef PortageConfig → IO ()
+belongs _ [] _ = putStrLn "you should specify what to search!"
+belongs _ [x] rpc = readIORef rpc >>= \pc -> do
   let tree      = pcTree pc
       installed = M.mapMaybe onlyInstalled tree
   foundPackages <- concat <$> mapM (findBelongs x) installed
@@ -72,13 +72,12 @@ belongs rpc _ [x] = readIORef rpc >>= \pc -> do
                     putStrLn vv
                     setSGR [Reset]
     _         -> putStrLn "nothing found for this one"
-belongs pc z (x:xs) = do belongs pc z [x]
-                         belongs pc z xs
+belongs z (x:xs) pc = belongs z [x] pc
+                   >> belongs z xs pc
 
 belongsM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
               String → [String] → m ()
-belongsM s xs = asks config >>= \cfg ->
-  liftIO $ belongs cfg s xs
+belongsM s xs = liftIO ∘ belongs s xs =<< asks config
 
 belongsCmd ∷ Command String m
 belongsCmd =

@@ -9,7 +9,6 @@ module Types
   ( Command (..)
   , Command' (..)
   , module ExportedTpyes
-  , liftMyAss
   ) where
 
 import           Control.Monad.Reader  as ExportedTpyes
@@ -28,9 +27,6 @@ data Command τ m
       , options     :: Bool -> [OptDescr (τ -> τ)]
       , handler     :: (MonadReader HakuEnv m, MonadIO m) => τ -> [String] -> m ()
       }
-
-liftMyAss ∷ MonadIO m ⇒ (α → β → IO ()) → α → β → m ()
-liftMyAss io t xs = liftIO $ io t xs
 
 data Command'
   = ∀ τ. Command' (Command τ (ReaderT HakuEnv IO))

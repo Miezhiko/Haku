@@ -66,6 +66,11 @@ isHelps ∷ [String] → Bool
 isHelps (x:_) =  isHelp x
 isHelps _     =  False
 
+hakuLog ∷ (MonadReader HakuEnv m, MonadIO m)
+             ⇒ String
+             → m ()
+hakuLog msg = liftIO . flip logger msg =<< ask
+
 handleCommand ∷ String → Command' → [String] → HakuEnv → IO ()
 handleCommand cname (Command' c) args env =
   if isHelps args
@@ -81,11 +86,6 @@ handleCommand cname (Command' c) args env =
         _  -> putStrLn (unlines es)
            >> putStrLn (usageInfo (usage c cname) ∘ options c $ False)
 
-hakuLog ∷ (MonadReader HakuEnv m, MonadIO m)
-             ⇒ String
-             → m ()
-hakuLog msg = liftIO . flip logger msg =<< ask
-
 goWithArguments ∷ [String] → IO ()
 goWithArguments []                =  printHelp
 goWithArguments [a] | isVersion a =  putStrLn showMyV
@@ -93,6 +93,7 @@ goWithArguments [a] | isHelp a    =  printHelp
 goWithArguments (x:xs) = getHakuCachePath >>= \hakuCachePath ->
   withBinaryFile hakuCachePath ReadWriteMode $ \h -> do
     gentooConfig <- portageConfig h >>= newIORef
+    -- TODO better logger
     let env = HakuEnv
           { handle = h
           , logger = putStrLn

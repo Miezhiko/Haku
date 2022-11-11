@@ -14,8 +14,8 @@ maybePrintTest ∷ (Package, Maybe Ebuild) → IO ()
 maybePrintTest (p, Nothing) = putStrLn $ show p ++ " | no ebuild found"
 maybePrintTest (p, Just eb) = putStrLn $ show p ++ " | " ++ eDescription eb
 
-test ∷ IORef PortageConfig → String → [String] → IO ()
-test rpc _ _ = readIORef rpc >>= \pc -> do
+test ∷ String → [String] → IORef PortageConfig → IO ()
+test _ _ rpc = readIORef rpc >>= \pc -> do
   let tree  =  pcTree pc
   packagesWithEbuilds <- mapM (\p -> do
                                   mbeb <- findEbuild pc p
@@ -25,8 +25,7 @@ test rpc _ _ = readIORef rpc >>= \pc -> do
 
 testM ∷ (MonadReader HakuEnv m, MonadIO m) ⇒
             String → [String] → m ()
-testM s xs = asks config >>= \cfg ->
-  liftIO $ test cfg s xs
+testM s xs = liftIO ∘ test s xs =<< asks config
 
 testCmd ∷ Command String m
 testCmd = Command
