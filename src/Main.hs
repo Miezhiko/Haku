@@ -114,7 +114,6 @@ goWithArguments [a] | isHelp a    =  printHelp
 goWithArguments (x:xs) = getHakuCachePath >>= \hakuCachePath →
   withBinaryFile hakuCachePath ReadWriteMode $ \h → do
     gentooConfig ← portageConfig h >>= newIORef
-    -- TODO better logger
     let env = HakuEnv
           { handle = h
           , logger = hakuLogger
