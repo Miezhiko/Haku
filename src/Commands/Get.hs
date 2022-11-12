@@ -70,7 +70,7 @@ getCmd = Command
           { command = ["get"]
           , description = "Merge one or more variants."
           , usage = \c → "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
-          , state = GetState { gpretend = False
+          , state = GetState  { gpretend = False
                               , gupdate  = False
                               , gask     = False
                               , gbdeps   = False
