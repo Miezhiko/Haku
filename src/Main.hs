@@ -96,7 +96,9 @@ handleCommand cname (Command' c) args env =
       in case es of
         [] → do void $ runReaderT (
                   hakuLog ( "[CMD] executing " ++ cname
-                         ++ " with " ++ intercalate ", " xs
+                         ++ case xs of
+                              [] -> []
+                              ss -> " with " ++ intercalate ", " ss
                          ++ "\n" )
                   ) env
                 void $ runReaderT (
