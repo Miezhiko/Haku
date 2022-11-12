@@ -38,7 +38,6 @@ import           System.Process
 
 import           Control.Arrow
 import           Control.Monad
-import           Control.Monad.Reader
 
 parseEnvMap ∷ String → EnvMap
 parseEnvMap s = M.fromList $
@@ -110,7 +109,7 @@ mergePackages p1 p2 =
   in Package (pCategory p1) versions (pName p1)
 
 findExactMax ∷ [String] → Maybe String
-findExactMax []  = Nothing
+findExactMax [ ] = Nothing
 findExactMax [x] = Just x
 findExactMax xss = Just (maximumBy (comparing length) xss)
 
@@ -227,6 +226,6 @@ portageConfig hakuCacheHandle = do
       changemTime ← getModificationTime hakuCachePath
       let diff = diffUTCTime currentTime changemTime
       if diff > 60 -- conversion functions will treat it as seconds
-        then liftIO $ maybeUpdateConfig hakuCacheHandle
-        else liftIO $ restoreConfig hakuCacheHandle
-    else liftIO $ loadPortageConfig hakuCacheHandle
+        then maybeUpdateConfig hakuCacheHandle
+        else restoreConfig hakuCacheHandle
+    else loadPortageConfig hakuCacheHandle

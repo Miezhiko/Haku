@@ -19,21 +19,19 @@ import qualified System.IO.Strict    as Strict
 
 onlyInstalled ∷ Package → Maybe Package
 onlyInstalled p =
-  let vers = pVersions p
-      inst = S.filter pvInstalled vers
+  let inst = S.filter pvInstalled $ pVersions p
   in if S.null inst
     then Nothing
     else Just $ Package (pCategory p) inst (pName p)
 
 findContent ∷ FilePath → String → IO Bool
-findContent f x = do
-  content ← lines <$> Strict.readFile f
-  return $ any (\l → let splt = filter (not ∘ null) $ splitOn " " l
-                      in case splt of
-                         []       → False
-                         [_]      → False
-                         (t:fn:_) → (t == "obj" ∨ t == "sym") ∧ (fn == x)
-               ) content
+findContent f x =
+  any (\l → let splt = filter (not ∘ null) $ splitOn " " l
+            in case splt of
+                [ ]      → False
+                [_]      → False
+                (t:fn:_) → (t == "obj" ∨ t == "sym") ∧ (fn == x)
+      ) ∘ lines <$> Strict.readFile f
 
 findVersions ∷ Package → [PackageVersion] → String → IO [String]
 findVersions _ [] _ = return 𝜀
@@ -55,10 +53,10 @@ findVersions package (x:xs) f = do
     ff → return ff
 
 findBelongs ∷ String → Package → IO [String]
-findBelongs f package = do
-  let versions = S.toList $ pVersions package
-  findVersions package versions f
-
+findBelongs f package = findVersions package versions f
+ where versions ∷ [PackageVersion]
+       versions = S.toList $ pVersions package
+  
 belongs ∷ String → [String] → IORef PortageConfig → IO ()
 belongs _ [] _ = putStrLn "you should specify what to search!"
 belongs _ [x] rpc = readIORef rpc >>= \pc → do

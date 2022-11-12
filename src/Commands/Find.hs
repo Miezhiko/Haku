@@ -1,6 +1,7 @@
 {-# LANGUAGE
     FlexibleContexts
   , UnicodeSyntax
+  , TupleSections
   #-}
 
 module Commands.Find where
@@ -8,7 +9,7 @@ module Commands.Find where
 import           Types
 import           Utils
 
-import           Data.Foldable       (for_)
+import           Data.Foldable       (traverse_)
 import           Data.List
 import qualified Data.Map            as M
 import qualified Data.Set            as S
@@ -58,14 +59,9 @@ findAction ∷ FindState → [String] → IORef PortageConfig → IO ()
 findAction _ [] _     = putStrLn "you should specify what to search!"
 findAction fs [x] rpc = readIORef rpc >>= \pc →
   if fndAll fs
-    then do
-      let tree = pcTree pc
-          matches = M.filter (\p → x `isInfixOf` pName p) tree
-      packagesWithEbuilds ← mapM (\p → do
-                                      mbeb ← findEbuild pc p
-                                      return (p, mbeb)
-                                  ) matches
-      for_ packagesWithEbuilds $ maybePrintFind (fndInstalled fs)
+    then traverse_ (maybePrintFind (fndInstalled fs))
+         =<< mapM (\p → (p,) <$> findEbuild pc p
+                  ) (M.filter ((x `isInfixOf`) ∘ pName) (pcTree pc))
     else case findPackage pc x of
           Just p → do print p
                       mbeb ← findEbuild pc p
