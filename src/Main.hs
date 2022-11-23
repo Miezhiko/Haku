@@ -58,8 +58,9 @@ hakuLogger msg = do
   putStr ∘ formatTime defaultTimeLocale "%F %T" =<< getCurrentTime
   setSGR [ SetColor Foreground Dull Cyan
          , SetConsoleIntensity BoldIntensity ]
-  putStrLn $ " " ++ msg
+  putStr $ " " ++ msg
   setSGR [ Reset ]
+  putStrLn [] -- forcing reset!
 
 hakuLog ∷ String → HakuEnv → IO ()
 hakuLog = runReaderT ∘ hLogM
