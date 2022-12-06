@@ -5,22 +5,12 @@
 
 module Main where
 
+import           Commands
 import           Paths
 import           Types
-import           Utils
 import           Version
 
 import           Portage.Config      (portageConfig)
-
-import           Commands.Belongs
-import           Commands.Clean
-import           Commands.Delete
-import           Commands.Find
-import           Commands.Get
-import           Commands.Test
-import           Commands.Update
-import           Commands.Upgrade
-import           Commands.UwU
 
 import           Data.List
 import           Data.Time.Clock
@@ -28,25 +18,6 @@ import           Data.Time.Format    (defaultTimeLocale, formatTime)
 
 import           System.Console.ANSI
 import           System.Environment
-
-commands ∷ Bool → [Command']
-commands showPrivate =
-    [ Command' getCmd,    Command' deleteCmd
-    , Command' updateCmd, Command' upgradeCmd
-    , Command' cleanCmd
-    , Command' findCmd,   Command' belongsCmd
-    ] ++ concat
-    [ [ Command' testCmd
-      , Command' uwuCmd
-      ] | showPrivate ]
-
-findCommand ∷ String → Maybe Command'
-findCommand x = lookup x [ (n,c') | c'@(Command' c) ← commands True, n ← command c ]
-
-printCommands ∷ [Command'] → String
-printCommands = align ∘ map printCommand
-  where printCommand (Command' cmd) =
-          [intercalate ", " (command cmd), "  ", description cmd]
 
 printHelp ∷ IO ()
 printHelp = do
