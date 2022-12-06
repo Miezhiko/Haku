@@ -8,7 +8,7 @@ module Commands.Update where
 import           Types
 import           Utils
 
-import           Portage.Config (portageConfig)
+import           Portage.Config (loadPortageConfig)
 
 data UpdateState
   = UpdateState
@@ -31,7 +31,7 @@ update h rpc upds _ = do
     runIfExists "/usr/bin/egencache" "egencache" ["--repo=gentoo", "--update"]
     runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
   when (updStore upds) $ do
-    pc ← portageConfig h
+    pc ← loadPortageConfig h
     writeIORef rpc pc
   when (updUpgrade upds) $
     rawAndIgnore "emerge" [ "-avuDN"

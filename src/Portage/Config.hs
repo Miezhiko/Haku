@@ -7,6 +7,7 @@ module Portage.Config
   , portageConfig
   , restoreConfig
   , storeConfig
+  , loadPortageConfig
   ) where
 
 import           Constants

@@ -9,7 +9,7 @@ import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
-import           Portage.Config    (portageConfig)
+import           Portage.Config    (loadPortageConfig)
 
 import           System.Directory  (doesFileExist)
 import           System.Posix.User (getRealUserID)
@@ -43,7 +43,8 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root →
 owo ∷ HakuMonad m ⇒ String → [String] → m ()
 owo c xs = ask >>= \env → do
   liftIO $ uwu (config env) c xs
-  void $ liftIO ( portageConfig (handle env) )
+  liftIO $ do pc <- loadPortageConfig (handle env)
+              writeIORef (config env) pc
 
 uwuCmd ∷ Command String m
 uwuCmd = Command { command = ["uwu"]
