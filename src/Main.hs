@@ -49,8 +49,13 @@ printCommands = align ∘ map printCommand
           [intercalate ", " (command cmd), "  ", description cmd]
 
 printHelp ∷ IO ()
-printHelp = putStrLn $ showMyV ++ "\n\n"
-                               ++ printCommands (commands False)
+printHelp = do
+  setSGR [ SetColor Foreground Dull Red
+         , SetConsoleIntensity BoldIntensity
+         , SetItalicized True ]
+  putStrLn $ showMyV ++ "\n"
+  setSGR [ Reset ]
+  putStrLn $ printCommands (commands False)
 
 hakuLogger ∷ String → IO ()
 hakuLogger msg = do
