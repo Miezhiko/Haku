@@ -10,7 +10,7 @@ import           Paths
 import           Types
 import           Version
 
-import           Portage.Config      (portageConfig)
+import           Portage.Config      (portageConfig, storeConfig)
 
 import           Data.List
 import           Data.Time.Clock
@@ -77,6 +77,9 @@ goWithArguments (x:xs) = getHakuCachePath >>= \hakuCachePath →
     case findCommand x of
       Nothing → handleCommand  "get"  (Command' getCmd)  (x:xs) env
       Just c  → handleCommand  x      c                     xs  env
+    readIORef gentooConfig >>= \pc ->
+      when (pcUpdateCache pc) $
+        storeConfig h pc
 
 main ∷ IO ()
 main = getArgs >>= goWithArguments

@@ -4,10 +4,10 @@
   #-}
 module Portage.Config
   ( module Portage.Types.Config
+  , loadPortageConfig
   , portageConfig
   , restoreConfig
   , storeConfig
-  , loadPortageConfig
   ) where
 
 import           Constants
@@ -171,8 +171,8 @@ storeConfig h = BL.hPut h ∘ encode
 restoreConfig ∷ Handle → IO PortageConfig
 restoreConfig h = decode <$> BL.hGetContents h
 
-loadPortageConfig ∷ Handle → IO PortageConfig
-loadPortageConfig cacheHandle = do
+loadPortageConfig ∷ IO PortageConfig
+loadPortageConfig = do
   makeConf ← getConfigFile constMakeConfPath
   let treePath = makeConf M.! "PORTDIR"
 
@@ -194,26 +194,28 @@ loadPortageConfig cacheHandle = do
                       ∘ concatMap (snd ∘ snd)
                       $ metaList
 
-  installed ← getInstalledPackages constInstalledPath categories
+  installed     ← getInstalledPackages constInstalledPath categories
   shelterHashes ← getShelterHashes
 
   let finalTree = M.unionWith mergePackages installed merged
-      myConfig  = PortageConfig makeConf categories eclasses finalTree overlays shelterHashes
 
-  -- always cache parsed config
-  storeConfig cacheHandle myConfig
+  return $ PortageConfig makeConf
+                         categories
+                         eclasses
+                         finalTree
+                         overlays
+                         shelterHashes
+                         True -- update cahce
 
-  return myConfig
-
-updateWithMaybeShelter ∷ Handle → Maybe ShelterConfig → PortageConfig → IO PortageConfig
-updateWithMaybeShelter _ (Just shelter) binaryParsedConfig
+updateWithMaybeShelter ∷ Maybe ShelterConfig → PortageConfig → IO PortageConfig
+updateWithMaybeShelter (Just shelter) binaryParsedConfig
   | isPortageConfigIsInSync binaryParsedConfig shelter
-    = return binaryParsedConfig
-updateWithMaybeShelter h _ _ = loadPortageConfig h
+    = return $ binaryParsedConfig { pcUpdateCache = False }
+updateWithMaybeShelter _ _ = loadPortageConfig
 
 maybeUpdateConfig ∷ Handle → IO PortageConfig
 maybeUpdateConfig h = getShelterConfig >>= \shelter →
-  restoreConfig h >>= updateWithMaybeShelter h shelter
+  restoreConfig h >>= updateWithMaybeShelter shelter
 
 portageConfig ∷ Handle → IO PortageConfig
 portageConfig hakuCacheHandle = do
@@ -228,5 +230,6 @@ portageConfig hakuCacheHandle = do
       let diff = diffUTCTime currentTime changemTime
       if diff > 60 -- conversion functions will treat it as seconds
         then maybeUpdateConfig hakuCacheHandle
-        else restoreConfig hakuCacheHandle
-    else loadPortageConfig hakuCacheHandle
+        else restoreConfig hakuCacheHandle >>= \pc ->
+              return pc { pcUpdateCache = False }
+    else loadPortageConfig

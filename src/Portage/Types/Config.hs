@@ -27,6 +27,7 @@ data PortageConfig
       , pcTree          :: Tree
       , pcOverlays      :: Overlays
       , pcShelterHashes :: ShelterHashes
+      , pcUpdateCache   :: Bool
       }
   deriving (Generic)
 

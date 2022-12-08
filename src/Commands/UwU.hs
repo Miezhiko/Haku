@@ -43,8 +43,8 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root →
 owo ∷ HakuMonad m ⇒ String → [String] → m ()
 owo c xs = ask >>= \env → do
   liftIO $ uwu (config env) c xs
-  liftIO $ do pc <- loadPortageConfig (handle env)
-              writeIORef (config env) pc
+  liftIO $ do pc <- loadPortageConfig
+              writeIORef (config env) pc { pcUpdateCache = True }
 
 uwuCmd ∷ Command String m
 uwuCmd = Command { command = ["uwu"]

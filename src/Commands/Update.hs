@@ -24,15 +24,15 @@ updateOpts _ =
     , Option "s" ["store"]   (NoArg (\s → s { updStore = True }))   "store new config after update"
     ]
 
-update ∷ Handle → IORef PortageConfig → UpdateState → [String] → IO ()
-update h rpc upds _ = do
+update ∷ IORef PortageConfig → UpdateState → [String] → IO ()
+update rpc upds _ = do
   rawAndIgnore "emerge" ["--sync"]
   unless minimal $ do
     runIfExists "/usr/bin/egencache" "egencache" ["--repo=gentoo", "--update"]
     runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
   when (updStore upds) $ do
-    pc ← loadPortageConfig h
-    writeIORef rpc pc
+    pc ← loadPortageConfig
+    writeIORef rpc pc { pcUpdateCache = True }
   when (updUpgrade upds) $
     rawAndIgnore "emerge" [ "-avuDN"
                           , "@world"
@@ -45,8 +45,7 @@ update h rpc upds _ = do
 
 updateMyAss ∷ HakuMonad m ⇒ UpdateState → [String] → m ()
 updateMyAss us xs = ask >>= \env →
-   liftIO $ update (handle env)
-                   (config env) us xs
+   liftIO $ update (config env) us xs
 
 updateCmd ∷ Command UpdateState m
 updateCmd = Command
