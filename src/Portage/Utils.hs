@@ -35,7 +35,6 @@ findPackage pc input =
     then M.lookup input (pcTree pc)
     else findPackageByName pc input
 
--- TODO: no pattern matching over sets?
 findMaxVersion ∷ S.Set PackageVersion → PortageConfig → Package → IO (Maybe Ebuild)
 findMaxVersion versions pc package =
   let mv = maximum versions

@@ -46,12 +46,12 @@ merge gs xs =
         ++   ["-v" | gverbose gs]
         ++   ["--with-bdeps=y" | gbdeps gs]
   in (== 0) <$> getRealUserID >>= \root →
-      if root ∨ pretend
-        then rawAndIgnore "emerge" (opts ++ xs)
-        else doesFileExist cosntSudoPath >>= \sudoExists →
-              if sudoExists
-                then rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
-                else putStrLn "should run as root or have sudo installed"
+    if root ∨ pretend
+      then rawAndIgnore "emerge" (opts ++ xs)
+      else doesFileExist cosntSudoPath >>= \sudoExists →
+            if sudoExists
+              then rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
+              else putStrLn "should run as root or have sudo installed"
 
 emerge ∷ GetState → [Atom] → PortageConfig → IO ()
 emerge _ [] _     = putStrLn "specify atom!"

@@ -11,6 +11,8 @@ import           Utils
 
 import           Portage.Config    (loadPortageConfig)
 
+import           Shelter.Checker
+
 import           System.Directory  (doesFileExist)
 import           System.Posix.User (getRealUserID)
 
@@ -18,7 +20,10 @@ import           System.Posix.User (getRealUserID)
 uwu ∷ IORef PortageConfig → String → [String] → IO ()
 uwu _ _ _ = (== 0) <$> getRealUserID >>= \root →
   if root then do
-    rawAndIgnore "shelter" 𝜀
+    doesFileExist "/usr/bin/shelter" >>= \shelterBinExists ->
+      if shelterBinExists
+        then rawAndIgnore "shelter" 𝜀
+        else updateAll
     rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
     rawAndIgnore "eix-update" 𝜀
     rawAndIgnore "emerge" [ "-avuDN", "@world"

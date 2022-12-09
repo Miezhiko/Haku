@@ -8,17 +8,20 @@ module Shelter.Checker
   , getShelterConfig
   , isAllRepositoriesUpdated
   , isRepositoryUpdated
+  , updateAll
   ) where
 
-import           Hacks
+import           Utils
 
 import           Shelter.Trim
 import           Shelter.Types
 
+import           Data.Foldable     (for_)
 import           Data.List
 import           Data.List.Split
 
 import           Control.Exception
+import           Control.Monad
 
 import           System.Directory
 import           System.FilePath
@@ -86,3 +89,12 @@ isShelterRepositoryUpdated node =
 
 isAllRepositoriesUpdated ∷ ShelterConfig → IO Bool
 isAllRepositoriesUpdated = allM isShelterRepositoryUpdated
+
+updateAll ∷ IO ()
+updateAll = getShelterConfig >>= \case
+  Nothing -> return ()
+  Just shelter -> for_ shelter $ \node ->
+    let path = target node
+    in doesDirectoryExist (path </> ".git") >>= \dirExists → when dirExists $
+      withCurrentDirectory path $ checkForHash (hash node) >>= \upadated ->
+        unless upadated $ rawAndIgnore "git" ["pull", upstream node]

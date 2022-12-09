@@ -1,12 +1,15 @@
 {-# LANGUAGE
     UnicodeSyntax
   #-}
+
 module Portage.Ebuild where
 
 import           Hacks
 
 import           Data.List
-import qualified Data.Map  as M
+import qualified Data.Map         as M
+
+import qualified System.IO.Strict as Strict
 
 data Ebuild
   = Ebuild
@@ -34,17 +37,12 @@ stringSeq ∷ String → b → b
 stringSeq []      c =  c
 stringSeq (_:xs)  c =  stringSeq xs c
 
--- TODO: maybe use Strict.readFile instead
-strictReadFile ∷ FilePath → IO String
-strictReadFile f  =   do  ff ← readFile f
-                          ff `stringSeq` return ff
-
 (!.) ∷ M.Map String String → String → String
 m !. k = maybe "" removeJunk (M.lookup k m)
 
 getEbuild ∷ FilePath → IO Ebuild
 getEbuild f = do
-  e ← lines <$> strictReadFile f
+  e ← lines <$> Strict.readFile f
   let em = readStringMap e
       inh = find (`isPrefixOf` "inherit ") e
       inherts = case inh of
