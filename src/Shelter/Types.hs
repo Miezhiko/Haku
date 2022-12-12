@@ -7,6 +7,7 @@ module Shelter.Types
   ( ShelterConfig
   , ShelterNode (..)
   , getShelterConfig
+  , updateShelterConfig
   ) where
 
 import           Paths                 (getShelterConfPath)
@@ -42,8 +43,15 @@ instance ToJSON ShelterNode where
 ymlDecode ∷ FromJSON iFromJSONable ⇒ FilePath → IO iFromJSONable
 ymlDecode = decodeThrow <=< BS.readFile
 
+ymlEncode ∷ ToJSON iToJSONable ⇒ FilePath → iToJSONable → IO()
+ymlEncode = (. encode) . BS.writeFile
+
 getShelterConfig ∷ IO (Maybe ShelterConfig)
 getShelterConfig = getShelterConfPath >>= \shelterCfgPath →
   doesFileExist shelterCfgPath >>= \shelterCfgExists →
     if shelterCfgExists then ymlDecode shelterCfgPath
                         else return Nothing
+
+updateShelterConfig ∷ ShelterConfig → IO ()
+updateShelterConfig shelter = getShelterConfPath >>= \shelterCfgPath →
+  ymlEncode shelterCfgPath shelter
