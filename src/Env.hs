@@ -1,6 +1,7 @@
 {-# LANGUAGE
     UnicodeSyntax
   #-}
+
 module Env
   ( module ExportedTpyes
   , HakuEnv (..)
@@ -14,6 +15,6 @@ import           System.IO            as ExportedTpyes
 data HakuEnv
   = HakuEnv
       { handle :: Handle
-      , logger :: String → IO ()
+      , logger :: String -> IO ()
       , config :: IORef PortageConfig
       }

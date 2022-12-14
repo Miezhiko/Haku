@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.38
+version: 0.0.39
 license: AGPL-3
 
 build-type: Simple
@@ -16,6 +16,7 @@ Executable haku
     Env,
     Utils,
     Version,
+    Logger,
     Commands,
     Shelter.Types,
     Shelter.Trim,

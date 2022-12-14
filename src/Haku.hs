@@ -6,6 +6,7 @@
 module Main where
 
 import           Commands
+import           Logger
 import           Paths
 import           Types
 import           Version
@@ -13,9 +14,6 @@ import           Version
 import           Portage.Config      (portageConfig, storeConfig)
 
 import           Data.List
-import           Data.Time.Format    (defaultTimeLocale, formatTime)
-import           Data.Time.LocalTime (getZonedTime)
-
 import           System.Console.ANSI
 import           System.Environment
 
@@ -27,21 +25,6 @@ printHelp = do
   putStrLn $ showMyV ++ "\n"
   setSGR [ Reset ]
   putStrLn $ printCommands (commands False)
-
-hakuLogger ∷ String → IO ()
-hakuLogger msg = do
-  setSGR [ SetColor Foreground Vivid Magenta ]
-  putStr ∘ formatTime defaultTimeLocale "%F %T" =<< getZonedTime
-  setSGR [ SetColor Foreground Dull Cyan
-         , SetConsoleIntensity BoldIntensity ]
-  putStr $ " " ++ msg
-  setSGR [ Reset ]
-  putStrLn [] -- forcing reset!
-
-hakuLog ∷ String → HakuEnv → IO ()
-hakuLog = runReaderT ∘ hLogM
- where hLogM ∷ HakuMonad m ⇒ String → m ()
-       hLogM msg = liftIO ∘ flip logger msg =<< ask
 
 hakuHandle ∷ Command τ (ReaderT HakuEnv IO) → [τ → τ] → [String] → HakuEnv → IO ()
 hakuHandle cmd ss xs = runReaderT (handleM cmd ss xs)
