@@ -55,9 +55,12 @@ merge gs xs =
 
 emerge ∷ GetState → [Atom] → PortageConfig → IO ()
 emerge _ [] _     = putStrLn "specify atom!"
-emerge gs [x] pc  = case findPackage pc x of
-                        Just p  → merge gs [show p]
-                        Nothing → putStrLn "Atom not found!"
+emerge gs [x] pc  =
+  if head x == '@'
+    then merge gs [x]
+    else case findPackage pc x of
+          Just p  → merge gs [show p]
+          Nothing → putStrLn "Atom not found!"
 emerge gs xs _    = merge gs xs
 
 getPackageM ∷ HakuMonad m ⇒ GetState → [String] → m ()
