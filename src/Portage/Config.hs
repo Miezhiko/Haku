@@ -13,7 +13,6 @@ module Portage.Config
 import           Constants
 import           Env
 import           Hacks
-import           Paths
 
 import           Portage.Types.Config
 import           Portage.Types.Package
@@ -217,20 +216,15 @@ maybeUpdateConfig ∷ Handle → IO PortageConfig
 maybeUpdateConfig h = getShelterConfig >>= \shelter →
   restoreConfig h >>= updateWithMaybeShelter shelter
 
-portageConfig ∷ Handle → IO PortageConfig
-portageConfig hakuCacheHandle = do
-  hakuCachePath ← getHakuCachePath
-  cacheExists   ← doesFileExist hakuCachePath
-  if cacheExists
-    then do
-      -- if cache is more than one minute old recheck if
-      -- shelter hashes changed (update was made and was meaningful)
-      currentTime ← getCurrentTime
-      -- getModificationTime returns UTC time (as it's in type)
-      changemTime ← getModificationTime hakuCachePath
-      let diff = diffUTCTime currentTime changemTime
-      if diff > 60 -- conversion functions will treat it as seconds
-        then maybeUpdateConfig hakuCacheHandle
-        else restoreConfig hakuCacheHandle >>= \pc ->
-              return pc { pcUpdateCache = False }
-    else loadPortageConfig
+portageConfig ∷ FilePath → Handle → IO PortageConfig
+portageConfig hakuCachePath hakuCacheHandle = do
+  -- if cache is more than one minute old recheck if
+  -- shelter hashes changed (update was made and was meaningful)
+  currentTime ← getCurrentTime
+  -- getModificationTime returns UTC time (as it's in type)
+  changemTime ← getModificationTime hakuCachePath
+  let diff = diffUTCTime currentTime changemTime
+  if diff > 60 -- conversion functions will treat it as seconds
+    then maybeUpdateConfig hakuCacheHandle
+    else restoreConfig hakuCacheHandle >>= \pc ->
+          return pc { pcUpdateCache = False }

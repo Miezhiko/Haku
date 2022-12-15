@@ -11,10 +11,11 @@ import           Paths
 import           Types
 import           Version
 
-import           Portage.Config      (portageConfig, storeConfig)
+import           Portage.Config
 
 import           Data.List
 import           System.Console.ANSI
+import           System.Directory    (doesFileExist)
 import           System.Environment
 
 printHelp ∷ IO ()
@@ -49,9 +50,12 @@ goWithArguments ∷ [String] → IO ()
 goWithArguments []                =  printHelp
 goWithArguments [a] | isVersion a =  putStrLn showMyV
 goWithArguments [a] | isHelp a    =  printHelp
-goWithArguments (x:xs) = getHakuCachePath >>= \hakuCachePath →
+goWithArguments (x:xs) = getHakuCachePath >>= \hakuCachePath → do
+  cacheExists ← doesFileExist hakuCachePath
   withBinaryFile hakuCachePath ReadWriteMode $ \h → do
-    gentooConfig ← portageConfig h >>= newIORef
+    gentooConfig ←
+      if cacheExists then portageConfig hakuCachePath h >>= newIORef
+                     else loadPortageConfig >>= newIORef
     let env = HakuEnv
           { handle = h
           , logger = hakuLogger
