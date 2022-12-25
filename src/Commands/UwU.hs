@@ -17,8 +17,8 @@ import           System.Directory  (doesFileExist)
 import           System.Posix.User (getRealUserID)
 
 {- HLINT ignore "Redundant <$>" -}
-uwu ∷ IORef PortageConfig → String → [String] → IO ()
-uwu _ _ _ = (== 0) <$> getRealUserID >>= \root →
+runUpgradeScripts ∷ IO ()
+runUpgradeScripts = (== 0) <$> getRealUserID >>= \root →
   if root then do
     doesFileExist "/usr/bin/shelter" >>= \shelterBinExists ->
       if shelterBinExists
@@ -46,9 +46,9 @@ uwu _ _ _ = (== 0) <$> getRealUserID >>= \root →
       else putStrLn "should run as root or have sudo installed"
 
 owo ∷ HakuMonad m ⇒ String → [String] → m ()
-owo c xs = ask >>= \env → do
-  liftIO $ uwu (config env) c xs
-  liftIO $ do pc <- loadPortageConfig
+owo _ _ = ask >>= \env → do
+  liftIO $ do runUpgradeScripts
+              pc <- loadPortageConfig
               writeIORef (config env) pc { pcUpdateCache = True }
 
 uwuCmd ∷ Command String m

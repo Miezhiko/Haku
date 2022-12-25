@@ -56,7 +56,7 @@ findBelongs ∷ String → Package → IO [String]
 findBelongs f package = findVersions package versions f
  where versions ∷ [PackageVersion]
        versions = S.toList $ pVersions package
-  
+
 belongs ∷ String → [String] → IORef PortageConfig → IO ()
 belongs _ [] _ = putStrLn "you should specify what to search!"
 belongs _ [x] rpc = readIORef rpc >>= \pc → do

@@ -156,7 +156,7 @@ getInstalledPackages pkgdb categories = do
                             treeCats
   catMaps ← mapM (\(fcat, cat) → do
                     pkgFiles ← getFilteredDirectoryContents fcat
-                    let myCat = find (\(c, _) → cat == c
+                    let myCat = find ((cat ==) ∘ fst
                                      ) categories
                     case myCat of
                       Just (_,pkgs) → findPackages fcat cat pkgFiles pkgs
