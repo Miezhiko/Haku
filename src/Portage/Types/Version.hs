@@ -73,7 +73,7 @@ showPackageVersion (PackageVersion v ov True)  = show v ++ "::" ++ ov ++ " [Inst
 showPackageVersion (PackageVersion v ov False) = show v ++ "::" ++ ov
 
 parseVersion ∷ String → Either ParseError Version
-parseVersion = parse (readVersion >>= \x → eof >> return x) "<version number>"
+parseVersion = parse (readVersion >>= \x → eof >> pure x) "<version number>"
 
 readVer      ∷  CharParser st ([Int],          String)
 readNum      ∷  CharParser st (Int,            String)
@@ -86,12 +86,12 @@ readRev      ∷  CharParser st (Int,            String)
 readVer      =  fmap (second (intercalate ".") . unzip) (sepBy1 readNum (char '.'))
 readNum      =  do  ds ← many1 digit
                     case read ds of
-                      n → return (n,ds)
+                      n → pure (n,ds)
 readC        =  option (Nothing,  "")  (fmap (\x → (Just x, [x])) letter)
 readSuf      =  do  _       ← char '_'
                     (f,sr)  ← readSufType
                     (n,nr)  ← option (0, "") readNum
-                    return (f n,"_" ++ sr ++ nr)
+                    pure (f n,"_" ++ sr ++ nr)
 
 readSufType  =  choice [ fmap (Alpha,)  (try $ string "alpha")
                        , fmap (Beta,)   (try $ string "beta" )
@@ -103,7 +103,7 @@ readSufType  =  choice [ fmap (Alpha,)  (try $ string "alpha")
 readSufs     =  fmap ( second concat . unzip ) (many readSuf)
 readRev      =  option (0,        "")  (  do  rr      ← string "-r"
                                               (n,nr)  ← readNum
-                                              return (n,rr ++ nr)
+                                              pure (n,rr ++ nr)
                                        )
 
 readVersion ∷ CharParser st Version
@@ -112,4 +112,4 @@ readVersion =  do  (ver,  verr)  ←  readVer
                    (suf,  sufr)  ←  readSufs
                    (rev,  revr)  ←  readRev
                    let rep = verr ++ cr ++ sufr ++ revr
-                   return (Version ver c suf rev rep)
+                   pure $ Version ver c suf rev rep

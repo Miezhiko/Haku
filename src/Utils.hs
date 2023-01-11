@@ -19,7 +19,7 @@ import           System.Process
 import           Control.Monad
 
 checkExitCode ∷ ExitCode → IO ()
-checkExitCode ExitSuccess = return ()
+checkExitCode ExitSuccess = pure ()
 checkExitCode (ExitFailure γ) =
     error $ "failed with exit code: " ++ show γ
 

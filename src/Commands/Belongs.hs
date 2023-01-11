@@ -34,7 +34,7 @@ findContent f x =
       ) ∘ lines <$> Strict.readFile f
 
 findVersions ∷ Package → [PackageVersion] → String → IO [String]
-findVersions _ [] _ = return 𝜀
+findVersions _ [] _ = pure 𝜀
 findVersions package [x] f =
   let path = constInstalledPath </> pCategory package
                                 </> pName package ++ "-" ++ show (pvVersion x)
@@ -43,14 +43,14 @@ findVersions package [x] f =
  where parse ∷ String → String → Bool → IO [String]
        parse e target True  =
          findContent e target >>= \found →
-          if found then return [show package, show x]
-                   else return 𝜀
-       parse _ _ False = return 𝜀
+          if found then pure [show package, show x]
+                   else pure 𝜀
+       parse _ _ False = pure 𝜀
 findVersions package (x:xs) f = do
   f1 ← findVersions package [x] f
   case f1 of
     [] → findVersions package xs f
-    ff → return ff
+    ff → pure ff
 
 findBelongs ∷ String → Package → IO [String]
 findBelongs f package = findVersions package versions f

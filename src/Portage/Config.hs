@@ -43,7 +43,7 @@ parseEnvMap ∷ String → EnvMap
 parseEnvMap s = M.fromList $
                    [  (v,stripQuotes c) | 
                       l ← lines s,
-                      (v,'=':c) ← return $ break (=='=') l ]
+                      (v,'=':c) ← pure $ break (=='=') l ]
   where  stripQuotes ('\'':r@(_:_)) =  init r
          stripQuotes x              =  x
 
@@ -54,14 +54,14 @@ getConfigFile ∷ FilePath → IO EnvMap
 getConfigFile f =  do  (_,r,_) ← readCreateProcessWithExitCode (
                                     shell $  "unset $(set | sed 's/^\\([^=]*\\)=.*$/\\1/') 2>/dev/null;" ++
                                              "source " ++ f ++ "; set" ) []
-                       return (parseEnvMap r)
+                       pure $ parseEnvMap r
 
 getVersions ∷ String → String → String → IO (S.Set PackageVersion)
 getVersions fp pn o = do
   dirContent ← getFilteredDirectoryContents fp
   let ebuilds   = filter (isSuffixOf ".ebuild") dirContent
       versions  = map (getVersion o pn) ebuilds
-  return $ S.fromList versions
+  pure $ S.fromList versions
 
 parseOverlay ∷ FilePath → IO (([Package], [String]), OverlayMeta)
 parseOverlay treePath = do
@@ -77,9 +77,9 @@ parseOverlay treePath = do
                                                   (filter (∉ ["metadata.xml"]) packages)
                     parsed ← mapM (\(fp, pn) → do
                                 versions ← getVersions fp pn overlayName
-                                return $ Package cat versions pn
+                                pure $ Package cat versions pn
                               ) packagesFiltered
-                    return (parsed, (cat, map snd packagesFiltered))
+                    pure (parsed, (cat, map snd packagesFiltered))
                  ) filteredCats -- [[package], a]
   let pkgs = concatMap fst catMap
       cpkg = map snd catMap
@@ -87,12 +87,12 @@ parseOverlay treePath = do
 
   eclasses ← if ecls
     then getFilteredDirectoryContents $ treePath </> "eclass"
-    else return 𝜀
+    else pure 𝜀
 
   let packagesEclasses = (pkgs, eclasses)
       overlayMeta = (overlayName, (treePath, cpkg))
 
-  return (packagesEclasses, overlayMeta)
+  pure (packagesEclasses, overlayMeta)
 
 parseOverlays ∷ String → IO (Tree, [OverlayMeta])
 parseOverlays input = do
@@ -101,7 +101,7 @@ parseOverlays input = do
   let treePkgs  = concatMap (fst . fst) parsed
       trees     = map (\p → (pCategory p ++ "/" ++ pName p, p)) treePkgs
       ovMetas   = map snd parsed
-  return (M.fromList trees, ovMetas)
+  pure (M.fromList trees, ovMetas)
 
 mergePackages ∷ Package → Package → Package
 mergePackages p1 p2 =
@@ -114,11 +114,11 @@ findExactMax [x] = Just x
 findExactMax xss = Just (maximumBy (comparing length) xss)
 
 getPackage ∷ String → String → Maybe String → String → IO (Maybe (Atom, Package))
-getPackage _ _ Nothing _ = return Nothing
+getPackage _ _ Nothing _ = pure Nothing
 getPackage fcat cat (Just pn) vp = do
   overlay ← rstrip <$> Strict.readFile (fcat </> vp </> "repository")
   let versions = S.singleton (getVersionInstalled overlay pn vp)
-  return $ Just (cat ++ "/" ++ pn, Package cat versions pn)
+  pure $ Just (cat ++ "/" ++ pn, Package cat versions pn)
 
 concatPackageGroups ∷ [(Atom, Package)] → [(Atom, Package)]
 concatPackageGroups [] = 𝜀
@@ -140,7 +140,7 @@ findPackages fcat cat versionedPkgs pkgs = do
   let srt = sortBy (\(a, _) (b, _) → compare a b) (catMaybes l)
       grp = groupBy (\(a, _) (b, _) → a == b) srt
       gmp = concatMap concatPackageGroups grp
-  return $ M.fromList gmp
+  pure $ M.fromList gmp
 
 concatMaps ∷ Tree → [Tree] → Tree
 concatMaps base []     = base
@@ -160,9 +160,9 @@ getInstalledPackages pkgdb categories = do
                                      ) categories
                     case myCat of
                       Just (_,pkgs) → findPackages fcat cat pkgFiles pkgs
-                      Nothing       → return M.empty
+                      Nothing       → pure M.empty
                   ) filteredCats
-  return $ concatMaps M.empty catMaps
+  pure $ concatMaps M.empty catMaps
 
 storeConfig ∷ Handle → PortageConfig → IO ()
 storeConfig h = BL.hPut h ∘ encode
@@ -180,7 +180,7 @@ loadPortageConfig = do
 
   (ov, met) ← case M.lookup "PORTDIR_OVERLAY" makeConf of
                   Just o  → parseOverlays o
-                  Nothing → return (M.empty, 𝜀)
+                  Nothing → pure (M.empty, 𝜀)
 
   let atoms       = map (\p → (pCategory p ++ "/" ++ pName p, p)) catMap
       pkgs        = M.fromList atoms
@@ -198,18 +198,18 @@ loadPortageConfig = do
 
   let finalTree = M.unionWith mergePackages installed merged
 
-  return $ PortageConfig makeConf
-                         categories
-                         eclasses
-                         finalTree
-                         overlays
-                         shelterHashes
-                         True -- update cahce
+  pure $ PortageConfig makeConf
+                       categories
+                       eclasses
+                       finalTree
+                       overlays
+                       shelterHashes
+                       True -- update cahce
 
 updateWithMaybeShelter ∷ Maybe ShelterConfig → PortageConfig → IO PortageConfig
 updateWithMaybeShelter (Just shelter) binaryParsedConfig
   | isPortageConfigIsInSync binaryParsedConfig shelter
-    = return $ binaryParsedConfig { pcUpdateCache = False }
+    = pure $ binaryParsedConfig { pcUpdateCache = False }
 updateWithMaybeShelter _ _ = loadPortageConfig
 
 maybeUpdateConfig ∷ Handle → IO PortageConfig
@@ -227,4 +227,4 @@ portageConfig hakuCachePath hakuCacheHandle = do
   if diff > 60 -- conversion functions will treat it as seconds
     then maybeUpdateConfig hakuCacheHandle
     else restoreConfig hakuCacheHandle >>= \pc ->
-          return pc { pcUpdateCache = False }
+          pure pc { pcUpdateCache = False }

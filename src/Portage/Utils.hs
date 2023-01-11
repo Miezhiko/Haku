@@ -48,11 +48,11 @@ findMaxVersion versions pc package =
   in doesFileExist ep >>= parse ep
  where parse ∷ String → Bool → IO (Maybe Ebuild)
        parse e True  = Just <$> getEbuild e
-       parse _ False = return Nothing
+       parse _ False = pure Nothing
 
 findEbuild ∷ PortageConfig → Package → IO (Maybe Ebuild)
 findEbuild pc package =
   let versions = pVersions package
   in if S.null versions
-      then return Nothing
+      then pure Nothing
       else findMaxVersion versions pc package

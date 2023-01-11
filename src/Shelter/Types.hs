@@ -50,7 +50,7 @@ getShelterConfig ∷ IO (Maybe ShelterConfig)
 getShelterConfig = getShelterConfPath >>= \shelterCfgPath →
   doesFileExist shelterCfgPath >>= \shelterCfgExists →
     if shelterCfgExists then ymlDecode shelterCfgPath
-                        else return Nothing
+                        else pure Nothing
 
 updateShelterConfig ∷ ShelterConfig → IO ()
 updateShelterConfig shelter = getShelterConfPath >>= \shelterCfgPath →

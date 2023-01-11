@@ -34,36 +34,36 @@ readIfSucc   -- useless wrapper on readCheck to return Maybe
   → IO (Maybe String)
 readIfSucc γ args =
   readCheck γ args
-  >>= \case Left _ → return Nothing
+  >>= \case Left _ → pure Nothing
             Right val → do putStr $ γ ++ " : " ++ val
-                           return (Just val)
+                           pure $ Just val
 
 getRemoteHash ∷ IO (Maybe String)
 getRemoteHash = do
   currentBranch ← readProcess "git" ["rev-parse", "--abbrev-ref", "HEAD"] []
   rlm ← readIfSucc "git" ["ls-remote", "origin", trim currentBranch]
   case rlm of
-    Nothing  → return Nothing
-    Just rlc → return $ Just (head (splitOn "\t" rlc))
+    Nothing  → pure Nothing
+    Just rlc → pure $ Just (head (splitOn "\t" rlc))
 
 checkForHash ∷ String → Maybe String → IO Bool
 checkForHash rlc Nothing = do
   currentHash ← readProcess "git" ["log", "-n", "1"
-                                   , "--pretty=format:%H"
-                                   ] []
-  return $ rlc == trim currentHash
+                                  , "--pretty=format:%H"
+                                  ] []
+  pure $ rlc == trim currentHash
 checkForHash rlc (Just shelterHash) =
-  return $ rlc == shelterHash
+  pure $ rlc == shelterHash
 
 updateNode ∷ ShelterNode → IO ShelterNode
 updateNode node = do
   getRemoteHash >>=
-   \case Nothing  -> return node
+   \case Nothing  -> pure node
          Just r   -> checkForHash r (hash node) >>=
-          \case False -> return node
+          \case False -> pure node
                 True  -> do
                   rawAndIgnore "git" ["pull", upstream node]
-                  return $ node { hash = Just r }
+                  pure $ node { hash = Just r }
 
 updateAll ∷ IO ()
 updateAll = getShelterConfig >>= \case

@@ -22,8 +22,8 @@ populateHashesMap shelter = M.fromList listMap
 
 getShelterHashes ∷ IO (M.Map FilePath (Maybe String))
 getShelterHashes = getShelterConfig >>=
-  \case Nothing → return M.empty
-        Just sh → return $ populateHashesMap sh
+  \case Nothing → pure M.empty
+        Just sh → pure $ populateHashesMap sh
 
 isShelterRepositoryInSync ∷ ShelterHashes → ShelterNode  → Bool
 isShelterRepositoryInSync hashes n =
