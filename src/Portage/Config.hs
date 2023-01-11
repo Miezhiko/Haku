@@ -70,17 +70,17 @@ parseOverlay treePath = do
   filteredCats ← filterM (\(f, _) → getFileStatus f <&> isDirectory)
                       $ map (\c → (treePath </> c, c))
                             (filter (∉ [".git","eclass","metadata","profiles"]) treeCats)
-  catMap ← mapM (\(fcat, cat) → do
-                    packages ← getFilteredDirectoryContents fcat
-                    packagesFiltered ← filterM (\(fp, _) → getFileStatus fp <&> isDirectory)
-                                            $ map (\p → (fcat </> p, p))
-                                                  (filter (∉ ["metadata.xml"]) packages)
-                    parsed ← mapM (\(fp, pn) → do
-                                versions ← getVersions fp pn overlayName
-                                pure $ Package cat versions pn
-                              ) packagesFiltered
-                    pure (parsed, (cat, map snd packagesFiltered))
-                 ) filteredCats -- [[package], a]
+  catMap ← traverse (\(fcat, cat) → do
+      packages ← getFilteredDirectoryContents fcat
+      packagesFiltered ← filterM (\(fp, _) → getFileStatus fp <&> isDirectory)
+                              $ map (\p → (fcat </> p, p))
+                                    (filter (∉ ["metadata.xml"]) packages)
+      parsed ← traverse (\(fp, pn) → do
+          versions ← getVersions fp pn overlayName
+          pure $ Package cat versions pn
+        ) packagesFiltered
+      pure (parsed, (cat, map snd packagesFiltered))
+    ) filteredCats -- [[package], a]
   let pkgs = concatMap fst catMap
       cpkg = map snd catMap
       ecls = "eclass" ∈ treeCats
@@ -97,7 +97,7 @@ parseOverlay treePath = do
 parseOverlays ∷ String → IO (Tree, [OverlayMeta])
 parseOverlays input = do
   let overlys = filter (not ∘ null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] input
-  parsed ← mapM parseOverlay overlys
+  parsed ← traverse parseOverlay overlys
   let treePkgs  = concatMap (fst . fst) parsed
       trees     = map (\p → (pCategory p ++ "/" ++ pName p, p)) treePkgs
       ovMetas   = map snd parsed
@@ -134,9 +134,9 @@ concatPackageGroups xs =
 
 findPackages ∷ String → String → [String] → [String] → IO Tree
 findPackages fcat cat versionedPkgs pkgs = do
-  l ← mapM (\vpkg → let mb = filter (`isPrefixOf` vpkg) pkgs
-                      in getPackage fcat cat (findExactMax mb) vpkg
-            ) versionedPkgs
+  l ← traverse (\vpkg → let mb = filter (`isPrefixOf` vpkg) pkgs
+                        in getPackage fcat cat (findExactMax mb) vpkg
+               ) versionedPkgs
   let srt = sortBy (\(a, _) (b, _) → compare a b) (catMaybes l)
       grp = groupBy (\(a, _) (b, _) → a == b) srt
       gmp = concatMap concatPackageGroups grp
@@ -154,14 +154,14 @@ getInstalledPackages pkgdb categories = do
   filteredCats  ← filterM (\(f, _) → getFileStatus f <&> isDirectory)
                       $ map (\c → (pkgdb </> c, c))
                             treeCats
-  catMaps ← mapM (\(fcat, cat) → do
-                    pkgFiles ← getFilteredDirectoryContents fcat
-                    let myCat = find ((cat ==) ∘ fst
-                                     ) categories
-                    case myCat of
-                      Just (_,pkgs) → findPackages fcat cat pkgFiles pkgs
-                      Nothing       → pure M.empty
-                  ) filteredCats
+  catMaps ← traverse (\(fcat, cat) → do
+      pkgFiles ← getFilteredDirectoryContents fcat
+      let myCat = find ((cat ==) ∘ fst
+                        ) categories
+      case myCat of
+        Just (_,pkgs) → findPackages fcat cat pkgFiles pkgs
+        Nothing       → pure M.empty
+    ) filteredCats
   pure $ concatMaps M.empty catMaps
 
 storeConfig ∷ Handle → PortageConfig → IO ()

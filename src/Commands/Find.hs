@@ -60,8 +60,8 @@ findAction _ [] _     = putStrLn "you should specify what to search!"
 findAction fs [x] rpc = readIORef rpc >>= \pc →
   if fndAll fs
     then traverse_ (maybePrintFind (fndInstalled fs))
-         =<< mapM (\p → (p,) <$> findEbuild pc p
-                  ) (M.filter ((x `isInfixOf`) ∘ pName) (pcTree pc))
+         =<< traverse (\p → (p,) <$> findEbuild pc p
+                      ) (M.filter ((x `isInfixOf`) ∘ pName) (pcTree pc))
     else case findPackage pc x of
           Just p → do print p
                       mbeb ← findEbuild pc p

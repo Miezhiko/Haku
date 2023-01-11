@@ -62,7 +62,7 @@ belongs _ [] _ = putStrLn "you should specify what to search!"
 belongs _ [x] rpc = readIORef rpc >>= \pc → do
   let tree      = pcTree pc
       installed = M.mapMaybe onlyInstalled tree
-  foundPackages ← concat <$> mapM (findBelongs x) installed
+  foundPackages ← concat <$> traverse (findBelongs x) installed
   case foundPackages of
     (p:vv:_) → do setSGR [ SetColor Foreground Dull Green
                          , SetConsoleIntensity BoldIntensity
