@@ -19,14 +19,12 @@ import           System.Console.ANSI
 data FindState
   = FindState
       { fndExact     :: Bool
-      , fndAll       :: Bool
       , fndInstalled :: Bool
       }
 
 findOpts ∷ Bool → [OptDescr (FindState → FindState)]
 findOpts _ =
-    [ Option "e" ["exact"] (NoArg (\s → s { fndExact = True })) "find exact ebuild/package"
-    , Option "a" ["all"] (NoArg (\s → s { fndAll = True })) "find all (part of name)"
+    [ Option "e" ["exact"]     (NoArg (\s → s { fndExact = True }))     "find exact ebuild/package"
     , Option "i" ["installed"] (NoArg (\s → s { fndInstalled = True })) "find installed atom"
     ]
 
@@ -58,11 +56,8 @@ maybePrintFind True (p,Just eb) =
 findAction ∷ FindState → [String] → IORef PortageConfig → IO ()
 findAction _ [] _     = putStrLn "you should specify what to search!"
 findAction fs [x] rpc = readIORef rpc >>= \pc →
-  if fndAll fs
-    then traverse_ (maybePrintFind (fndInstalled fs))
-         =<< traverse (\p → (p,) <$> findEbuild pc p
-                      ) (M.filter ((x `isInfixOf`) ∘ pName) (pcTree pc))
-    else case findPackage pc x of
+  if fndExact fs -- find exact is mostly useless but fast
+    then case findPackage pc x of
           Just p → do print p
                       mbeb ← findEbuild pc p
                       setSGR [SetColor Foreground Vivid Blue]
@@ -71,6 +66,9 @@ findAction fs [x] rpc = readIORef rpc >>= \pc →
                       prettyPrintVersions $ pVersions p
                       setSGR [Reset]
           Nothing → putStrLn "Atom not found!"
+    else traverse_ (maybePrintFind (fndInstalled fs))
+         =<< traverse (\p → (p,) <$> findEbuild pc p
+                      ) (M.filter ((x `isInfixOf`) ∘ pName) (pcTree pc))
 findAction fs (x:xs) pc = findAction fs [x] pc
                        ≫ findAction fs xs pc
 
@@ -83,7 +81,6 @@ findCmd = Command
           , description = "Find some Atom in main tree and overlays"
           , usage = \c → "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
           , state = FindState { fndExact      = False
-                              , fndAll        = False
                               , fndInstalled  = False }
           , options = findOpts
           , handler = findM }
