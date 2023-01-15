@@ -33,6 +33,7 @@ Executable haku
     Commands.Delete,
     Commands.Find,
     Commands.Update,
+    Commands.Updates,
     Commands.Upgrade,
     Commands.UwU,
     Commands.Clean,

@@ -19,6 +19,7 @@ import           Commands.Digest  as CommandModules
 import           Commands.Find    as CommandModules
 import           Commands.Get     as CommandModules
 import           Commands.Update  as CommandModules
+import           Commands.Updates as CommandModules
 import           Commands.Upgrade as CommandModules
 import           Commands.UwU     as CommandModules
 
@@ -28,6 +29,7 @@ commands ∷ Bool → [Command']
 commands showPrivate =
     [ Command' getCmd,    Command' deleteCmd
     , Command' updateCmd, Command' upgradeCmd
+    , Command' updatesCmd
     , Command' cleanCmd
     , Command' findCmd,   Command' belongsCmd
     , Command' digestCmd

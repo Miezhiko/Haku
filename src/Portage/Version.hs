@@ -6,6 +6,7 @@ module Portage.Version
   ( module Portage.Types.Version
   , getVersion
   , getVersionInstalled
+  , isLive
   ) where
 
 import           Portage.Types.Version
@@ -26,3 +27,9 @@ getVersionInstalled overlay pn path = do
                     Left   _ → error $ "getVersionInstalled: version parse error '" ++ ver ++ "'"
                     Right  x →  x
   PackageVersion version overlay True
+
+isLiveVersion ∷ Version → Bool
+isLiveVersion (Version ver _ _ _ _) = 9999 `elem` ver
+
+isLive ∷ PackageVersion → Bool
+isLive pv = isLiveVersion (pvVersion pv)

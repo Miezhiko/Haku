@@ -24,8 +24,8 @@ updateOpts _ =
     , Option "s" ["store"]   (NoArg (\s → s { updStore = True }))   "store new config after update"
     ]
 
-update ∷ IORef PortageConfig → UpdateState → [String] → IO ()
-update rpc upds _ = do
+update ∷ IORef PortageConfig → UpdateState → IO ()
+update rpc upds = do
   rawAndIgnore "emerge" ["--sync"]
   unless minimal $ do
     runIfExists "/usr/bin/egencache" "egencache" ["--repo=gentoo", "--update"]
@@ -44,8 +44,8 @@ update rpc upds _ = do
        minimal = updMinimal upds
 
 updateMyAss ∷ HakuMonad m ⇒ UpdateState → [String] → m ()
-updateMyAss us xs = ask >>= \env →
-   liftIO $ update (config env) us xs
+updateMyAss us _ = ask >>= \env →
+   liftIO $ update (config env) us
 
 updateCmd ∷ Command UpdateState m
 updateCmd = Command

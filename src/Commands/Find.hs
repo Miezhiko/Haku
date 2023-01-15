@@ -1,7 +1,7 @@
 {-# LANGUAGE
     FlexibleContexts
-  , UnicodeSyntax
   , TupleSections
+  , UnicodeSyntax
   #-}
 
 module Commands.Find where
@@ -33,8 +33,8 @@ maybePrint Nothing   = putStrLn "no ebuild found"
 maybePrint (Just eb) = putStrLn $ eDescription eb
 
 maybePrintFind ∷ Bool → (Package, Maybe Ebuild) → IO ()
-maybePrintFind _ (p,Nothing) = putStrLn $ show p ++ " | no ebuild found"
-maybePrintFind False (p,Just eb) = do
+maybePrintFind _ (p, Nothing) = putStrLn $ show p ++ " | no ebuild found"
+maybePrintFind False (p, Just eb) = do
   setSGR [ SetConsoleIntensity BoldIntensity
          , SetUnderlining SingleUnderline ]
   print p
@@ -46,10 +46,10 @@ maybePrintFind False (p,Just eb) = do
   prettyPrintVersions $ pVersions p
   putStrLn []
   setSGR [ Reset ]
-maybePrintFind True (p,Just eb) =
+maybePrintFind True (p, Just eb) =
   let versionsList = S.toList versions
       installed = any pvInstalled versionsList
-  in when installed $ maybePrintFind False (p,Just eb)
+  in when installed $ maybePrintFind False (p, Just eb)
  where versions ∷ S.Set PackageVersion
        versions = pVersions p
 
