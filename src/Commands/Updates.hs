@@ -8,6 +8,7 @@ module Commands.Updates where
 import           Types
 
 import           Data.Foldable       (for_)
+import           Data.List
 import qualified Data.Map            as M
 import qualified Data.Set            as S
 
@@ -44,7 +45,7 @@ showSingle package =
                             ) versionsList
   in showOnlyInstalled package installed notInstalled
 
-showU ∷ IORef PortageConfig → String → IO ()
+showU ∷ IORef PortageConfig → [String] → IO ()
 showU rpc [] = readIORef rpc >>= \pc →
   let tree = pcTree pc
   in for_ (M.toList tree) $ \(_, package) ->
@@ -52,11 +53,11 @@ showU rpc [] = readIORef rpc >>= \pc →
 showU rpc xs = readIORef rpc >>= \pc →
   let tree = pcTree pc
   in for_ (M.toList tree) $ \(a, package) ->
-    when (any (∈ a) xs) $ showSingle package
+    when (any (`isInfixOf` a) xs) $ showSingle package
 
 showPossibleUpdates ∷ HakuMonad m ⇒ String → [String] → m ()
-showPossibleUpdates ss _ = ask >>= \env →
-   liftIO $ showU (config env) ss
+showPossibleUpdates _ xs = ask >>= \env →
+   liftIO $ showU (config env) xs
 
 updatesCmd ∷ Command String m
 updatesCmd = Command
