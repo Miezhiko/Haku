@@ -34,18 +34,25 @@ showOnlyInstalled p xs vv  =
   let maxInstalledVersion = maximum xs
   in showOnlyInstalled p [maxInstalledVersion] vv
 
+showSingle ∷ Package → IO ()
+showSingle package =
+  let versions      = pVersions package
+      versionsList  = S.toList versions
+      installed     = filter pvInstalled versionsList
+      notInstalled  = filter (\v -> not (pvInstalled v) 
+                                && not (isLive v)
+                            ) versionsList
+  in showOnlyInstalled package installed notInstalled
+
 showU ∷ IORef PortageConfig → String → IO ()
 showU rpc [] = readIORef rpc >>= \pc →
   let tree = pcTree pc
   in for_ (M.toList tree) $ \(_, package) ->
-    let versions      = pVersions package
-        versionsList  = S.toList versions
-        installed     = filter pvInstalled versionsList
-        notInstalled  = filter (\v -> not (pvInstalled v) 
-                                       && not (isLive v)
-                               ) versionsList
-    in showOnlyInstalled package installed notInstalled
-showU rpc _ = showU rpc [] -- TODO: implement filtering later
+    showSingle package
+showU rpc xs = readIORef rpc >>= \pc →
+  let tree = pcTree pc
+  in for_ (M.toList tree) $ \(a, package) ->
+    when (any (∈ a) xs) $ showSingle package
 
 showPossibleUpdates ∷ HakuMonad m ⇒ String → [String] → m ()
 showPossibleUpdates ss _ = ask >>= \env →
