@@ -56,7 +56,7 @@ maybePrintFind True (p, Just eb) =
 findAction ∷ FindState → [String] → IORef PortageConfig → IO ()
 findAction _ [] _     = putStrLn "you should specify what to search!"
 findAction fs [x] rpc = readIORef rpc >>= \pc →
-  if fndExact fs -- find exact is mostly useless but fast
+  if fndExact fs || '/' ∈ x -- find exact is mostly useless but fast
     then case findPackage pc x of
           Just p → do print p
                       mbeb ← findEbuild pc p

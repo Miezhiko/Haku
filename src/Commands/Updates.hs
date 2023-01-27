@@ -41,8 +41,8 @@ showSingle package =
       versionsList  = S.toList versions
       installed     = filter pvInstalled versionsList
       notInstalled  = filter (\v -> not (pvInstalled v) 
-                                && not (isLive v)
-                            ) versionsList
+                                 && not (isLive v)
+                             ) versionsList
   in showOnlyInstalled package installed notInstalled
 
 showU ∷ IORef PortageConfig → [String] → IO ()
