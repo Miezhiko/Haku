@@ -49,6 +49,7 @@ update rpc upds = (== 0) <$> getRealUserID >>= \root → if root
   else doesFileExist cosntSudoPath >>= \sudoExists →
     if sudoExists
       then do
+        messageRunningWithSudo
         rawAndIgnore "sudi" [ "emerge", "--sync" ]
         unless (updMinimal upds) $ do
           runIfExists "/usr/bin/egencache" "sudo" [ "egencache", "--repo=gentoo", "--update" ]
@@ -64,7 +65,7 @@ update rpc upds = (== 0) <$> getRealUserID >>= \root → if root
                               , "--with-bdeps=y"
                               , "--quiet-build=n"
                               ]
-      else putStrLn "should run as root or have sudo installed"
+      else messageShouldRunAsRoot
 
 updateMyAss ∷ HakuMonad m ⇒ UpdateState → [String] → m ()
 updateMyAss us _ = ask >>= \env →

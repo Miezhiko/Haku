@@ -19,8 +19,9 @@ digestEbuild ∷ String → IO ()
 digestEbuild x = (== 0) <$> getRealUserID >>= \r →
   if r then rawAndIgnore "ebuild" [ x, "digest" ]
       else doesFileExist cosntSudoPath >>= \sudoExists →
-        if sudoExists then rawAndIgnore "sudo" [ "ebuild", x, "digest" ]
-                      else putStrLn "should run as root or have sudo installed"
+        if sudoExists then messageRunningWithSudo
+                        >> rawAndIgnore "sudo" [ "ebuild", x, "digest" ]
+                      else messageShouldRunAsRoot
 
 digest ∷ IO ()
 digest = filter (isSuffixOf ".ebuild") <$> (getDirectoryContents =<< getCurrentDirectory)

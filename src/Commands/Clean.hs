@@ -16,8 +16,9 @@ clean ∷ IO ()
 clean = (== 0) <$> getRealUserID >>= \r →
   if r then rawAndIgnore "emerge" [ "--depclean" ]
        else doesFileExist cosntSudoPath >>= \sudoExists →
-              if sudoExists then rawAndIgnore "sudo" [ "emerge", "--depclean" ]
-                            else putStrLn "should run as root or have sudo installed"
+              if sudoExists then messageRunningWithSudo
+                              >> rawAndIgnore "sudo" [ "emerge", "--depclean" ]
+                            else messageShouldRunAsRoot
 
 cleanCmd ∷ Command String m
 cleanCmd = Command { command = ["clean"]

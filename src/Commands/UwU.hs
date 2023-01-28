@@ -34,7 +34,7 @@ runUpgradeScripts = (== 0) <$> getRealUserID >>= \root →
   else doesFileExist cosntSudoPath >>= \sudoExists →
     if sudoExists
       then do
-        putStrLn "running with sudo (not recommended)"
+        messageRunningWithSudo
         rawAndIgnore "sudo" ["shelter"]
         rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
         rawAndIgnore "sudo" ["eix-update"]
@@ -43,7 +43,7 @@ runUpgradeScripts = (== 0) <$> getRealUserID >>= \root →
                             , "--with-bdeps=y"
                             , "--quiet-build=n"
                             ]
-      else putStrLn "should run as root or have sudo installed"
+      else messageShouldRunAsRoot
 
 owo ∷ HakuMonad m ⇒ String → [String] → m ()
 owo _ _ = ask >>= \env → do

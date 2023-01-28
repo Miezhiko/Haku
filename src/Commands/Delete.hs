@@ -36,8 +36,9 @@ unmerge dels xs =
         then rawAndIgnore "emerge" (opts ++ xs)
         else doesFileExist cosntSudoPath >>= \sudoExists →
               if sudoExists
-                then rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
-                else putStrLn "should run as root or have sudo installed"
+                then messageRunningWithSudo
+                  >> rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
+                else messageShouldRunAsRoot
 
 delete ∷ DeleteState → [Atom] → PortageConfig → IO ()
 delete _ [] _       = putStrLn "specify atom!"

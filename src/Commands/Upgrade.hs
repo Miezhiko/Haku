@@ -37,7 +37,7 @@ upgrade ugrs = (== 0) <$> getRealUserID >>= \root → if root
   else doesFileExist cosntSudoPath >>= \sudoExists →
     if sudoExists
       then do
-        putStrLn "running with sudo (not recommended)"
+        messageRunningWithSudo
         if upgrdSelf ugrs
           then rawAndIgnore "sudo" [ "emerge", "haku" ]
           else rawAndIgnore "sudo" [ "emerge"
@@ -47,7 +47,7 @@ upgrade ugrs = (== 0) <$> getRealUserID >>= \root → if root
                                    , "--with-bdeps=y"
                                    , "--quiet-build=n"
                                    ]
-    else putStrLn "should run as root or have sudo installed"
+    else messageShouldRunAsRoot
 
 upgradeCmd ∷ Command UpgradeState m
 upgradeCmd = Command { command = ["upgrade"]

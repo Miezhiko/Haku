@@ -50,8 +50,9 @@ merge gs xs =
       then rawAndIgnore "emerge" (opts ++ xs)
       else doesFileExist cosntSudoPath >>= \sudoExists →
             if sudoExists
-              then rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
-              else putStrLn "should run as root or have sudo installed"
+              then messageRunningWithSudo
+                >> rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
+              else messageShouldRunAsRoot
 
 emerge ∷ GetState → [Atom] → PortageConfig → IO ()
 emerge _ [] _     = putStrLn "specify atom!"
