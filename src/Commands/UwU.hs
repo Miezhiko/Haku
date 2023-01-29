@@ -5,21 +5,18 @@
 
 module Commands.UwU where
 
-import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
-import           Portage.Config    (loadPortageConfig)
+import           System.Directory (doesFileExist)
+
+import           Portage.Config   (loadPortageConfig)
 
 import           Shelter.Checker
 
-import           System.Directory  (doesFileExist)
-import           System.Posix.User (getRealUserID)
-
-{- HLINT ignore "Redundant <$>" -}
 runUpgradeScripts ∷ IO ()
-runUpgradeScripts = (== 0) <$> getRealUserID >>= \root →
-  if root then do
+runUpgradeScripts = isRoot
+  (do
     doesFileExist "/usr/bin/shelter" >>= \shelterBinExists ->
       if shelterBinExists
         then rawAndIgnore "shelter" 𝜀
@@ -30,20 +27,16 @@ runUpgradeScripts = (== 0) <$> getRealUserID >>= \root →
                           , "--backtrack=100"
                           , "--with-bdeps=y"
                           , "--quiet-build=n"
-                          ]
-  else doesFileExist cosntSudoPath >>= \sudoExists →
-    if sudoExists
-      then do
-        messageRunningWithSudo
-        rawAndIgnore "sudo" ["shelter"]
-        rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
-        rawAndIgnore "sudo" ["eix-update"]
-        rawAndIgnore "sudo" [ "emerge", "-avuDN", "@world"
-                            , "--backtrack=100"
-                            , "--with-bdeps=y"
-                            , "--quiet-build=n"
-                            ]
-      else messageShouldRunAsRoot
+                          ])
+  (do
+    rawAndIgnore "sudo" ["shelter"]
+    rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
+    rawAndIgnore "sudo" ["eix-update"]
+    rawAndIgnore "sudo" [ "emerge", "-avuDN", "@world"
+                        , "--backtrack=100"
+                        , "--with-bdeps=y"
+                        , "--quiet-build=n"
+                        ])
 
 owo ∷ HakuMonad m ⇒ String → [String] → m ()
 owo _ _ = ask >>= \env → do

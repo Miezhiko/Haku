@@ -5,24 +5,19 @@
 
 module Commands.Digest where
 
-import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
-import           Data.List         (isSuffixOf)
+import           Data.List        (isSuffixOf)
 
-import           System.Directory  (doesFileExist, getCurrentDirectory, getDirectoryContents)
-import           System.Posix.User (getRealUserID)
+import           System.Directory (getCurrentDirectory, getDirectoryContents)
+
+digestEbuild ∷ String → IO ()
+digestEbuild x = isRoot
+  ( rawAndIgnore "ebuild" [ x, "digest" ] )
+  ( rawAndIgnore "sudo" [ "ebuild", x, "digest" ] )
 
 {- HLINT ignore "Redundant <$>" -}
-digestEbuild ∷ String → IO ()
-digestEbuild x = (== 0) <$> getRealUserID >>= \r →
-  if r then rawAndIgnore "ebuild" [ x, "digest" ]
-      else doesFileExist cosntSudoPath >>= \sudoExists →
-        if sudoExists then messageRunningWithSudo
-                        >> rawAndIgnore "sudo" [ "ebuild", x, "digest" ]
-                      else messageShouldRunAsRoot
-
 digest ∷ IO ()
 digest = filter (isSuffixOf ".ebuild") <$> (getDirectoryContents =<< getCurrentDirectory)
          >>= \case []    -> putStrLn "no ebuilds found"

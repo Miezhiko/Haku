@@ -4,21 +4,12 @@
 
 module Commands.Clean where
 
-import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
-import           System.Directory  (doesFileExist)
-import           System.Posix.User (getRealUserID)
-
-{- HLINT ignore "Redundant <$>" -}
 clean ∷ IO ()
-clean = (== 0) <$> getRealUserID >>= \r →
-  if r then rawAndIgnore "emerge" [ "--depclean" ]
-       else doesFileExist cosntSudoPath >>= \sudoExists →
-              if sudoExists then messageRunningWithSudo
-                              >> rawAndIgnore "sudo" [ "emerge", "--depclean" ]
-                            else messageShouldRunAsRoot
+clean = isRoot ( rawAndIgnore "emerge" [ "--depclean" ] )
+               ( rawAndIgnore "sudo" [ "emerge", "--depclean" ] )
 
 cleanCmd ∷ Command String m
 cleanCmd = Command { command = ["clean"]

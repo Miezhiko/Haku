@@ -5,11 +5,9 @@
 
 module Commands.Delete where
 
-import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
-import           System.Directory  (doesFileExist)
 import           System.Posix.User (getRealUserID)
 
 data DeleteState
@@ -34,11 +32,7 @@ unmerge dels xs =
   in (== 0) <$> getRealUserID >>= \root →
       if root ∨ pretend
         then rawAndIgnore "emerge" (opts ++ xs)
-        else doesFileExist cosntSudoPath >>= \sudoExists →
-              if sudoExists
-                then messageRunningWithSudo
-                  >> rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
-                else messageShouldRunAsRoot
+        else hasSudo $ rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
 
 delete ∷ DeleteState → [Atom] → PortageConfig → IO ()
 delete _ [] _       = putStrLn "specify atom!"

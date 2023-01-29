@@ -5,11 +5,9 @@
 
 module Commands.Get where
 
-import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
-import           System.Directory  (doesFileExist)
 import           System.Posix.User (getRealUserID)
 
 data GetState
@@ -48,11 +46,7 @@ merge gs xs =
   in (== 0) <$> getRealUserID >>= \root →
     if root ∨ pretend
       then rawAndIgnore "emerge" (opts ++ xs)
-      else doesFileExist cosntSudoPath >>= \sudoExists →
-            if sudoExists
-              then messageRunningWithSudo
-                >> rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
-              else messageShouldRunAsRoot
+      else hasSudo $ rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
 
 emerge ∷ GetState → [Atom] → PortageConfig → IO ()
 emerge _ [] _     = putStrLn "specify atom!"

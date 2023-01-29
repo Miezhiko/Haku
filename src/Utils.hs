@@ -1,21 +1,25 @@
 {-# LANGUAGE
-    UnicodeSyntax
+    LambdaCase
+  , UnicodeSyntax
   #-}
 
 module Utils
   ( module ExportedUtils
-  , messageRunningWithSudo
-  , messageShouldRunAsRoot
+  , hasSudo
+  , isRoot
   , raw
   , rawAndIgnore
   , runIfExists
   ) where
+
+import           Constants           (cosntSudoPath)
 
 import           Hacks               as ExportedUtils
 import           Portage.Utils       as ExportedUtils
 
 import           System.Directory    (doesFileExist)
 import           System.Exit
+import           System.Posix.User   (getRealUserID)
 import           System.Process
 
 import           Control.Monad
@@ -37,6 +41,16 @@ runIfExists ∷ FilePath → String → [String] → IO ()
 runIfExists ξ λ α =
   doesFileExist ξ >>= \fe →
     when fe $ void (rawSystem λ α)
+
+isRoot ∷ IO () → IO () → IO ()
+isRoot f1 f2 = getRealUserID >>=
+  (\r -> if r then f1
+              else hasSudo f2) . (== 0)
+
+hasSudo ∷ IO () → IO ()
+hasSudo something = doesFileExist cosntSudoPath >>=
+  \case True  -> something
+        False -> messageShouldRunAsRoot
 
 messageRunningWithSudo ∷ IO ()
 messageRunningWithSudo = do
