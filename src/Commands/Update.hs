@@ -5,10 +5,14 @@
 
 module Commands.Update where
 
+import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
 
 import           Portage.Config (loadPortageConfig)
+
+import           System.Directory  (doesFileExist)
+import           System.Posix.User (getRealUserID)
 
 data UpdateState
   = UpdateState
@@ -24,24 +28,43 @@ updateOpts _ =
     , Option "s" ["store"]   (NoArg (\s → s { updStore = True }))   "store new config after update"
     ]
 
+{- HLINT ignore "Redundant <$>" -}
 update ∷ IORef PortageConfig → UpdateState → IO ()
-update rpc upds = do
-  rawAndIgnore "emerge" ["--sync"]
-  unless minimal $ do
-    runIfExists "/usr/bin/egencache" "egencache" ["--repo=gentoo", "--update"]
-    runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
-  when (updStore upds) $ do
-    pc ← loadPortageConfig
-    writeIORef rpc pc { pcUpdateCache = True }
-  when (updUpgrade upds) $
-    rawAndIgnore "emerge" [ "-avuDN"
-                          , "@world"
-                          , "--backtrack=100"
-                          , "--with-bdeps=y"
-                          , "--quiet-build=n"
-                          ]
- where minimal ∷ Bool
-       minimal = updMinimal upds
+update rpc upds = (== 0) <$> getRealUserID >>= \root → if root
+  then do
+    rawAndIgnore "emerge" [ "--sync" ]
+    unless (updMinimal upds) $ do
+      runIfExists "/usr/bin/egencache" "egencache" [ "--repo=gentoo", "--update" ]
+      runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
+    when (updStore upds) $ do
+      pc ← loadPortageConfig
+      writeIORef rpc pc { pcUpdateCache = True }
+    when (updUpgrade upds) $
+      rawAndIgnore "emerge" [ "-avuDN"
+                            , "@world"
+                            , "--backtrack=100"
+                            , "--with-bdeps=y"
+                            , "--quiet-build=n"
+                            ]
+  else doesFileExist cosntSudoPath >>= \sudoExists →
+    if sudoExists
+      then do
+        rawAndIgnore "sudi" [ "emerge", "--sync" ]
+        unless (updMinimal upds) $ do
+          runIfExists "/usr/bin/egencache" "sudo" [ "egencache", "--repo=gentoo", "--update" ]
+          runIfExists "/usr/bin/eix-update" "sudo" [ "eix-update" ]
+        when (updStore upds) $ do
+          pc ← loadPortageConfig
+          writeIORef rpc pc { pcUpdateCache = True }
+        when (updUpgrade upds) $
+          rawAndIgnore "sudo" [ "emerge"
+                              , "-avuDN"
+                              , "@world"
+                              , "--backtrack=100"
+                              , "--with-bdeps=y"
+                              , "--quiet-build=n"
+                              ]
+      else putStrLn "should run as root or have sudo installed"
 
 updateMyAss ∷ HakuMonad m ⇒ UpdateState → [String] → m ()
 updateMyAss us _ = ask >>= \env →

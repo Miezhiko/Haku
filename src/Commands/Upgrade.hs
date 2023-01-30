@@ -4,8 +4,12 @@
 
 module Commands.Upgrade where
 
+import           Constants         (cosntSudoPath)
 import           Types
 import           Utils
+
+import           System.Directory  (doesFileExist)
+import           System.Posix.User (getRealUserID)
 
 data UpgradeState
   = UpgradeState
@@ -19,15 +23,31 @@ upgradeOpts _ =
     , Option "v" ["verbose"]  (NoArg (\s → s { upgrdVerbose = True })) "more things..."
     ]
 
+{- HLINT ignore "Redundant <$>" -}
 upgrade ∷ UpgradeState → IO ()
-upgrade ugrs = if upgrdSelf ugrs
-  then rawAndIgnore "emerge" [ "haku" ]
-  else rawAndIgnore "emerge" [ "-avuDN"
-                             , "@world"
-                             , "--backtrack=100"
-                             , "--with-bdeps=y"
-                             , "--quiet-build=n"
-                             ]
+upgrade ugrs = (== 0) <$> getRealUserID >>= \root → if root
+  then if upgrdSelf ugrs
+          then rawAndIgnore "emerge" [ "haku" ]
+          else rawAndIgnore "emerge" [ "-avuDN"
+                                     , "@world"
+                                     , "--backtrack=100"
+                                     , "--with-bdeps=y"
+                                     , "--quiet-build=n"
+                                     ]
+  else doesFileExist cosntSudoPath >>= \sudoExists →
+    if sudoExists
+      then do
+        putStrLn "running with sudo (not recommended)"
+        if upgrdSelf ugrs
+          then rawAndIgnore "sudo" [ "emerge", "haku" ]
+          else rawAndIgnore "sudo" [ "emerge"
+                                   , "-avuDN"
+                                   , "@world"
+                                   , "--backtrack=100"
+                                   , "--with-bdeps=y"
+                                   , "--quiet-build=n"
+                                   ]
+    else putStrLn "should run as root or have sudo installed"
 
 upgradeCmd ∷ Command UpgradeState m
 upgradeCmd = Command { command = ["upgrade"]
