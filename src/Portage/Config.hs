@@ -117,8 +117,11 @@ getPackage ∷ String → String → Maybe String → String → IO (Maybe (Atom
 getPackage _ _ Nothing _ = pure Nothing
 getPackage fcat cat (Just pn) vp = do
   overlay ← rstrip <$> Strict.readFile (fcat </> vp </> "repository")
-  let versions = S.singleton (getVersionInstalled overlay pn vp)
-  pure $ Just (cat ++ "/" ++ pn, Package cat versions pn)
+  case getVersionInstalled overlay pn vp of
+    Left err -> putStrLn err
+             >> pure Nothing
+    Right vi -> let versions = S.singleton vi
+                in pure $ Just (cat ++ "/" ++ pn, Package cat versions pn)
 
 concatPackageGroups ∷ [(Atom, Package)] → [(Atom, Package)]
 concatPackageGroups [] = 𝜀
