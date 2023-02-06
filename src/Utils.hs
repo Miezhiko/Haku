@@ -49,7 +49,8 @@ isRoot f1 f2 = getRealUserID >>=
 
 hasSudo ∷ IO () → IO ()
 hasSudo something = doesFileExist cosntSudoPath >>=
-  \case True  -> something
+  \case True  -> messageRunningWithSudo
+              >> something
         False -> messageShouldRunAsRoot
 
 messageRunningWithSudo ∷ IO ()
