@@ -14,29 +14,34 @@ import           Portage.Config   (loadPortageConfig)
 
 import           Shelter.Checker
 
-runUpgradeScripts ∷ IO ()
-runUpgradeScripts = isRoot
-  (do
-    doesFileExist "/usr/bin/shelter" >>= \shelterBinExists ->
-      if shelterBinExists
-        then rawAndIgnore "shelter" 𝜀
-        else updateAll
-    rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
-    rawAndIgnore "eix-update" 𝜀
-    rawAndIgnore "emerge" [ "-avuDN", "@world"
-                          , "--backtrack=100"
-                          , "--with-bdeps=y"
-                          , "--quiet-build=n"
-                          ])
-  (do
-    rawAndIgnore "sudo" ["shelter"]
-    rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
-    rawAndIgnore "sudo" ["eix-update"]
-    rawAndIgnore "sudo" [ "emerge", "-avuDN", "@world"
+runUpgradeScriptsRoot ∷ IO ()
+runUpgradeScriptsRoot = do
+  doesFileExist "/usr/bin/shelter" >>= \shelterBinExists ->
+    if shelterBinExists
+      then rawAndIgnore "shelter" 𝜀
+      else updateAll
+  rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
+  rawAndIgnore "eix-update" 𝜀
+  rawAndIgnore "emerge" [ "-avuDN", "@world"
                         , "--backtrack=100"
                         , "--with-bdeps=y"
                         , "--quiet-build=n"
-                        ])
+                        ]
+
+runUpgradeScriptsSudo ∷ IO ()
+runUpgradeScriptsSudo = do
+  runIfExists "/usr/bin/shelter" "sudo" ["shelter"]
+  rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
+  rawAndIgnore "sudo" ["eix-update"]
+  rawAndIgnore "sudo" [ "emerge", "-avuDN", "@world"
+                      , "--backtrack=100"
+                      , "--with-bdeps=y"
+                      , "--quiet-build=n"
+                      ]
+
+runUpgradeScripts ∷ IO ()
+runUpgradeScripts = isRoot runUpgradeScriptsRoot
+                           runUpgradeScriptsSudo
 
 owo ∷ HakuMonad m ⇒ String → [String] → m ()
 owo _ _ = ask >>= \env → do

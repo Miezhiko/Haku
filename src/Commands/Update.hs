@@ -24,44 +24,47 @@ updateOpts _ =
     , Option "s" ["store"]   (NoArg (\s → s { updStore = True }))   "store new config after update"
     ]
 
-{- HLINT ignore "Redundant <$>" -}
-update ∷ IORef PortageConfig → UpdateState → IO ()
-update rpc upds = isRoot
-  (do
-    rawAndIgnore "emerge" [ "--sync" ]
-    unless (updMinimal upds) $ do
-      runIfExists "/usr/bin/egencache" "egencache" [ "--repo=gentoo", "--update" ]
-      runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
-    when (updStore upds) $ do
-      pc ← loadPortageConfig
-      writeIORef rpc pc { pcUpdateCache = True }
-    when (updUpgrade upds) $
-      rawAndIgnore "emerge" [ "-avuDN"
-                            , "@world"
-                            , "--backtrack=100"
-                            , "--with-bdeps=y"
-                            , "--quiet-build=n"
-                            ])
-  (do
-    rawAndIgnore "sudo" [ "emerge", "--sync" ]
-    unless (updMinimal upds) $ do
-      runIfExists "/usr/bin/egencache" "sudo" [ "egencache", "--repo=gentoo", "--update" ]
-      runIfExists "/usr/bin/eix-update" "sudo" [ "eix-update" ]
-    when (updStore upds) $ do
-      pc ← loadPortageConfig
-      writeIORef rpc pc { pcUpdateCache = True }
-    when (updUpgrade upds) $
-      rawAndIgnore "sudo" [ "emerge"
-                          , "-avuDN"
+updateRoot ∷ (IORef PortageConfig, UpdateState) → IO ()
+updateRoot (rpc, upds) = do
+  rawAndIgnore "emerge" [ "--sync" ]
+  unless (updMinimal upds) $ do
+    runIfExists "/usr/bin/egencache" "egencache" [ "--repo=gentoo", "--update" ]
+    runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
+  when (updStore upds) $ do
+    pc ← loadPortageConfig
+    writeIORef rpc pc { pcUpdateCache = True }
+  when (updUpgrade upds) $
+    rawAndIgnore "emerge" [ "-avuDN"
                           , "@world"
                           , "--backtrack=100"
                           , "--with-bdeps=y"
                           , "--quiet-build=n"
-                          ])
+                          ]
+
+updateSudo ∷ (IORef PortageConfig, UpdateState) → IO ()
+updateSudo (rpc, upds) = do
+  rawAndIgnore "sudo" [ "emerge", "--sync" ]
+  unless (updMinimal upds) $ do
+    runIfExists "/usr/bin/egencache" "sudo" [ "egencache", "--repo=gentoo", "--update" ]
+    runIfExists "/usr/bin/eix-update" "sudo" [ "eix-update" ]
+  when (updStore upds) $ do
+    pc ← loadPortageConfig
+    writeIORef rpc pc { pcUpdateCache = True }
+  when (updUpgrade upds) $
+    rawAndIgnore "sudo" [ "emerge"
+                        , "-avuDN"
+                        , "@world"
+                        , "--backtrack=100"
+                        , "--with-bdeps=y"
+                        , "--quiet-build=n"
+                        ]
+
+update ∷ (IORef PortageConfig, UpdateState) → IO ()
+update = liftM2 isRoot updateRoot updateSudo
 
 updateMyAss ∷ HakuMonad m ⇒ UpdateState → [String] → m ()
 updateMyAss us _ = ask >>= \env →
-   liftIO $ update (config env) us
+  liftIO $ update (config env, us)
 
 updateCmd ∷ Command UpdateState m
 updateCmd = Command
