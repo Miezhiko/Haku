@@ -14,6 +14,7 @@ import           Constants
 import           Env
 import           Hacks
 
+import           Portage.Mask
 import           Portage.Types.Config
 import           Portage.Types.Package
 import           Portage.Version
@@ -38,6 +39,13 @@ import           System.Process
 
 import           Control.Arrow
 import           Control.Monad
+
+type OverlayMeta = ( String -- overlay name
+                   , ( FilePath -- path
+                     , [(String, [String])] -- category and packages
+                     , [Masking]
+                     )
+                   )
 
 parseEnvMap ∷ String → EnvMap
 parseEnvMap s = M.fromList $
@@ -65,7 +73,13 @@ getVersions fp pn o = do
 
 parseOverlay ∷ FilePath → IO (([Package], [String]), OverlayMeta)
 parseOverlay treePath = do
-  overlayName  ← rstrip <$> readFile (treePath </> "profiles/repo_name")
+  overlayName  ← rstrip <$> readFile (treePath </> constProfilesRepoName)
+  let profilesMaskFile = treePath </> constProfilesPackageMask
+  profilesMask <- doesFileExist profilesMaskFile >>= \pmfExists ->
+    if pmfExists
+      then do fileData <- rstrip <$> readFile profilesMaskFile
+              pure $ normalizeMasking (parseMask fileData [])
+      else pure []
   treeCats     ← getFilteredDirectoryContents treePath
   filteredCats ← filterM (\(f, _) → getFileStatus f <&> isDirectory)
                       $ map (\c → (treePath </> c, c))
@@ -90,7 +104,7 @@ parseOverlay treePath = do
     else pure 𝜀
 
   let packagesEclasses = (pkgs, eclasses)
-      overlayMeta = (overlayName, (treePath, cpkg))
+      overlayMeta = (overlayName, (treePath, cpkg, profilesMask))
 
   pure (packagesEclasses, overlayMeta)
 
@@ -178,7 +192,7 @@ loadPortageConfig = do
   makeConf ← getConfigFile constMakeConfPath
   let treePath = makeConf M.! "PORTDIR"
 
-  ((catMap, eclasses), (ovName, (_, categoriesMain)))
+  ((catMap, eclasses), (ovName, (_, categoriesMain, mainMasks)))
     ← parseOverlay treePath
 
   (ov, met) ← case M.lookup "PORTDIR_OVERLAY" makeConf of
@@ -188,12 +202,12 @@ loadPortageConfig = do
   let atoms       = map (\p → (pCategory p ++ "/" ++ pName p, p)) catMap
       pkgs        = M.fromList atoms
       merged      = M.unionWith mergePackages pkgs ov
-      metaList    = (ovName, (treePath, categoriesMain)) : met
+      metaList    = (ovName, (treePath, categoriesMain, mainMasks)) : met
       overlays    = M.fromList metaList
       categories  = map (fst ∘ head &&& concatMap snd) 
                       ∘ groupBy ((==) `on` fst)
                       ∘ sortBy (comparing fst)
-                      ∘ concatMap (snd ∘ snd)
+                      ∘ concatMap (\(_, (_, c, _)) -> c)
                       $ metaList
 
   installed     ← getInstalledPackages constInstalledPath categories

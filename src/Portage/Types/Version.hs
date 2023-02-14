@@ -54,6 +54,7 @@ data PackageVersion
       { pvVersion   :: Version
       , pvOverlay   :: String
       , pvInstalled :: Bool
+      , pvMasked    :: Bool
       }
   deriving (Generic)
 
@@ -69,8 +70,9 @@ instance Show PackageVersion where
   show = showPackageVersion
 
 showPackageVersion ∷ PackageVersion → String
-showPackageVersion (PackageVersion v ov True)  = show v ++ "::" ++ ov ++ " [Installed]"
-showPackageVersion (PackageVersion v ov False) = show v ++ "::" ++ ov
+showPackageVersion (PackageVersion v ov True _) = show v ++ "::" ++ ov ++ " [Installed]"
+showPackageVersion (PackageVersion v ov False True) = show v ++ "::" ++ ov ++ " [Masked]"
+showPackageVersion (PackageVersion v ov False False) = show v ++ "::" ++ ov
 
 parseVersion ∷ String → Either ParseError Version
 parseVersion = parse (readVersion >>= \x → eof >> pure x) "<version number>"

@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.51
+version: 0.0.52
 license: AGPL-3
 
 build-type: Simple
@@ -24,8 +24,13 @@ Executable haku
     Shelter.Checker,
     Portage.Types.Version,
     Portage.Types.Package,
+    Portage.Types.Atom,
+    Portage.Types.Masking,
     Portage.Types.Config,
     Portage.Version,
+    Portage.P,
+    Portage.Atom,
+    Portage.Mask,
     Portage.Config,
     Portage.Utils,
     Portage.Ebuild,

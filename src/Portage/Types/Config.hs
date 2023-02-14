@@ -4,6 +4,7 @@
   #-}
 module Portage.Types.Config where
 
+import           Portage.Types.Masking
 import           Portage.Types.Package
 
 import           GHC.Generics          (Generic)
@@ -13,10 +14,15 @@ import qualified Data.Map              as M
 
 type EnvMap = M.Map String String
 
-type Atom     = String -- Atom is category/PN
+type Atom     = String -- Atom here is category/PN
 type Tree     = M.Map Atom Package
-type Overlays = M.Map String (FilePath, [(String, [String])])
-type OverlayMeta = (String, (FilePath, [(String, [String])]))
+
+type Overlays = M.Map String -- Overlay Name
+                      ( FilePath
+                      , [(String, [String])]
+                      , [Masking]
+                      )
+
 type ShelterHashes = M.Map FilePath (Maybe String)
 
 data PortageConfig

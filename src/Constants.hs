@@ -12,3 +12,9 @@ constInstalledPath = "/var/db/pkg"
 
 cosntSudoPath ∷ String
 cosntSudoPath = "/usr/bin/sudo"
+
+constProfilesPackageMask ∷ String
+constProfilesPackageMask = "profiles/package.mask"
+
+constProfilesRepoName ∷ String
+constProfilesRepoName = "profiles/repo_name"

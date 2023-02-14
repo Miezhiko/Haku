@@ -7,5 +7,5 @@ dist*
 *.lock
 .stack-work/
 *.local
-*.local~
+*.local~*
 hake
