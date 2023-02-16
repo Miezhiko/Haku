@@ -9,10 +9,10 @@ module Shelter.Trim
 
 import           Data.Char (isSpace)
 
-trim ∷ String → String
+trim ∷ String -> String
 trim xs = dropSpaceTail "" $ dropWhile isSpace xs
 
-dropSpaceTail ∷ String → String → String
+dropSpaceTail ∷ String -> String -> String
 dropSpaceTail _ "" = ""
 dropSpaceTail maybeStuff (χ:xs)
   | isSpace χ       = dropSpaceTail (χ:maybeStuff) xs

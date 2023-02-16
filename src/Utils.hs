@@ -26,28 +26,28 @@ import           Control.Monad
 
 import           System.Console.ANSI
 
-checkExitCode ∷ ExitCode → IO ()
+checkExitCode ∷ ExitCode -> IO ()
 checkExitCode ExitSuccess = pure ()
 checkExitCode (ExitFailure γ) =
     error $ "failed with exit code: " ++ show γ
 
-raw ∷ String → [String] → IO ()
+raw ∷ String -> [String] -> IO ()
 raw λ α = rawSystem λ α >>= checkExitCode
 
-rawAndIgnore ∷ String → [String] → IO ()
+rawAndIgnore ∷ String -> [String] -> IO ()
 rawAndIgnore = void .: rawSystem
 
-runIfExists ∷ FilePath → String → [String] → IO ()
+runIfExists ∷ FilePath -> String -> [String] -> IO ()
 runIfExists ξ λ α =
-  doesFileExist ξ >>= \fe →
+  doesFileExist ξ >>= \fe ->
     when fe $ void (rawSystem λ α)
 
-isRoot ∷ IO () → IO () → IO ()
+isRoot ∷ IO () -> IO () -> IO ()
 isRoot f1 f2 = getRealUserID >>=
   (\r -> if r then f1
               else hasSudo f2) . (== 0)
 
-hasSudo ∷ IO () → IO ()
+hasSudo ∷ IO () -> IO ()
 hasSudo something = doesFileExist cosntSudoPath >>=
   \case True  -> messageRunningWithSudo
               >> something

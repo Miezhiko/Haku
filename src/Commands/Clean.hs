@@ -17,4 +17,4 @@ cleanCmd = Command { command = ["clean"]
                    , usage = ("haku " ++)
                    , state = 𝜀
                    , options = const 𝜀
-                   , handler = \_ _ → liftIO clean }
+                   , handler = \_ _ -> liftIO clean }

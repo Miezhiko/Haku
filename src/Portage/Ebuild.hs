@@ -30,24 +30,24 @@ data Ebuild
       }
   deriving (Eq, Show)
 
-removeJunk ∷ String → String
-removeJunk xs = [ x | x ← xs, x /= '\"' ]
+removeJunk ∷ String -> String
+removeJunk xs = [ x | x <- xs, x /= '\"' ]
 
-stringSeq ∷ String → b → b
+stringSeq ∷ String -> b -> b
 stringSeq []      c =  c
 stringSeq (_:xs)  c =  stringSeq xs c
 
-(!.) ∷ M.Map String String → String → String
+(!.) ∷ M.Map String String -> String -> String
 m !. k = maybe "" removeJunk (M.lookup k m)
 
-getEbuild ∷ FilePath → IO Ebuild
+getEbuild ∷ FilePath -> IO Ebuild
 getEbuild f = do
-  e ← lines <$> Strict.readFile f
+  e <- lines <$> Strict.readFile f
   let em = readStringMap e
       inh = find (`isPrefixOf` "inherit ") e
       inherts = case inh of
-                  Just s  → drop 8 s
-                  Nothing → []
+                  Just s  -> drop 8 s
+                  Nothing -> []
   pure (Ebuild  (words (em !. "DEPEND"))
                 (words (em !. "RDEPEND"))
                 (em !. "SLOT")

@@ -13,13 +13,13 @@ data UpgradeState
       , upgrdVerbose :: Bool
       }
 
-upgradeOpts ∷ Bool → [OptDescr (UpgradeState → UpgradeState)]
+upgradeOpts ∷ Bool -> [OptDescr (UpgradeState -> UpgradeState)]
 upgradeOpts _ =
-    [ Option "s" ["self"]     (NoArg (\s → s { upgrdSelf = True })) "upgrade self"
-    , Option "v" ["verbose"]  (NoArg (\s → s { upgrdVerbose = True })) "more things..."
+    [ Option "s" ["self"]     (NoArg (\s -> s { upgrdSelf = True })) "upgrade self"
+    , Option "v" ["verbose"]  (NoArg (\s -> s { upgrdVerbose = True })) "more things..."
     ]
 
-upgradeRoot ∷ UpgradeState → IO ()
+upgradeRoot ∷ UpgradeState -> IO ()
 upgradeRoot ugrs = if upgrdSelf ugrs
   then rawAndIgnore "emerge" [ "haku" ]
   else rawAndIgnore "emerge" [ "-avuDN"
@@ -29,7 +29,7 @@ upgradeRoot ugrs = if upgrdSelf ugrs
                              , "--quiet-build=n"
                              ]
 
-upgradeSudo ∷ UpgradeState → IO ()
+upgradeSudo ∷ UpgradeState -> IO ()
 upgradeSudo ugrs = if upgrdSelf ugrs
   then rawAndIgnore "sudo" [ "emerge", "haku" ]
   else rawAndIgnore "sudo" [ "emerge"
@@ -40,7 +40,7 @@ upgradeSudo ugrs = if upgrdSelf ugrs
                            , "--quiet-build=n"
                            ]
 
-upgrade ∷ UpgradeState → IO ()
+upgrade ∷ UpgradeState -> IO ()
 upgrade = liftM2 isRoot upgradeRoot upgradeSudo
 
 upgradeCmd ∷ Command UpgradeState m
@@ -50,4 +50,4 @@ upgradeCmd = Command { command = ["upgrade"]
                      , state = UpgradeState { upgrdSelf     = False
                                             , upgrdVerbose  = False }
                      , options = upgradeOpts
-                     , handler = \ugrs _ → liftIO $ upgrade ugrs }
+                     , handler = \ugrs _ -> liftIO $ upgrade ugrs }

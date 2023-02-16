@@ -25,7 +25,7 @@ import           Commands.UwU     as CommandModules
 
 import           Data.List
 
-commands ∷ Bool → [Command']
+commands ∷ Bool -> [Command']
 commands showPrivate =
     [ Command' getCmd,    Command' deleteCmd
     , Command' updateCmd, Command' upgradeCmd
@@ -37,10 +37,10 @@ commands showPrivate =
     [ [ Command' uwuCmd
       ] | showPrivate ]
 
-findCommand ∷ String → Maybe Command'
-findCommand x = lookup x [ (n,c') | c'@(Command' c) ← commands True, n ← command c ]
+findCommand ∷ String -> Maybe Command'
+findCommand x = lookup x [ (n,c') | c'@(Command' c) <- commands True, n <- command c ]
 
-printCommands ∷ [Command'] → String
+printCommands ∷ [Command'] -> String
 printCommands = align ∘ map printCommand
   where printCommand (Command' cmd) =
           [intercalate ", " (command cmd), "  ", description cmd]

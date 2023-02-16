@@ -40,18 +40,18 @@ instance FromJSON ShelterNode
 instance ToJSON ShelterNode where
   toJSON = genericToJSON defaultOptions
 
-ymlDecode ∷ FromJSON iFromJSONable ⇒ FilePath → IO iFromJSONable
+ymlDecode ∷ FromJSON iFromJSONable ⇒ FilePath -> IO iFromJSONable
 ymlDecode = decodeThrow <=< BS.readFile
 
-ymlEncode ∷ ToJSON iToJSONable ⇒ FilePath → iToJSONable → IO()
+ymlEncode ∷ ToJSON iToJSONable ⇒ FilePath -> iToJSONable -> IO()
 ymlEncode = (. encode) . BS.writeFile
 
 getShelterConfig ∷ IO (Maybe ShelterConfig)
-getShelterConfig = getShelterConfPath >>= \shelterCfgPath →
-  doesFileExist shelterCfgPath >>= \shelterCfgExists →
+getShelterConfig = getShelterConfPath >>= \shelterCfgPath ->
+  doesFileExist shelterCfgPath >>= \shelterCfgExists ->
     if shelterCfgExists then ymlDecode shelterCfgPath
                         else pure Nothing
 
-updateShelterConfig ∷ ShelterConfig → IO ()
-updateShelterConfig shelter = getShelterConfPath >>= \shelterCfgPath →
+updateShelterConfig ∷ ShelterConfig -> IO ()
+updateShelterConfig shelter = getShelterConfPath >>= \shelterCfgPath ->
   ymlEncode shelterCfgPath shelter

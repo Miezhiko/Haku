@@ -43,8 +43,8 @@ runUpgradeScripts ∷ IO ()
 runUpgradeScripts = isRoot runUpgradeScriptsRoot
                            runUpgradeScriptsSudo
 
-owo ∷ HakuMonad m ⇒ String → [String] → m ()
-owo _ _ = ask >>= \env → do
+owo ∷ HakuMonad m ⇒ String -> [String] -> m ()
+owo _ _ = ask >>= \env -> do
   liftIO $ do runUpgradeScripts
               pc <- loadPortageConfig
               writeIORef (config env) pc { pcUpdateCache = True }

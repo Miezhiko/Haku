@@ -47,50 +47,50 @@ type OverlayMeta = ( String -- overlay name
                      )
                    )
 
-parseEnvMap ∷ String → EnvMap
+parseEnvMap ∷ String -> EnvMap
 parseEnvMap s = M.fromList $
                    [  (v,stripQuotes c) | 
-                      l ← lines s,
-                      (v,'=':c) ← pure $ break (=='=') l ]
+                      l <- lines s,
+                      (v,'=':c) <- pure $ break (=='=') l ]
   where  stripQuotes ('\'':r@(_:_)) =  init r
          stripQuotes x              =  x
 
-getFilteredDirectoryContents ∷ FilePath → IO [FilePath]
+getFilteredDirectoryContents ∷ FilePath -> IO [FilePath]
 getFilteredDirectoryContents fp = filter (∉ [".",".."]) <$> getDirectoryContents fp
 
-getConfigFile ∷ FilePath → IO EnvMap
-getConfigFile f =  do  (_,r,_) ← readCreateProcessWithExitCode (
+getConfigFile ∷ FilePath -> IO EnvMap
+getConfigFile f =  do  (_,r,_) <- readCreateProcessWithExitCode (
                                     shell $  "unset $(set | sed 's/^\\([^=]*\\)=.*$/\\1/') 2>/dev/null;" ++
                                              "source " ++ f ++ "; set" ) []
                        pure $ parseEnvMap r
 
-getVersions ∷ String → String → String → IO (S.Set PackageVersion)
+getVersions ∷ String -> String -> String -> IO (S.Set PackageVersion)
 getVersions fp pn o = do
-  dirContent ← getFilteredDirectoryContents fp
+  dirContent <- getFilteredDirectoryContents fp
   let ebuilds   = filter (isSuffixOf ".ebuild") dirContent
       versions  = map (getVersion o pn) ebuilds
   pure $ S.fromList versions
 
-parseOverlay ∷ FilePath → IO (([Package], [String]), OverlayMeta)
+parseOverlay ∷ FilePath -> IO (([Package], [String]), OverlayMeta)
 parseOverlay treePath = do
-  overlayName  ← rstrip <$> readFile (treePath </> constProfilesRepoName)
+  overlayName  <- rstrip <$> readFile (treePath </> constProfilesRepoName)
   let profilesMaskFile = treePath </> constProfilesPackageMask
   profilesMask <- doesFileExist profilesMaskFile >>= \pmfExists ->
     if pmfExists
       then do fileData <- rstrip <$> readFile profilesMaskFile
               pure $ normalizeMasking (parseMask fileData [])
       else pure []
-  treeCats     ← getFilteredDirectoryContents treePath
-  filteredCats ← filterM (\(f, _) → getFileStatus f <&> isDirectory)
-                      $ map (\c → (treePath </> c, c))
+  treeCats     <- getFilteredDirectoryContents treePath
+  filteredCats <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
+                      $ map (\c -> (treePath </> c, c))
                             (filter (∉ [".git","eclass","metadata","profiles"]) treeCats)
-  catMap ← traverse (\(fcat, cat) → do
-      packages ← getFilteredDirectoryContents fcat
-      packagesFiltered ← filterM (\(fp, _) → getFileStatus fp <&> isDirectory)
-                              $ map (\p → (fcat </> p, p))
+  catMap <- traverse (\(fcat, cat) -> do
+      packages <- getFilteredDirectoryContents fcat
+      packagesFiltered <- filterM (\(fp, _) -> getFileStatus fp <&> isDirectory)
+                              $ map (\p -> (fcat </> p, p))
                                     (filter (∉ ["metadata.xml"]) packages)
-      parsed ← traverse (\(fp, pn) → do
-          versions ← getVersions fp pn overlayName
+      parsed <- traverse (\(fp, pn) -> do
+          versions <- getVersions fp pn overlayName
           pure $ Package cat versions pn
         ) packagesFiltered
       pure (parsed, (cat, map snd packagesFiltered))
@@ -99,7 +99,7 @@ parseOverlay treePath = do
       cpkg = map snd catMap
       ecls = "eclass" ∈ treeCats
 
-  eclasses ← if ecls
+  eclasses <- if ecls
     then getFilteredDirectoryContents $ treePath </> "eclass"
     else pure 𝜀
 
@@ -108,36 +108,36 @@ parseOverlay treePath = do
 
   pure (packagesEclasses, overlayMeta)
 
-parseOverlays ∷ String → IO (Tree, [OverlayMeta])
+parseOverlays ∷ String -> IO (Tree, [OverlayMeta])
 parseOverlays input = do
   let overlys = filter (not ∘ null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] input
-  parsed ← traverse parseOverlay overlys
+  parsed <- traverse parseOverlay overlys
   let treePkgs  = concatMap (fst . fst) parsed
-      trees     = map (\p → (pCategory p ++ "/" ++ pName p, p)) treePkgs
+      trees     = map (\p -> (pCategory p ++ "/" ++ pName p, p)) treePkgs
       ovMetas   = map snd parsed
   pure (M.fromList trees, ovMetas)
 
-mergePackages ∷ Package → Package → Package
+mergePackages ∷ Package -> Package -> Package
 mergePackages p1 p2 =
   let versions = S.union (pVersions p1) (pVersions p2)
   in Package (pCategory p1) versions (pName p1)
 
-findExactMax ∷ [String] → Maybe String
+findExactMax ∷ [String] -> Maybe String
 findExactMax [ ] = Nothing
 findExactMax [x] = Just x
 findExactMax xss = Just (maximumBy (comparing length) xss)
 
-getPackage ∷ String → String → Maybe String → String → IO (Maybe (Atom, Package))
+getPackage ∷ String -> String -> Maybe String -> String -> IO (Maybe (Atom, Package))
 getPackage _ _ Nothing _ = pure Nothing
 getPackage fcat cat (Just pn) vp = do
-  overlay ← rstrip <$> Strict.readFile (fcat </> vp </> "repository")
+  overlay <- rstrip <$> Strict.readFile (fcat </> vp </> "repository")
   case getVersionInstalled overlay pn vp of
     Left err -> putStrLn err
              >> pure Nothing
     Right vi -> let versions = S.singleton vi
                 in pure $ Just (cat ++ "/" ++ pn, Package cat versions pn)
 
-concatPackageGroups ∷ [(Atom, Package)] → [(Atom, Package)]
+concatPackageGroups ∷ [(Atom, Package)] -> [(Atom, Package)]
 concatPackageGroups [] = 𝜀
 concatPackageGroups [(a, p)] = [(a, p)]
 concatPackageGroups xs =
@@ -149,57 +149,57 @@ concatPackageGroups xs =
       versions  = S.fromList (S.toList ∘ pVersions ∘ snd =<< xs)
   in [(anyAtom, Package anyCat versions anyName)]
 
-findPackages ∷ String → String → [String] → [String] → IO Tree
+findPackages ∷ String -> String -> [String] -> [String] -> IO Tree
 findPackages fcat cat versionedPkgs pkgs = do
-  l ← traverse (\vpkg → let mb = filter (`isPrefixOf` vpkg) pkgs
+  l <- traverse (\vpkg -> let mb = filter (`isPrefixOf` vpkg) pkgs
                         in getPackage fcat cat (findExactMax mb) vpkg
                ) versionedPkgs
-  let srt = sortBy (\(a, _) (b, _) → compare a b) (catMaybes l)
-      grp = groupBy (\(a, _) (b, _) → a == b) srt
+  let srt = sortBy (\(a, _) (b, _) -> compare a b) (catMaybes l)
+      grp = groupBy (\(a, _) (b, _) -> a == b) srt
       gmp = concatMap concatPackageGroups grp
   pure $ M.fromList gmp
 
-concatMaps ∷ Tree → [Tree] → Tree
+concatMaps ∷ Tree -> [Tree] -> Tree
 concatMaps base []     = base
 concatMaps base [x]    = M.unionWith mergePackages base x
 concatMaps base (x:xs) = M.unionWith mergePackages (concatMaps base [x])
                                                    (concatMaps base xs)
 
-getInstalledPackages ∷ FilePath → [(String, [String])] → IO Tree
+getInstalledPackages ∷ FilePath -> [(String, [String])] -> IO Tree
 getInstalledPackages pkgdb categories = do
-  treeCats      ← getFilteredDirectoryContents pkgdb
-  filteredCats  ← filterM (\(f, _) → getFileStatus f <&> isDirectory)
-                      $ map (\c → (pkgdb </> c, c))
+  treeCats      <- getFilteredDirectoryContents pkgdb
+  filteredCats  <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
+                      $ map (\c -> (pkgdb </> c, c))
                             treeCats
-  catMaps ← traverse (\(fcat, cat) → do
-      pkgFiles ← getFilteredDirectoryContents fcat
+  catMaps <- traverse (\(fcat, cat) -> do
+      pkgFiles <- getFilteredDirectoryContents fcat
       let myCat = find ((cat ==) ∘ fst
                         ) categories
       case myCat of
-        Just (_,pkgs) → findPackages fcat cat pkgFiles pkgs
-        Nothing       → pure M.empty
+        Just (_,pkgs) -> findPackages fcat cat pkgFiles pkgs
+        Nothing       -> pure M.empty
     ) filteredCats
   pure $ concatMaps M.empty catMaps
 
-storeConfig ∷ Handle → PortageConfig → IO ()
+storeConfig ∷ Handle -> PortageConfig -> IO ()
 storeConfig h = BL.hPut h ∘ encode
 
-restoreConfig ∷ Handle → IO PortageConfig
+restoreConfig ∷ Handle -> IO PortageConfig
 restoreConfig h = decode <$> BL.hGetContents h
 
 loadPortageConfig ∷ IO PortageConfig
 loadPortageConfig = do
-  makeConf ← getConfigFile constMakeConfPath
+  makeConf <- getConfigFile constMakeConfPath
   let treePath = makeConf M.! "PORTDIR"
 
   ((catMap, eclasses), (ovName, (_, categoriesMain, mainMasks)))
-    ← parseOverlay treePath
+    <- parseOverlay treePath
 
-  (ov, met) ← case M.lookup "PORTDIR_OVERLAY" makeConf of
-                  Just o  → parseOverlays o
-                  Nothing → pure (M.empty, 𝜀)
+  (ov, met) <- case M.lookup "PORTDIR_OVERLAY" makeConf of
+                  Just o  -> parseOverlays o
+                  Nothing -> pure (M.empty, 𝜀)
 
-  let atoms       = map (\p → (pCategory p ++ "/" ++ pName p, p)) catMap
+  let atoms       = map (\p -> (pCategory p ++ "/" ++ pName p, p)) catMap
       pkgs        = M.fromList atoms
       merged      = M.unionWith mergePackages pkgs ov
       metaList    = (ovName, (treePath, categoriesMain, mainMasks)) : met
@@ -210,8 +210,8 @@ loadPortageConfig = do
                       ∘ concatMap (\(_, (_, c, _)) -> c)
                       $ metaList
 
-  installed     ← getInstalledPackages constInstalledPath categories
-  shelterHashes ← getShelterHashes
+  installed     <- getInstalledPackages constInstalledPath categories
+  shelterHashes <- getShelterHashes
 
   let finalTree = M.unionWith mergePackages installed merged
 
@@ -223,23 +223,23 @@ loadPortageConfig = do
                        shelterHashes
                        True -- update cahce
 
-updateWithMaybeShelter ∷ Maybe ShelterConfig → PortageConfig → IO PortageConfig
+updateWithMaybeShelter ∷ Maybe ShelterConfig -> PortageConfig -> IO PortageConfig
 updateWithMaybeShelter (Just shelter) binaryParsedConfig
   | isPortageConfigIsInSync binaryParsedConfig shelter
     = pure $ binaryParsedConfig { pcUpdateCache = False }
 updateWithMaybeShelter _ _ = loadPortageConfig
 
-maybeUpdateConfig ∷ Handle → IO PortageConfig
-maybeUpdateConfig h = getShelterConfig >>= \shelter →
+maybeUpdateConfig ∷ Handle -> IO PortageConfig
+maybeUpdateConfig h = getShelterConfig >>= \shelter ->
   restoreConfig h >>= updateWithMaybeShelter shelter
 
-portageConfig ∷ FilePath → Handle → IO PortageConfig
+portageConfig ∷ FilePath -> Handle -> IO PortageConfig
 portageConfig hakuCachePath hakuCacheHandle = do
   -- if cache is more than one minute old recheck if
   -- shelter hashes changed (update was made and was meaningful)
-  currentTime ← getCurrentTime
+  currentTime <- getCurrentTime
   -- getModificationTime returns UTC time (as it's in type)
-  changemTime ← getModificationTime hakuCachePath
+  changemTime <- getModificationTime hakuCachePath
   let diff = diffUTCTime currentTime changemTime
   if diff > 60 -- conversion functions will treat it as seconds
     then maybeUpdateConfig hakuCacheHandle

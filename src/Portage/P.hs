@@ -48,24 +48,24 @@ data PVS
       }
   deriving (Eq, Ord, Show)
 
-addSlot    ∷  PV → Slot → PVS
+addSlot    ∷  PV -> Slot -> PVS
 addSlot (PV c p v) = PVS c p v
 
-extractPS  ∷  PVS → PS
+extractPS  ∷  PVS -> PS
 extractPS (PVS c p _v s) = PS c p s
 
-extractP   ∷  PV → P
+extractP   ∷  PV -> P
 extractP (PV c p _v) = P c p
 
-showPV'       ∷  PV → [Char]
-showPV        ∷  PV → String
-showP         ∷  P → String
-showPS        ∷  PS → String
-showPVS       ∷  PVS → String
-getPV         ∷  String → PV
-getP          ∷  String → P
-showEbuildPV' ∷  PV → [Char]
-showEbuildPV  ∷  PV → FilePath
+showPV'       ∷  PV     -> [Char]
+showPV        ∷  PV     -> String
+showP         ∷  P      -> String
+showPS        ∷  PS     -> String
+showPVS       ∷  PVS    -> String
+getPV         ∷  String -> PV
+getP          ∷  String -> P
+showEbuildPV' ∷  PV     -> [Char]
+showEbuildPV  ∷  PV     -> FilePath
 
 showPV'        (PV _cat pkg ver)     =  pkg ++ "-" ++ showVersion ver
 showPV         pv@(PV cat _pkg _ver)  =  cat </> showPV' pv
@@ -77,7 +77,7 @@ showPS         (PS cat pkg slot)    =
 showPVS        (PVS cat pkg ver slot) =
     cat ++ "/" ++ pkg ++ "-" ++ showVersion ver ++ showSlot slot
 
-showSlot   ∷  Slot → String
+showSlot   ∷  Slot -> String
 showSlot ['0'] = ""
 showSlot slot  = ":" ++ slot
 
@@ -91,7 +91,7 @@ getP xs       =  case parseP xs of
                      error $ "getCatPkg: cat/pkg parse error '" ++ xs ++ "'\n" ++ show e
                    Right  x  ->  x
 
-parsePV       ∷ [Char] → Either ParseError PV
+parsePV       ∷ [Char] -> Either ParseError PV
 parsePV       =  parse (readPV >>= \x -> eof >> return x) "<cat/pkg-ver>"
 
 readPV        ∷ Text.Parsec.Prim.ParsecT
@@ -103,7 +103,7 @@ readPV        =  do  cat         <-  readCat
                        Nothing  ->  error "readPV: version expected"
                        Just ver ->  pure (PV cat pkg ver)
 
-parseP        ∷ [Char] → Either ParseError P
+parseP        ∷ [Char] -> Either ParseError P
 parseP        =  parse (readP >>= \x -> eof >> return x) "<cat/pkg>"
 
 readP         ∷ Text.Parsec.Prim.ParsecT

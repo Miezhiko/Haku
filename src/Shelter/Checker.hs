@@ -22,40 +22,40 @@ import           System.Directory
 import           System.FilePath
 import           System.Process
 
-readCheck    -- return whether command was success or not
-   ∷ String  -- command
-  → [String] -- arguments
-  → IO (Either SomeException String)
+readCheck     -- return whether command was success or not
+   ∷ String   -- command
+  -> [String] -- arguments
+  -> IO (Either SomeException String)
 readCheck γ args = try $ readProcess γ args []
 
-readIfSucc   -- useless wrapper on readCheck to return Maybe
-   ∷ String  -- command
-  → [String] -- arguments
-  → IO (Maybe String)
+readIfSucc    -- useless wrapper on readCheck to return Maybe
+   ∷ String   -- command
+  -> [String] -- arguments
+  -> IO (Maybe String)
 readIfSucc γ args =
   readCheck γ args
-  >>= \case Left _ → pure Nothing
-            Right val → do putStr $ γ ++ " : " ++ val
-                           pure $ Just val
+  >>= \case Left _ -> pure Nothing
+            Right val -> do putStr $ γ ++ " : " ++ val
+                            pure $ Just val
 
 getRemoteHash ∷ IO (Maybe String)
 getRemoteHash = do
-  currentBranch ← readProcess "git" ["rev-parse", "--abbrev-ref", "HEAD"] []
-  rlm ← readIfSucc "git" ["ls-remote", "origin", trim currentBranch]
+  currentBranch <- readProcess "git" ["rev-parse", "--abbrev-ref", "HEAD"] []
+  rlm <- readIfSucc "git" ["ls-remote", "origin", trim currentBranch]
   case rlm of
-    Nothing  → pure Nothing
-    Just rlc → pure $ Just (head (splitOn "\t" rlc))
+    Nothing  -> pure Nothing
+    Just rlc -> pure $ Just (head (splitOn "\t" rlc))
 
-checkForHash ∷ String → Maybe String → IO Bool
+checkForHash ∷ String -> Maybe String -> IO Bool
 checkForHash rlc Nothing = do
-  currentHash ← readProcess "git" ["log", "-n", "1"
+  currentHash <- readProcess "git" ["log", "-n", "1"
                                   , "--pretty=format:%H"
                                   ] []
   pure $ rlc == trim currentHash
 checkForHash rlc (Just shelterHash) =
   pure $ rlc == shelterHash
 
-updateNode ∷ ShelterNode → IO ShelterNode
+updateNode ∷ ShelterNode -> IO ShelterNode
 updateNode node = do
   getRemoteHash >>=
    \case Nothing  -> pure node

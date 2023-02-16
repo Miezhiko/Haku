@@ -30,11 +30,11 @@ instance Binary Package
 instance Show Package where
   show (Package c _ n) = c ++ "/" ++ n
 
-prettyShowVersionsList ∷ [PackageVersion] → String
+prettyShowVersionsList ∷ [PackageVersion] -> String
 prettyShowVersionsList = intercalate ", " . map show
 
-prettyShowVersions ∷ S.Set PackageVersion → String
+prettyShowVersions ∷ S.Set PackageVersion -> String
 prettyShowVersions = prettyShowVersionsList . S.toList
 
-prettyPrintVersions ∷ S.Set PackageVersion → IO ()
+prettyPrintVersions ∷ S.Set PackageVersion -> IO ()
 prettyPrintVersions = putStrLn . prettyShowVersions

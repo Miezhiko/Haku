@@ -18,24 +18,24 @@ import           Data.List
 import qualified Data.Map              as M
 import qualified Data.Set              as S
 
-findPackageByName ∷ PortageConfig → String → Maybe Package
+findPackageByName ∷ PortageConfig -> String -> Maybe Package
 findPackageByName pc x =
   let tree = pcTree pc
-      cat = find (\(c, _) → case M.lookup (c ++ "/" ++ x) tree of
-                              Just _  → True
-                              Nothing → False
+      cat = find (\(c, _) -> case M.lookup (c ++ "/" ++ x) tree of
+                              Just _  -> True
+                              Nothing -> False
                  ) $ pcCategories pc
   in case cat of
-      Just (c,_) → findPackage pc (c ++ "/" ++ x)
-      Nothing    → Nothing
+      Just (c,_) -> findPackage pc (c ++ "/" ++ x)
+      Nothing    -> Nothing
 
-findPackage ∷ PortageConfig → String → Maybe Package
+findPackage ∷ PortageConfig -> String -> Maybe Package
 findPackage pc input =
   if '/' ∈ input
     then M.lookup input (pcTree pc)
     else findPackageByName pc input
 
-findMaxVersion ∷ S.Set PackageVersion → PortageConfig → Package → IO (Maybe Ebuild)
+findMaxVersion ∷ S.Set PackageVersion -> PortageConfig -> Package -> IO (Maybe Ebuild)
 findMaxVersion versions pc package =
   let mv = maximum versions
       pv = pvVersion mv
@@ -46,11 +46,11 @@ findMaxVersion versions pc package =
       (ovp, _, _) = pcOverlays pc M.! po
       ep = ovp </> pp </> p
   in doesFileExist ep >>= parse ep
- where parse ∷ String → Bool → IO (Maybe Ebuild)
+ where parse ∷ String -> Bool -> IO (Maybe Ebuild)
        parse e True  = Just <$> getEbuild e
        parse _ False = pure Nothing
 
-findEbuild ∷ PortageConfig → Package → IO (Maybe Ebuild)
+findEbuild ∷ PortageConfig -> Package -> IO (Maybe Ebuild)
 findEbuild pc package =
   let versions = pVersions package
   in if S.null versions

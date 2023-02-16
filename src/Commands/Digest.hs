@@ -12,7 +12,7 @@ import           Data.List        (isSuffixOf)
 
 import           System.Directory (getCurrentDirectory, getDirectoryContents)
 
-digestEbuild ∷ String → IO ()
+digestEbuild ∷ String -> IO ()
 digestEbuild x = isRoot
   ( rawAndIgnore "ebuild" [ x, "digest" ] )
   ( rawAndIgnore "sudo" [ "ebuild", x, "digest" ] )
@@ -29,4 +29,4 @@ digestCmd = Command { command = ["digest"]
                    , usage = ("haku " ++)
                    , state = 𝜀
                    , options = const 𝜀
-                   , handler = \_ _ → liftIO digest }
+                   , handler = \_ _ -> liftIO digest }
