@@ -10,9 +10,9 @@ import           GHC.Generics          (Generic)
 
 import           Data.Binary
 
-type Slot = String
+type Slot     = String
 type Category = String
-type UseFlag = String
+type UseFlag  = String
 
 data DepAtom
   = DepAtom DepNeg DepRev DepMod Category String DepVer DepSlot

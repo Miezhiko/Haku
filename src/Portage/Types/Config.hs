@@ -28,6 +28,9 @@ type Tree           = M.Map Atom Package
 type ShelterHashes  = M.Map FilePath (Maybe String)
 type Overlays       = M.Map String OverlayData
 
+-- useless helper type
+type OverlayMeta = ( String, OverlayData )
+
 data PortageConfig
   = PortageConfig
       { pcMakeConf      :: EnvMap

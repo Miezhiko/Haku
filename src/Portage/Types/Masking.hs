@@ -12,10 +12,9 @@ import           Data.Binary
 
 data Masking
   = Masking
-      { mreason  :: [String]
-      , mfile    :: FilePath
-      , mdepatom :: DepAtom
-      , mnegate  :: Bool
+      { mNegate  :: Bool
+      , mSystem  :: Bool
+      , mDepAtom :: DepAtom
       }
   deriving (Eq, Generic, Ord, Show)
 

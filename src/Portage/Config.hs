@@ -40,8 +40,6 @@ import           System.Process
 import           Control.Arrow
 import           Control.Monad
 
-type OverlayMeta = ( String, OverlayData )
-
 parseEnvMap ∷ String -> EnvMap
 parseEnvMap s = M.fromList $
                    [  (v,stripQuotes c) | 
@@ -73,7 +71,7 @@ parseOverlay treePath = do
   profilesMask <- doesFileExist profilesMaskFile >>= \pmfExists ->
     if pmfExists
       then do fileData <- rstrip <$> readFile profilesMaskFile
-              pure $ normalizeMasking (parseMask fileData [])
+              pure $ parseMask fileData
       else pure []
   treeCats     <- getFilteredDirectoryContents treePath
   filteredCats <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)

@@ -3,30 +3,38 @@
   #-}
 module Portage.Mask
   ( module Portage.Types.Masking
-  , normalizeMasking
   , parseMask
   ) where
-
-import           Data.Char             (isSpace)
-import qualified Data.Set              as S
 
 import           Portage.Atom
 import           Portage.Types.Masking
 
-parseMask ∷ FilePath -> String -> [Masking]
-parseMask f = parseMaskByLine f [] [] . lines
+import           Data.Functor.Identity
 
-parseMaskByLine ∷ FilePath -> [String] -> [String] -> [String] -> [Masking]
-parseMaskByLine f acc _acc (l@('#':_) : ls)  =  let  nacc = l : acc
-                                                in   parseMaskByLine f nacc (reverse nacc) ls
-parseMaskByLine f _ac facc (l@('-':_) : ls)  =  Masking facc f (getDepAtom l) True  : parseMaskByLine f [] facc ls
-parseMaskByLine f _ac facc (l : ls)
-  | all isSpace l                            =  parseMaskByLine f [] [] ls
-  | otherwise                                =  Masking facc f (getDepAtom l) False : parseMaskByLine f [] facc ls
-parseMaskByLine _ _ac _acc []                =  []
+import           Text.Parsec.Prim
+import           Text.ParserCombinators.Parsec as P
 
-normalizeMasking ∷ [Masking] -> [Masking]
-normalizeMasking xs  =  S.elems $
-                        foldl  (\s m -> if mnegate m  then  S.delete m s
-                                                      else  S.insert m s
-                               ) S.empty xs
+-- | Strip empty lines and comments from a string.
+stripComments ∷ String -> String
+stripComments = unlines . filter (not . null) . map (takeWhile (/= '#')) . lines
+
+parseMask ∷ String -> [Masking]
+parseMask = map getProfilePackage . lines . stripComments
+
+-- | Get a dependency atom which can be modified by an initial @*@,
+--   indicating a base system package, and by an additional initial @-@,
+--   indicating removal of a package from the profile.
+getProfilePackage ∷ String -> Masking
+getProfilePackage p =  case parseProfilePackage p of
+  Left   e ->  error $ "getProfilePackage: " ++ show e
+  Right  x ->  x
+
+parseProfilePackage ∷ [Char] -> Either ParseError Masking
+parseProfilePackage = parse readProfilePackage "<-*depatom>"
+
+readProfilePackage ∷ Text.Parsec.Prim.ParsecT
+                      [Char] u Data.Functor.Identity.Identity Masking
+readProfilePackage =  do  neg  <-  optchar '-'
+                          sys  <-  optchar '*'
+                          d    <-  readDepAtom (const [])
+                          pure $ Masking neg sys d
