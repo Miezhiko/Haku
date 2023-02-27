@@ -43,8 +43,9 @@ findMaxVersion versions pc package =
       pn = pName package
       pp = pCategory package </> pn
       p  = pn ++ "-" ++ show pv ++ ".ebuild"
-      (ovp, _, _) = pcOverlays pc M.! po
-      ep = ovp </> pp </> p
+      od = pcOverlays pc M.! po
+      op = ovFilePath od
+      ep = op </> pp </> p
   in doesFileExist ep >>= parse ep
  where parse ∷ String -> Bool -> IO (Maybe Ebuild)
        parse e True  = Just <$> getEbuild e

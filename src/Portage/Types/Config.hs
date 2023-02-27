@@ -15,15 +15,18 @@ import qualified Data.Map              as M
 type EnvMap = M.Map String String
 
 type Atom     = String -- Atom here is category/PN
-type Tree     = M.Map Atom Package
 
-type Overlays = M.Map String -- Overlay Name
-                      ( FilePath
-                      , [(String, [String])]
-                      , [Masking]
-                      )
+data OverlayData
+  = OverlayData
+      { ovFilePath      :: FilePath
+      , ovCategories    :: [(String, [String])]
+      , ovMasking       :: [Masking]
+      }
+  deriving (Generic)
 
-type ShelterHashes = M.Map FilePath (Maybe String)
+type Tree           = M.Map Atom Package
+type ShelterHashes  = M.Map FilePath (Maybe String)
+type Overlays       = M.Map String OverlayData
 
 data PortageConfig
   = PortageConfig
@@ -37,4 +40,5 @@ data PortageConfig
       }
   deriving (Generic)
 
+instance Binary OverlayData
 instance Binary PortageConfig

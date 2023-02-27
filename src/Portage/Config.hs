@@ -40,12 +40,7 @@ import           System.Process
 import           Control.Arrow
 import           Control.Monad
 
-type OverlayMeta = ( String -- overlay name
-                   , ( FilePath -- path
-                     , [(String, [String])] -- category and packages
-                     , [Masking]
-                     )
-                   )
+type OverlayMeta = ( String, OverlayData )
 
 parseEnvMap ∷ String -> EnvMap
 parseEnvMap s = M.fromList $
@@ -73,7 +68,7 @@ getVersions fp pn o = do
 
 parseOverlay ∷ FilePath -> IO (([Package], [String]), OverlayMeta)
 parseOverlay treePath = do
-  overlayName  <- rstrip <$> readFile (treePath </> constProfilesRepoName)
+  overlayName <- rstrip <$> readFile (treePath </> constProfilesRepoName)
   let profilesMaskFile = treePath </> constProfilesPackageMask
   profilesMask <- doesFileExist profilesMaskFile >>= \pmfExists ->
     if pmfExists
@@ -104,7 +99,8 @@ parseOverlay treePath = do
     else pure 𝜀
 
   let packagesEclasses = (pkgs, eclasses)
-      overlayMeta = (overlayName, (treePath, cpkg, profilesMask))
+      overlayMeta = ( overlayName
+                    , OverlayData treePath cpkg profilesMask )
 
   pure (packagesEclasses, overlayMeta)
 
@@ -192,8 +188,7 @@ loadPortageConfig = do
   makeConf <- getConfigFile constMakeConfPath
   let treePath = makeConf M.! "PORTDIR"
 
-  ((catMap, eclasses), (ovName, (_, categoriesMain, mainMasks)))
-    <- parseOverlay treePath
+  ((catMap, eclasses), (treeName, treeData)) <- parseOverlay treePath
 
   (ov, met) <- case M.lookup "PORTDIR_OVERLAY" makeConf of
                   Just o  -> parseOverlays o
@@ -202,12 +197,12 @@ loadPortageConfig = do
   let atoms       = map (\p -> (pCategory p ++ "/" ++ pName p, p)) catMap
       pkgs        = M.fromList atoms
       merged      = M.unionWith mergePackages pkgs ov
-      metaList    = (ovName, (treePath, categoriesMain, mainMasks)) : met
+      metaList    = (treeName, treeData) : met
       overlays    = M.fromList metaList
       categories  = map (fst ∘ head &&& concatMap snd) 
                       ∘ groupBy ((==) `on` fst)
                       ∘ sortBy (comparing fst)
-                      ∘ concatMap (\(_, (_, c, _)) -> c)
+                      ∘ concatMap (\(_, oDt) -> ovCategories oDt)
                       $ metaList
 
   installed     <- getInstalledPackages constInstalledPath categories
