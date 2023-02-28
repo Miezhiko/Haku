@@ -3,7 +3,9 @@
   , UnicodeSyntax
   #-}
 
-module Commands.Get where
+module Commands.Get
+  ( getCmd
+  ) where
 
 import           Types
 import           Utils

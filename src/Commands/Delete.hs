@@ -3,7 +3,9 @@
   , UnicodeSyntax
   #-}
 
-module Commands.Delete where
+module Commands.Delete
+  ( deleteCmd
+  ) where
 
 import           Types
 import           Utils

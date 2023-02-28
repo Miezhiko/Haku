@@ -4,7 +4,9 @@
   , UnicodeSyntax
   #-}
 
-module Commands.Find where
+module Commands.Find
+  ( findCmd
+  ) where
 
 import           Types
 import           Utils

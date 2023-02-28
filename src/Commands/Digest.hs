@@ -3,7 +3,9 @@
   , UnicodeSyntax
   #-}
 
-module Commands.Digest where
+module Commands.Digest
+  ( digestCmd
+  ) where
 
 import           Types
 import           Utils

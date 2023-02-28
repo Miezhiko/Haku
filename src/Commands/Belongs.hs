@@ -3,7 +3,9 @@
   , UnicodeSyntax
   #-}
 
-module Commands.Belongs where
+module Commands.Belongs
+  ( belongsCmd
+  ) where
 
 import           Constants
 import           Types

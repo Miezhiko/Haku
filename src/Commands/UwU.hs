@@ -3,7 +3,9 @@
   , UnicodeSyntax
   #-}
 
-module Commands.UwU where
+module Commands.UwU
+  ( uwuCmd
+  ) where
 
 import           Types
 import           Utils

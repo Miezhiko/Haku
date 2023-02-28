@@ -3,7 +3,9 @@
   , UnicodeSyntax
   #-}
 
-module Commands.Update where
+module Commands.Update
+  ( updateCmd
+  ) where
 
 import           Types
 import           Utils

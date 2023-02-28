@@ -2,7 +2,9 @@
     UnicodeSyntax
   #-}
 
-module Commands.Upgrade where
+module Commands.Upgrade
+  ( upgradeCmd
+  ) where
 
 import           Types
 import           Utils
