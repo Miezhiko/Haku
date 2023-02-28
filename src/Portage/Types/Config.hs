@@ -12,15 +12,14 @@ import           GHC.Generics          (Generic)
 import           Data.Binary
 import qualified Data.Map              as M
 
-type EnvMap = M.Map String String
-
+type ConfData = M.Map String String
 type Atom     = String -- Atom here is category/PN
 
 data OverlayData
   = OverlayData
-      { ovFilePath      :: FilePath
-      , ovCategories    :: [(String, [String])]
-      , ovMasking       :: [Masking]
+      { ovFilePath   :: FilePath
+      , ovCategories :: [(String, [String])]
+      , ovMasking    :: [Masking]
       }
   deriving (Generic)
 
@@ -33,7 +32,7 @@ type OverlayMeta = ( String, OverlayData )
 
 data PortageConfig
   = PortageConfig
-      { pcMakeConf      :: EnvMap
+      { pcMakeConf      :: ConfData
       , pcCategories    :: [(String, [String])]
       , pcEclasses      :: [String]
       , pcTree          :: Tree

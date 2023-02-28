@@ -40,7 +40,7 @@ import           System.Process
 import           Control.Arrow
 import           Control.Monad
 
-parseEnvMap ∷ String -> EnvMap
+parseEnvMap ∷ String -> ConfData
 parseEnvMap s = M.fromList $
                    [  (v,stripQuotes c) | 
                       l <- lines s,
@@ -51,7 +51,7 @@ parseEnvMap s = M.fromList $
 getFilteredDirectoryContents ∷ FilePath -> IO [FilePath]
 getFilteredDirectoryContents fp = filter (∉ [".",".."]) <$> getDirectoryContents fp
 
-getConfigFile ∷ FilePath -> IO EnvMap
+getConfigFile ∷ FilePath -> IO ConfData
 getConfigFile f =  do  (_,r,_) <- readCreateProcessWithExitCode (
                                     shell $  "unset $(set | sed 's/^\\([^=]*\\)=.*$/\\1/') 2>/dev/null;" ++
                                              "source " ++ f ++ "; set" ) []

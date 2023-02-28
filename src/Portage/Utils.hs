@@ -35,10 +35,9 @@ findPackage pc input =
     then M.lookup input (pcTree pc)
     else findPackageByName pc input
 
-findMaxVersion ∷ S.Set PackageVersion -> PortageConfig -> Package -> IO (Maybe Ebuild)
-findMaxVersion versions pc package =
-  let mv = maximum versions
-      pv = pvVersion mv
+findVersionedEbuild ∷ PortageConfig -> Package -> PackageVersion -> IO (Maybe Ebuild)
+findVersionedEbuild pc package mv =
+  let pv = pvVersion mv
       po = pvOverlay mv
       pn = pName package
       pp = pCategory package </> pn
@@ -55,5 +54,6 @@ findEbuild ∷ PortageConfig -> Package -> IO (Maybe Ebuild)
 findEbuild pc package =
   let versions = pVersions package
   in if S.null versions
-      then pure Nothing
-      else findMaxVersion versions pc package
+    then pure Nothing
+    else let mv = maximum versions
+         in findVersionedEbuild pc package mv

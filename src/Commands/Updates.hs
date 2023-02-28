@@ -1,15 +1,18 @@
 {-# LANGUAGE
     FlexibleContexts
+  , LambdaCase
   , UnicodeSyntax
   #-}
 
 module Commands.Updates where
 
 import           Types
+import           Utils
 
 import           Data.Foldable       (for_)
 import           Data.List
 import qualified Data.Map            as M
+import           Data.Maybe
 import qualified Data.Set            as S
 
 import           System.Console.ANSI
@@ -41,36 +44,54 @@ prettyShowVersionsListAndMasking masks vers = do
   for_ vers (printWithMasks masks)
   putStrLn []
 
+checkForEbuild ∷ PortageConfig
+             -> Package
+             -> PackageVersion
+             -> IO (Maybe PackageVersion)
+checkForEbuild pc p ver =
+  findVersionedEbuild pc p ver >>=
+    \case Nothing -> pure Nothing
+          Just eb ->
+            case eKeywords eb of
+              [] -> pure Nothing    -- no keywords
+              kw -> if any (∈ ["amd64", "~amd64"]) kw
+                      then pure $ Just ver -- good keywords
+                      else pure Nothing    -- bad keywords
+
 showOnlyInstalled ∷ Package
                 -> [PackageVersion]
                 -> [PackageVersion]
                 -> [DepAtom]
+                -> PortageConfig
                 -> IO ()
-showOnlyInstalled _ _ [] _      = pure ()
-showOnlyInstalled _ [] _ _      = pure ()
-showOnlyInstalled p [x] vv mask =
+showOnlyInstalled _ _ [] _ _      = pure ()
+showOnlyInstalled _ [] _ _ _      = pure ()
+showOnlyInstalled p [x] vv mask pc =
   let higherVersions = filter (> x) vv
   in unless (null higherVersions) $ do
-    setSGR [ SetConsoleIntensity BoldIntensity
-           , SetUnderlining SingleUnderline ]
-    print p
-    setSGR [ SetColor Foreground Vivid Green
-           , SetUnderlining NoUnderline
-           , SetConsoleIntensity BoldIntensity ]
-    putStrLn $ prettyShowVersionsList [x]
-    prettyShowVersionsListAndMasking mask higherVersions
-    setSGR [ Reset ]
-    putStrLn []
-showOnlyInstalled p xs vv mask  =
+    newVersionsWithEbuilds <-
+      catMaybes <$> traverse (checkForEbuild pc p) higherVersions
+    unless (null newVersionsWithEbuilds) $ do
+      setSGR [ SetConsoleIntensity BoldIntensity
+            , SetUnderlining SingleUnderline ]
+      print p
+      setSGR [ SetColor Foreground Vivid Green
+            , SetUnderlining NoUnderline
+            , SetConsoleIntensity BoldIntensity ]
+      putStrLn $ prettyShowVersionsList [x]
+      prettyShowVersionsListAndMasking mask newVersionsWithEbuilds
+      setSGR [ Reset ]
+      putStrLn []
+showOnlyInstalled p xs vv mask pc =
   let maxInstalledVersion = maximum xs
-  in showOnlyInstalled p [maxInstalledVersion] vv mask
+  in showOnlyInstalled p [maxInstalledVersion] vv mask pc
 
 filteredDep ∷ String -> String -> DepAtom -> Bool
 filteredDep pcat pname (DepAtom _ _ _ cat name _ _) = 
   cat == pcat && pname == name
 
-showSingle ∷ Package -> [OverlayMeta] -> IO ()
-showSingle package ovs =
+showSingle ∷ Package -> [OverlayMeta] -> PortageConfig -> IO ()
+showSingle package ovs pc =
   let versions      = pVersions package
       versionsList  = S.toList versions
       installed     = filter pvInstalled versionsList
@@ -88,7 +109,7 @@ showSingle package ovs =
           xs -> let ovMasks = concatMap (\(_, od) -> ovMasking od) xs
                     mAtoms  = map mDepAtom ovMasks
                 in filter (filteredDep category name) mAtoms
-  in showOnlyInstalled package installed notInstalled masksForPkg
+  in showOnlyInstalled package installed notInstalled masksForPkg pc
 
 showU ∷ IORef PortageConfig -> [String] -> IO ()
 showU rpc filterPackages = readIORef rpc >>= \pc ->
@@ -96,8 +117,8 @@ showU rpc filterPackages = readIORef rpc >>= \pc ->
       ovls = M.toList (pcOverlays pc)
   in for_ (M.toList tree) $ \(a, package) ->
     case filterPackages of
-      [] -> showSingle package ovls
-      xs -> when (any (`isInfixOf` a) xs) $ showSingle package ovls
+      [] -> showSingle package ovls pc
+      xs -> when (any (`isInfixOf` a) xs) $ showSingle package ovls pc
 
 showPossibleUpdates ∷ HakuMonad m ⇒ String -> [String] -> m ()
 showPossibleUpdates _ xs = ask >>= \env ->
