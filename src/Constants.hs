@@ -16,5 +16,8 @@ cosntSudoPath = "/usr/bin/sudo"
 constProfilesPackageMask ∷ String
 constProfilesPackageMask = "profiles/package.mask"
 
+constPortagePackageMask ∷ String
+constPortagePackageMask = "/etc/portage/package.mask"
+
 constProfilesRepoName ∷ String
 constProfilesRepoName = "profiles/repo_name"

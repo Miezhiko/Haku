@@ -188,6 +188,12 @@ loadPortageConfig = do
 
   ((catMap, eclasses), (treeName, treeData)) <- parseOverlay treePath
 
+  portageMask <- doesFileExist constPortagePackageMask >>= \pmfExists ->
+    if pmfExists
+      then do fileData <- rstrip <$> readFile constPortagePackageMask
+              pure $ parseMask fileData
+      else pure []
+
   (ov, met) <- case M.lookup "PORTDIR_OVERLAY" makeConf of
                   Just o  -> parseOverlays o
                   Nothing -> pure (M.empty, 𝜀)
@@ -196,6 +202,9 @@ loadPortageConfig = do
       pkgs        = M.fromList atoms
       merged      = M.unionWith mergePackages pkgs ov
       metaList    = (treeName, treeData) : met
+      maskData    = MaskingData
+                      portageMask
+                      [] -- for keywords
       overlays    = M.fromList metaList
       categories  = map (fst ∘ head &&& concatMap snd) 
                       ∘ groupBy ((==) `on` fst)
@@ -213,6 +222,7 @@ loadPortageConfig = do
                        eclasses
                        finalTree
                        overlays
+                       maskData
                        shelterHashes
                        True -- update cahce
 

@@ -19,10 +19,22 @@ import qualified Data.Set            as S
 
 import           System.Console.ANSI
 
+{-
+showMod DNONE =  ""
+showMod DLT   =  "<"
+showMod DLEQ  =  "<="
+showMod DEQ   =  "="
+showMod DGEQ  =  ">="
+showMod DGT   =  ">"
+-}
 isVersionMasked ∷ Version -> DepAtom -> Bool
-isVersionMasked _ (DepAtom _ _ _ _ _ NoVer _) = False
-isVersionMasked v (DepAtom neg _rev _dmod _ _ (DepVer vv _ast) _slt) =
-  not neg && v == vv
+isVersionMasked _ (DepAtom _ _ _ _ _ NoVer _)                        = True
+isVersionMasked v (DepAtom _neg _rev DLT _ _ (DepVer vv _ast) _slt)  = v < vv
+isVersionMasked v (DepAtom _neg _rev DLEQ _ _ (DepVer vv _ast) _slt) = v <= vv
+isVersionMasked v (DepAtom _neg _rev DEQ _ _ (DepVer vv _ast) _slt)  = v == vv
+isVersionMasked v (DepAtom _neg _rev DGEQ _ _ (DepVer vv _ast) _slt) = v >= vv
+isVersionMasked v (DepAtom _neg _rev DGT _ _ (DepVer vv _ast) _slt)  = v > vv
+isVersionMasked _ (DepAtom _neg _rev _ _ _ _ _)                      = True
 
 printWithMasks ∷ [DepAtom] -> PackageVersion -> IO ()
 printWithMasks masks (PackageVersion v ov installed) = do
@@ -92,8 +104,8 @@ filteredDep ∷ String -> String -> DepAtom -> Bool
 filteredDep pcat pname (DepAtom _ _ _ cat name _ _) = 
   cat == pcat && pname == name
 
-showSingle ∷ Package -> [OverlayMeta] -> PortageConfig -> IO ()
-showSingle package ovs pc =
+showSingle ∷ Package -> [OverlayMeta] -> MaskingData -> PortageConfig -> IO ()
+showSingle package ovs mask pc =
   let versions      = pVersions package
       versionsList  = S.toList versions
       installed     = filter pvInstalled versionsList
@@ -107,20 +119,21 @@ showSingle package ovs pc =
                   any (\(c, pkgs) ->
                     c == category && name ∈ pkgs
                     ) (ovCategories od)) ovs of
-          [] -> 𝜀
+          [] -> map mDepAtom (pMask mask)
           xs -> let ovMasks = concatMap (\(_, od) -> ovMasking od) xs
-                    mAtoms  = map mDepAtom ovMasks
-                in filter (filteredDep category name) mAtoms
-  in showOnlyInstalled package installed notInstalled masksForPkg pc
+                in map mDepAtom (ovMasks ++ pMask mask)
+      finalMasks = filter (filteredDep category name) masksForPkg
+  in showOnlyInstalled package installed notInstalled finalMasks pc
 
 showU ∷ IORef PortageConfig -> [String] -> IO ()
 showU rpc filterPackages = readIORef rpc >>= \pc ->
   let tree = pcTree pc
+      mask = pcMasking pc
       ovls = M.toList (pcOverlays pc)
   in for_ (M.toList tree) $ \(a, package) ->
     case filterPackages of
-      [] -> showSingle package ovls pc
-      xs -> when (any (`isInfixOf` a) xs) $ showSingle package ovls pc
+      [] -> showSingle package ovls mask pc
+      xs -> when (any (`isInfixOf` a) xs) $ showSingle package ovls mask pc
 
 showPossibleUpdates ∷ HakuMonad m ⇒ String -> [String] -> m ()
 showPossibleUpdates _ xs = ask >>= \env ->

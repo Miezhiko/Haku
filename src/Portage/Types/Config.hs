@@ -23,11 +23,18 @@ data OverlayData
       }
   deriving (Generic)
 
+data MaskingData
+  = MaskingData
+      { pMask     :: [Masking]
+      , pKeywords :: [Masking]
+        -- unused for now
+      }
+  deriving (Generic)
+
 type Tree           = M.Map Atom Package
 type ShelterHashes  = M.Map FilePath (Maybe String)
 type Overlays       = M.Map String OverlayData
 
--- useless helper type
 type OverlayMeta = ( String, OverlayData )
 
 data PortageConfig
@@ -37,10 +44,12 @@ data PortageConfig
       , pcEclasses      :: [String]
       , pcTree          :: Tree
       , pcOverlays      :: Overlays
+      , pcMasking       :: MaskingData
       , pcShelterHashes :: ShelterHashes
       , pcUpdateCache   :: Bool
       }
   deriving (Generic)
 
 instance Binary OverlayData
+instance Binary MaskingData
 instance Binary PortageConfig
