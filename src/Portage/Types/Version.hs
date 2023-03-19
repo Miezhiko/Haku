@@ -26,25 +26,39 @@ instance Binary Suffix
 
 data Version'
   = Version' [Int] (Maybe Char) [Suffix] Int
-  deriving (Eq, Ord)
+  deriving (Eq)
 
 data Version
   = Version [Int] (Maybe Char) [Suffix] Int String
   deriving (Generic)
+
+-- ensure that 1.0 > 1.0_rc
+instance Ord Version' where
+  compare (Version' v1 _ s1 r1) (Version' v2 _ s2 r2) =
+    case compare v1 v2 of
+      EQ -> case compare s1 s2 of
+        EQ -> compare r1 r2
+        _  ->
+          if null s1
+            then GT
+            else if null s2
+                  then LT
+                  else compare s2 s1
+      unequal -> unequal
 
 instance Binary Version
 
 instance Show Version where
   show = showVersion
 
+projectVersion ∷ Version -> Version'
+projectVersion (Version ver c suf rev _) = Version' ver c suf rev
+
 instance Eq Version where
   v1 == v2 = projectVersion v1 == projectVersion v2
 
 instance Ord Version where
   compare v1 v2 = compare (projectVersion v1) (projectVersion v2)
-
-projectVersion ∷ Version -> Version'
-projectVersion (Version ver c suf rev _) = Version' ver c suf rev
 
 showVersion ∷ Version -> String
 showVersion (Version _ _ _ _ rep) = rep
