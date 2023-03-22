@@ -38,10 +38,9 @@ instance Ord Version' where
     case compare v1 v2 of
       EQ -> case compare s1 s2 of
         EQ -> compare r1 r2
-        _  ->
-          if null s1
-            then GT
-            else if null s2
+        _  -> if null s1
+                then GT
+                else if null s2
                   then LT
                   else compare s2 s1
       unequal -> unequal

@@ -175,12 +175,6 @@ getInstalledPackages pkgdb categories = do
     ) filteredCats
   pure $ concatMaps M.empty catMaps
 
-storeConfig ∷ Handle -> PortageConfig -> IO ()
-storeConfig h = BL.hPut h ∘ encode
-
-restoreConfig ∷ Handle -> IO PortageConfig
-restoreConfig h = decode <$> BL.hGetContents h
-
 loadPortageConfig ∷ IO PortageConfig
 loadPortageConfig = do
   makeConf <- getConfigFile constMakeConfPath
@@ -225,6 +219,16 @@ loadPortageConfig = do
                        maskData
                        shelterHashes
                        True -- update cahce
+
+storeConfig ∷ Handle -> PortageConfig -> IO ()
+storeConfig h = BL.hPut h ∘ encode
+
+restoreConfig ∷ Handle -> IO PortageConfig
+restoreConfig h = BL.hGetContents h >>= \c ->
+  case decodeOrFail c of
+    Left (_,_,err) -> do putStrLn $ "Failed to decode cache: " ++ err
+                         loadPortageConfig
+    Right (_,_,pc) -> pure pc
 
 updateWithMaybeShelter ∷ Maybe ShelterConfig -> PortageConfig -> IO PortageConfig
 updateWithMaybeShelter (Just shelter) binaryParsedConfig
