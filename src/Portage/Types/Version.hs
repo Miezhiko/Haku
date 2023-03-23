@@ -32,17 +32,28 @@ data Version
   = Version [Int] (Maybe Char) [Suffix] Int String
   deriving (Generic)
 
+getPatchVersion ∷ [Suffix] -> Int
+getPatchVersion sfx =
+  case patches of
+    [] -> 0
+    xs -> maximum xs
+ where patches ∷ [Int]
+       patches = [x | P_ x <- sfx]
+
 -- ensure that 1.0 > 1.0_rc
 instance Ord Version' where
-  compare (Version' v1 _ s1 r1) (Version' v2 _ s2 r2) =
+  compare (Version' v1 _ s1 r1)
+          (Version' v2 _ s2 r2) =
     case compare v1 v2 of
       EQ -> case compare s1 s2 of
         EQ -> compare r1 r2
-        _  -> if null s1
-                then GT
-                else if null s2
-                  then LT
-                  else compare s2 s1
+        _  -> case compare (getPatchVersion s1) (getPatchVersion s2) of
+                EQ -> if null s1
+                        then GT
+                        else if null s2
+                          then LT
+                          else compare s2 s1
+                px -> px
       unequal -> unequal
 
 instance Binary Version
@@ -82,7 +93,7 @@ instance Show PackageVersion where
   show = showPackageVersion
 
 showPackageVersion ∷ PackageVersion -> String
-showPackageVersion (PackageVersion v ov True) = show v ++ "::" ++ ov ++ " [Installed]"
+showPackageVersion (PackageVersion v ov True)  = show v ++ "::" ++ ov ++ " [Installed]"
 showPackageVersion (PackageVersion v ov False) = show v ++ "::" ++ ov
 
 parseVersion ∷ String -> Either ParseError Version
