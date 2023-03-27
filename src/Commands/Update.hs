@@ -21,10 +21,10 @@ data UpdateState
 
 updateOpts ∷ Bool -> [OptDescr (UpdateState -> UpdateState)]
 updateOpts _ =
-    [ Option "u" ["upgrade"] (NoArg (\s -> s { updUpgrade = True })) "run upgrade after"
-    , Option "m" ["minimal"] (NoArg (\s -> s { updMinimal = True })) "only emerge --sync"
-    , Option "s" ["store"]   (NoArg (\s -> s { updStore = True }))   "store new config after update"
-    ]
+  [ Option "u" ["upgrade"] (NoArg (\s -> s { updUpgrade = True })) "run upgrade after"
+  , Option "m" ["minimal"] (NoArg (\s -> s { updMinimal = True })) "only emerge --sync"
+  , Option "s" ["store"]   (NoArg (\s -> s { updStore = True }))   "store new config after update"
+  ]
 
 updateRoot ∷ (IORef PortageConfig, UpdateState) -> IO ()
 updateRoot (rpc, upds) = do

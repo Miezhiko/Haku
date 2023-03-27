@@ -28,10 +28,10 @@ data UpdatesState
 
 updatesOpts ∷ Bool -> [OptDescr (UpdatesState -> UpdatesState)]
 updatesOpts _ =
-    [ Option "v" ["verbose"] (NoArg (\s -> s { updsVerbose = True })) "verbose output"
-    , Option "m" ["show-masks"] (NoArg (\s -> s { updsShowMasks = True })) "show masked"
-    , Option "o" ["only-masks"] (NoArg (\s -> s { updsOnlyMasks = True })) "show only masked"
-    ]
+  [ Option "v" ["verbose"] (NoArg (\s -> s { updsVerbose = True })) "verbose output"
+  , Option "m" ["show-masks"] (NoArg (\s -> s { updsShowMasks = True })) "show masked"
+  , Option "o" ["only-masks"] (NoArg (\s -> s { updsOnlyMasks = True })) "show only masked"
+  ]
 
 {-
 showMod DNONE =  ""

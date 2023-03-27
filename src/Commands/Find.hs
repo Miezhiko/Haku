@@ -26,9 +26,9 @@ data FindState
 
 findOpts ∷ Bool -> [OptDescr (FindState -> FindState)]
 findOpts _ =
-    [ Option "e" ["exact"]     (NoArg (\s -> s { fndExact = True }))     "find exact ebuild/package"
-    , Option "i" ["installed"] (NoArg (\s -> s { fndInstalled = True })) "find installed atom"
-    ]
+  [ Option "e" ["exact"]     (NoArg (\s -> s { fndExact = True }))     "find exact ebuild/package"
+  , Option "i" ["installed"] (NoArg (\s -> s { fndInstalled = True })) "find installed atom"
+  ]
 
 maybePrint ∷ Maybe Ebuild -> IO ()
 maybePrint Nothing   = putStrLn "no ebuild found"

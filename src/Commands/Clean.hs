@@ -22,9 +22,9 @@ data CleanState
 
 cleanOpts ∷ Bool -> [OptDescr (CleanState -> CleanState)]
 cleanOpts _ =
-    [ Option "d" ["dist"]     (NoArg (\s -> s { cleanDirs = True })) "clean portage DIST and TMP dirs"
-    , Option "v" ["verbose"]  (NoArg (\s -> s { cleanVerbose = True })) "verbose output"
-    ]
+  [ Option "d" ["dist"]     (NoArg (\s -> s { cleanDirs = True })) "clean portage DIST and TMP dirs"
+  , Option "v" ["verbose"]  (NoArg (\s -> s { cleanVerbose = True })) "verbose output"
+  ]
 
 depcleanIO ∷ IO ()
 depcleanIO = isRoot ( rawAndIgnore "emerge" [ "--depclean" ] )

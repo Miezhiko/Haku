@@ -17,9 +17,9 @@ data UpgradeState
 
 upgradeOpts ∷ Bool -> [OptDescr (UpgradeState -> UpgradeState)]
 upgradeOpts _ =
-    [ Option "s" ["self"]     (NoArg (\s -> s { upgrdSelf = True })) "upgrade self"
-    , Option "v" ["verbose"]  (NoArg (\s -> s { upgrdVerbose = True })) "more things..."
-    ]
+  [ Option "s" ["self"]     (NoArg (\s -> s { upgrdSelf = True })) "upgrade self"
+  , Option "v" ["verbose"]  (NoArg (\s -> s { upgrdVerbose = True })) "more things..."
+  ]
 
 upgradeRoot ∷ UpgradeState -> IO ()
 upgradeRoot ugrs = if upgrdSelf ugrs

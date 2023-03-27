@@ -20,9 +20,9 @@ data DeleteState
 
 deleteOpts ∷ Bool -> [OptDescr (DeleteState -> DeleteState)]
 deleteOpts _ =
-    [ Option "p" ["pretend"]  (NoArg (\s -> s { dpretend = True }))   "update variants"
-    , Option "a" ["ask"]      (NoArg (\s -> s { dask = True }))       "ask before run"
-    ]
+  [ Option "p" ["pretend"]  (NoArg (\s -> s { dpretend = True }))   "update variants"
+  , Option "a" ["ask"]      (NoArg (\s -> s { dask = True }))       "ask before run"
+  ]
 
 {- HLINT ignore "Redundant <$>" -}
 unmerge ∷ DeleteState -> [Atom] -> IO ()

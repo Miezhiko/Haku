@@ -25,14 +25,14 @@ data GetState
 
 getOpts ∷ Bool -> [OptDescr (GetState -> GetState)]
 getOpts _ =
-    [ Option "p" ["pretend"]    (NoArg (\s -> s { gpretend = True }))   "pretend"
-    , Option "u" ["update"]     (NoArg (\s -> s { gupdate = True }))    "update variants"
-    , Option "a" ["ask"]        (NoArg (\s -> s { gask = True }))       "ask before emerge"
-    , Option "w" ["with-bdeps"] (NoArg (\s -> s { gbdeps = True }))     "with build deps"
-    , Option "N" ["newuse"]     (NoArg (\s -> s { gnewuse = True }))    "use new USE"
-    , Option "D" ["deep"]       (NoArg (\s -> s { gdeep = True }))      "very deep"
-    , Option "v" ["verbose"]    (NoArg (\s -> s { gverbose = True }))   "verbose output"
-    ]
+  [ Option "p" ["pretend"]    (NoArg (\s -> s { gpretend = True }))   "pretend"
+  , Option "u" ["update"]     (NoArg (\s -> s { gupdate = True }))    "update variants"
+  , Option "a" ["ask"]        (NoArg (\s -> s { gask = True }))       "ask before emerge"
+  , Option "w" ["with-bdeps"] (NoArg (\s -> s { gbdeps = True }))     "with build deps"
+  , Option "N" ["newuse"]     (NoArg (\s -> s { gnewuse = True }))    "use new USE"
+  , Option "D" ["deep"]       (NoArg (\s -> s { gdeep = True }))      "very deep"
+  , Option "v" ["verbose"]    (NoArg (\s -> s { gverbose = True }))   "verbose output"
+  ]
 
 {- HLINT ignore "Redundant <$>" -}
 merge ∷ GetState -> [Atom] -> IO ()
