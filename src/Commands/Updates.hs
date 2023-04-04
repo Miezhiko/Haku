@@ -8,6 +8,7 @@ module Commands.Updates
   ( updatesCmd
   ) where
 
+import           Constants
 import           Types
 import           Utils
 
@@ -24,13 +25,15 @@ data UpdatesState
       { updsVerbose   :: Bool
       , updsShowMasks :: Bool
       , updsOnlyMasks :: Bool
+      , updsWithBdeps :: Bool
       }
 
 updatesOpts ∷ Bool -> [OptDescr (UpdatesState -> UpdatesState)]
 updatesOpts _ =
-  [ Option "v" ["verbose"] (NoArg (\s -> s { updsVerbose = True })) "verbose output"
-  , Option "m" ["show-masks"] (NoArg (\s -> s { updsShowMasks = True })) "show masked"
-  , Option "o" ["only-masks"] (NoArg (\s -> s { updsOnlyMasks = True })) "show only masked"
+  [ Option "v" ["verbose"]    (NoArg (\s -> s { updsVerbose = True }))    "verbose output"
+  , Option "m" ["show-masks"] (NoArg (\s -> s { updsShowMasks = True }))  "show masked"
+  , Option "o" ["only-masks"] (NoArg (\s -> s { updsOnlyMasks = True }))  "show only masked"
+  , Option "b" ["with-bdeps"] (NoArg (\s -> s { updsWithBdeps = True }))  "show build deps updates too"
   ]
 
 {-
@@ -177,14 +180,23 @@ showSingle package ovs mask pc uss =
   in printOnlyInstalled package installed notInstalled finalMasks pc uss
 
 showU ∷ IORef PortageConfig -> UpdatesState -> [String] -> IO ()
-showU rpc uss filterPackages = readIORef rpc >>= \pc ->
+showU rpc uss filterPackages = readIORef rpc >>= \pc -> do
   let tree = pcTree pc
       mask = pcMasking pc
       ovls = M.toList (pcOverlays pc)
-  in for_ (M.toList tree) $ \(a, package) ->
-    case filterPackages of
-      [] -> showSingle package ovls mask pc uss
-      xs -> when (any (`isInfixOf` a) xs) $ showSingle package ovls mask pc uss
+  worldTree <- if updsWithBdeps uss
+                then pure (M.toList tree)
+                else do
+                  world <- readFile constWorldFile
+                  pure $ filter ( \(a, _) -> a ∈ lines world )
+                                (M.toList tree)
+  case worldTree of
+    [] -> putStrLn "no updates available"
+    wt -> for_ wt $ \(a, package) ->
+            case filterPackages of
+              [] -> showSingle package ovls mask pc uss
+              xs -> when (any (`isInfixOf` a) xs) $
+                      showSingle package ovls mask pc uss
 
 showPossibleUpdates ∷ HakuMonad m ⇒ UpdatesState -> [String] -> m ()
 showPossibleUpdates uss xs = ask >>= \env ->
@@ -197,6 +209,7 @@ updatesCmd = Command
             , usage = ("haku " ++)
             , state = UpdatesState { updsVerbose    = False
                                    , updsShowMasks  = False
-                                   , updsOnlyMasks  = False }
+                                   , updsOnlyMasks  = False
+                                   , updsWithBdeps  = False }
             , options = updatesOpts
             , handler = showPossibleUpdates }

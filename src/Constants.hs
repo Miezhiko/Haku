@@ -4,20 +4,18 @@
   #-}
 module Constants where
 
-constMakeConfPath ∷ String
-constMakeConfPath = "/etc/portage/make.conf"
+constMakeConfPath         ∷ String
+constInstalledPath        ∷ String
+constWorldFile            ∷ String
+cosntSudoPath             ∷ String
+constProfilesPackageMask  ∷ String
+constPortagePackageMask   ∷ String
+constProfilesRepoName     ∷ String
 
-constInstalledPath ∷ String
-constInstalledPath = "/var/db/pkg"
-
-cosntSudoPath ∷ String
-cosntSudoPath = "/usr/bin/sudo"
-
-constProfilesPackageMask ∷ String
-constProfilesPackageMask = "profiles/package.mask"
-
-constPortagePackageMask ∷ String
-constPortagePackageMask = "/etc/portage/package.mask"
-
-constProfilesRepoName ∷ String
-constProfilesRepoName = "profiles/repo_name"
+constMakeConfPath         = "/etc/portage/make.conf"
+constInstalledPath        = "/var/db/pkg"
+constWorldFile            = "/var/lib/portage/world"
+cosntSudoPath             = "/usr/bin/sudo"
+constProfilesPackageMask  = "profiles/package.mask"
+constPortagePackageMask   = "/etc/portage/package.mask"
+constProfilesRepoName     = "profiles/repo_name"
