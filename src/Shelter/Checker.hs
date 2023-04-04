@@ -5,6 +5,7 @@
 
 module Shelter.Checker
   ( ShelterConfig
+  , getRemoteHash
   , getShelterConfig
   , updateAll
   ) where

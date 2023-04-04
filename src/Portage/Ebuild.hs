@@ -17,6 +17,7 @@ data Ebuild
       , eRdepend     :: [String]
       , eSlot        :: String
       , eSrc_uri     :: [String]
+      , eGit_uri     :: [String]
       , eRestrict    :: [String]
       , eHomepage    :: String
       , eLicense     :: String
@@ -52,6 +53,7 @@ getEbuild f = do
                 (words (em !. "RDEPEND"))
                 (em !. "SLOT")
                 (words (em !. "SRC_URI"))
+                (words (em !. "EGIT_REPO_URI"))
                 (words (em !. "RESTRICT"))
                 (em !. "HOMEPAGE")
                 (em !. "LICENSE")

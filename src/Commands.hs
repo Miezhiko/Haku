@@ -18,6 +18,7 @@ import           Commands.Delete  as CommandModules
 import           Commands.Digest  as CommandModules
 import           Commands.Find    as CommandModules
 import           Commands.Get     as CommandModules
+import           Commands.Live    as CommandModules
 import           Commands.Update  as CommandModules
 import           Commands.Updates as CommandModules
 import           Commands.Upgrade as CommandModules
@@ -27,11 +28,11 @@ import           Data.List
 
 commands ∷ Bool -> [Command']
 commands showPrivate =
-    [ Command' getCmd,    Command' deleteCmd
-    , Command' updateCmd, Command' upgradeCmd
-    , Command' updatesCmd
+    [ Command' getCmd,     Command' deleteCmd
+    , Command' updateCmd,  Command' upgradeCmd
+    , Command' updatesCmd, Command' liveCmd
     , Command' cleanCmd
-    , Command' findCmd,   Command' belongsCmd
+    , Command' findCmd,    Command' belongsCmd
     , Command' digestCmd
     ] ++ concat
     [ [ Command' uwuCmd
