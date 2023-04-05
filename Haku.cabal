@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.65
+version: 0.0.66
 license: AGPL-3
 
 build-type: Simple
@@ -65,6 +65,8 @@ Executable haku
       base-unicode-symbols,
       yaml,
       aeson,
-      mtl
+      mtl,
+      regex-tdfa,
+      raw-strings-qq
  ghc-options:
     -Wall

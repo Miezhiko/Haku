@@ -9,6 +9,7 @@ module Utils
   , isRoot
   , raw
   , rawAndIgnore
+  , readIfSucc
   , runIfExists
   ) where
 
@@ -22,6 +23,7 @@ import           System.Exit
 import           System.Posix.User   (getRealUserID)
 import           System.Process
 
+import           Control.Exception
 import           Control.Monad
 
 import           System.Console.ANSI
@@ -41,6 +43,22 @@ runIfExists ∷ FilePath -> String -> [String] -> IO ()
 runIfExists ξ λ α =
   doesFileExist ξ >>= \fe ->
     when fe $ void (rawSystem λ α)
+
+readCheck     -- return whether command was success or not
+   ∷ String   -- command
+  -> [String] -- arguments
+  -> IO (Either SomeException String)
+readCheck γ args = try $ readProcess γ args []
+
+readIfSucc    -- useless wrapper on readCheck to return Maybe
+   ∷ String   -- command
+  -> [String] -- arguments
+  -> IO (Maybe String)
+readIfSucc γ args =
+  readCheck γ args
+  >>= \case Left _ -> pure Nothing
+            Right val -> do putStr $ γ ++ " : " ++ val
+                            pure $ Just val
 
 isRoot ∷ IO () -> IO () -> IO ()
 isRoot f1 f2 = getRealUserID >>=

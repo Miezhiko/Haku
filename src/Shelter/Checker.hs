@@ -5,7 +5,6 @@
 
 module Shelter.Checker
   ( ShelterConfig
-  , getRemoteHash
   , getShelterConfig
   , updateAll
   ) where
@@ -17,27 +16,9 @@ import           Shelter.Types
 
 import           Data.List.Split
 
-import           Control.Exception
-
 import           System.Directory
 import           System.FilePath
 import           System.Process
-
-readCheck     -- return whether command was success or not
-   ∷ String   -- command
-  -> [String] -- arguments
-  -> IO (Either SomeException String)
-readCheck γ args = try $ readProcess γ args []
-
-readIfSucc    -- useless wrapper on readCheck to return Maybe
-   ∷ String   -- command
-  -> [String] -- arguments
-  -> IO (Maybe String)
-readIfSucc γ args =
-  readCheck γ args
-  >>= \case Left _ -> pure Nothing
-            Right val -> do putStr $ γ ++ " : " ++ val
-                            pure $ Just val
 
 getRemoteHash ∷ IO (Maybe String)
 getRemoteHash = do

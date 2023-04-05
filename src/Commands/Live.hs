@@ -1,6 +1,7 @@
 {-# LANGUAGE
     FlexibleContexts
   , LambdaCase
+  , QuasiQuotes
   , UnicodeSyntax
   #-}
 
@@ -11,20 +12,20 @@ module Commands.Live
 import           Types
 import           Utils
 
-import           Shelter.Checker     (getRemoteHash)
-import           Shelter.Trim
-
 import           Data.Foldable       (for_)
 import           Data.List
+import           Data.List.Split     (splitOn)
 import qualified Data.Map            as M
 import           Data.Maybe
 import qualified Data.Set            as S
+
+import           Text.RawString.QQ
+import           Text.Regex.TDFA
 
 import           System.Console.ANSI
 import           System.Directory
 import           System.FilePath
 import           System.Posix.User   (getRealUserID)
-import           System.Process      (readProcess)
 
 data LiveState
   = LiveState
@@ -75,28 +76,43 @@ liveRebuild pvv = (== 0) <$> getRealUserID >>= \root ->
                              sv -> "=" ++ show p ++ "-" ++ sv
                           ) pvv
 
-isThereGitUpdates ∷ String -> IO Bool
-isThereGitUpdates repoPath =
-  getRemoteHash >>=
-   \case Nothing  -> pure True
-         Just r   -> do
-          withCurrentDirectory repoPath $ do
-            currentHash <- readProcess "git" ["log", "-n", "1"
-                                       , "--pretty=format:%H"
-                                       ] []
-            pure $ trim currentHash /= r
+isThereGitUpdates ∷ String -> String -> String -> [String] -> IO Bool
+isThereGitUpdates  repo repoFilePath rName mbBranch = do
+  putStrLn $ "Checking for: " ++ repo
+  rlm <- case mbBranch of
+    []     -> readIfSucc "git" ["ls-remote", repo, "HEAD"]
+    (rb:_) -> readIfSucc "git" ["ls-remote", repo, rb]
+  case rlm of
+    Nothing  -> pure True
+    Just rlc -> do
+      let remoteHash = head (splitOn "\t" rlc)
+      repoHashFile <- readFile repoFilePath
+      let currentHash = head (splitOn "\t" repoHashFile)
+      if currentHash == remoteHash
+        then do putStrLn $ rName ++ " is up to date, hash: " ++ currentHash
+                pure True
+        else do putStrLn $ rName ++ " will be updated to: " ++ remoteHash
+                pure False
 
 checkForRepository ∷ PortageConfig
                   -> (Package, [PackageVersion])
                   -> String
+                  -> [String]
                   -> IO (Maybe (Package, [PackageVersion]))
-checkForRepository pc (package, liveVersions) repo =
-  let repositoryName = repo -- TODO: this is wrong
-      repoPath = treePath </> "distfiles/git3-src" </> repositoryName
-  in doesDirectoryExist repoPath >>=
+checkForRepository pc (package, liveVersions) repo mbBranch = do
+  let rx = getAllTextSubmatches $ repo =~ [r|https://github.com/([^/]+)/([^/]+)(.git)?|] :: [String]
+      rOwner          = rx !! 1
+      rNameGit        = rx !! 2
+      -- TODO: this is because I can't write proper regex in POSIX style
+      rName           = if ".git" `isSuffixOf` rNameGit
+                          then take (length rNameGit - 4) rNameGit
+                          else rNameGit
+      repoPath        = treePath </> "distfiles/git3-src" </> rOwner ++ "_" ++ rName ++ ".git"
+      repoFilePath    = repoPath </> "FETCH_HEAD"
+  doesFileExist repoFilePath >>=
       \case False -> pure $ Just (package, liveVersions) 
             True  -> do
-              gitUpdates <- isThereGitUpdates repoPath
+              gitUpdates <- isThereGitUpdates repo repoFilePath rName mbBranch
               if gitUpdates
                 then pure $ Just (package, liveVersions) 
                 else pure Nothing
@@ -114,7 +130,8 @@ smartLiveRebuild pc package (ver:_) = -- TODO: many versions
           Just eb ->
             case eGit_uri eb of
               []     -> pure $ Just (package, [ver]) -- not git?
-              (rp:_) -> checkForRepository pc (package, [ver]) rp
+              (rp:_) -> checkForRepository pc (package, [ver])
+                                           rp (eGit_branch eb)
 
 liveUpdateMap ∷ Package
              -> PortageConfig

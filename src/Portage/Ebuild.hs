@@ -18,6 +18,7 @@ data Ebuild
       , eSlot        :: String
       , eSrc_uri     :: [String]
       , eGit_uri     :: [String]
+      , eGit_branch  :: [String]
       , eRestrict    :: [String]
       , eHomepage    :: String
       , eLicense     :: String
@@ -54,6 +55,7 @@ getEbuild f = do
                 (em !. "SLOT")
                 (words (em !. "SRC_URI"))
                 (words (em !. "EGIT_REPO_URI"))
+                (words (em !. "EGIT_BRANCH"))
                 (words (em !. "RESTRICT"))
                 (em !. "HOMEPAGE")
                 (em !. "LICENSE")
