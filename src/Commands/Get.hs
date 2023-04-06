@@ -20,6 +20,7 @@ data GetState
       , gbdeps   :: Bool
       , gnewuse  :: Bool
       , gdeep    :: Bool
+      , goneshot :: Bool
       , gverbose :: Bool
       }
 
@@ -31,6 +32,7 @@ getOpts _ =
   , Option "w" ["with-bdeps"] (NoArg (\s -> s { gbdeps = True }))     "with build deps"
   , Option "N" ["newuse"]     (NoArg (\s -> s { gnewuse = True }))    "use new USE"
   , Option "D" ["deep"]       (NoArg (\s -> s { gdeep = True }))      "very deep"
+  , Option "1" ["oneshot"]    (NoArg (\s -> s { goneshot = True }))   "build but dont't include in world"
   , Option "v" ["verbose"]    (NoArg (\s -> s { gverbose = True }))   "verbose output"
   ]
 
@@ -43,6 +45,7 @@ merge gs xs =
         ++   ["-u" | gupdate gs]
         ++   ["-N" | gnewuse gs]
         ++   ["-D" | gdeep gs]
+        ++   ["-1" | goneshot gs]
         ++   ["-v" | gverbose gs]
         ++   ["--with-bdeps=y" | gbdeps gs]
   in (== 0) <$> getRealUserID >>= \root ->
@@ -76,6 +79,7 @@ getCmd = Command
                               , gbdeps   = False
                               , gnewuse  = False
                               , gdeep    = False
+                              , goneshot = False
                               , gverbose = False }
           , options = getOpts
           , handler = getPackageM }
