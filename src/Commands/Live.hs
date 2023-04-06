@@ -90,9 +90,9 @@ isThereGitUpdates  repo repoFilePath rName mbBranch = do
       let currentHash = head (splitOn "\t" repoHashFile)
       if currentHash == remoteHash
         then do putStrLn $ rName ++ " is up to date, hash: " ++ currentHash
-                pure True
-        else do putStrLn $ rName ++ " will be updated to: " ++ remoteHash
                 pure False
+        else do putStrLn $ rName ++ " will be updated to: " ++ remoteHash
+                pure True
 
 checkForRepository ∷ PortageConfig
                   -> (Package, [PackageVersion])
