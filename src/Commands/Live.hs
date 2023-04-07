@@ -129,7 +129,8 @@ smartLiveRebuild pc package (ver:_) = -- TODO: many versions
     \case Nothing -> pure $ Just (package, [ver])
           Just eb ->
             case eGit_uri eb of
-              []     -> pure $ Just (package, [ver]) -- not git?
+              []     -> do putStrLn $ show package ++ ": Can't find EGIT SRC"
+                           pure Nothing -- not git?
               (rp:_) -> checkForRepository pc (package, [ver])
                                            rp (eGit_branch eb)
 
@@ -162,7 +163,9 @@ liveUpdateIO rpc lss filterPackages = readIORef rpc >>= \pc -> do
   case catMaybes llst of
     [] -> putStrLn "No live packages found"
     xs -> if livePreview lss
-            then for_ xs showLivePackage
+            then do
+              putStrLn []
+              for_ xs showLivePackage
             else liveRebuild xs
 
 liveUpdate ∷ HakuMonad m ⇒ LiveState -> [String] -> m ()
