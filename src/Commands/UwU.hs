@@ -36,6 +36,7 @@ runUpgradeScriptsRoot uws = do
           if shelterBinExists
             then rawAndIgnore "shelter" 𝜀
             else updateAll
+  putStrLn "regenerating Gentoo cache..."
   rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
   rawAndIgnore "eix-update" 𝜀
   rawAndIgnore "emerge" $ [ "-avuDN", "@world"
@@ -48,6 +49,7 @@ runUpgradeScriptsSudo ∷ UwuState -> IO ()
 runUpgradeScriptsSudo uws = do
   when (uwuHaskellSync uws) $ putStrLn "WARNING: can't run sync with own code in sudo mode"
   runIfExists "/usr/bin/shelter" "sudo" ["shelter"]
+  putStrLn "regenerating Gentoo cache..."
   rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
   rawAndIgnore "sudo" ["eix-update"]
   rawAndIgnore "sudo" $ [ "emerge", "-avuDN", "@world"
