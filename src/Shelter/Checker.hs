@@ -11,7 +11,6 @@ module Shelter.Checker
 
 import           Utils
 
-import           Shelter.Trim
 import           Shelter.Types
 
 import           Data.List.Split

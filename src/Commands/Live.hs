@@ -29,13 +29,15 @@ import           System.Posix.User   (getRealUserID)
 
 data LiveState
   = LiveState
-      { livePreview :: Bool
+      { liveVerbose :: Bool
+      , livePreview :: Bool
       , liveForce   :: Bool
       }
 
 liveOpts ∷ Bool -> [OptDescr (LiveState -> LiveState)]
 liveOpts _ =
-  [ Option "p" ["preview"]  (NoArg (\s -> s { livePreview = True }))  "check live packages to update"
+  [ Option "v" ["verbose"]  (NoArg (\s -> s { liveVerbose = True }))  "verbose output" 
+  , Option "p" ["preview"]  (NoArg (\s -> s { livePreview = True }))  "check live packages to update"
   , Option "f" ["force"]    (NoArg (\s -> s { liveForce = True }))    "update all live packages"
   ]
 
@@ -94,47 +96,62 @@ isThereGitUpdates  repo repoFilePath rName mbBranch = do
         else do putStrLn $ rName ++ " will be updated to: " ++ remoteHash
                 pure True
 
+checkForRepository' ∷ PortageConfig
+                  -> String -- repo owner
+                  -> String -- repo name
+                  -> (Package, [PackageVersion])
+                  -> (String, [String])
+                  -> IO (Maybe (Package, [PackageVersion]))
+checkForRepository' pc rOwner rNameGit (p, lv) (repo, mbBranch) =
+  let rName           = if ".git" `isSuffixOf` rNameGit
+                          then take (length rNameGit - 4) rNameGit
+                          else rNameGit
+      repoPath        = treePath </> "distfiles/git3-src" </> rOwner ++ "_" ++ rName ++ ".git"
+      repoFilePath    = repoPath </> "FETCH_HEAD"
+  in doesFileExist repoFilePath >>=
+      \case False -> do putStrLn $ show p ++ ": not downloaded on " ++ repoFilePath
+                        pure $ Just (p, lv)
+            True  -> do
+              gitUpdates <- isThereGitUpdates repo repoFilePath rName mbBranch
+              if gitUpdates
+                then pure $ Just (p, lv) 
+                else pure Nothing
+ where treePath ∷ String
+       treePath = pcMakeConf pc M.! "PORTDIR"
+
 checkForRepository ∷ PortageConfig
                   -> (Package, [PackageVersion])
                   -> String
                   -> [String]
                   -> IO (Maybe (Package, [PackageVersion]))
-checkForRepository pc (package, liveVersions) repo mbBranch = do
-  let rx = getAllTextSubmatches $ repo =~ [r|https://github.com/([^/]+)/([^/]+)(.git)?|] :: [String]
-      -- TODO: ensure about number of variables
-      rOwner          = rx !! 1
-      rNameGit        = rx !! 2
-      -- TODO: this is because I can't write proper regex in POSIX style
-      rName           = if ".git" `isSuffixOf` rNameGit
-                          then take (length rNameGit - 4) rNameGit
-                          else rNameGit
-      repoPath        = treePath </> "distfiles/git3-src" </> rOwner ++ "_" ++ rName ++ ".git"
-      repoFilePath    = repoPath </> "FETCH_HEAD"
-  doesFileExist repoFilePath >>=
-      \case False -> do putStrLn $ show package ++ ": not downloaded on " ++ repoFilePath
-                        pure $ Just (package, liveVersions)
-            True  -> do
-              gitUpdates <- isThereGitUpdates repo repoFilePath rName mbBranch
-              if gitUpdates
-                then pure $ Just (package, liveVersions) 
-                else pure Nothing
- where treePath ∷ String
-       treePath = pcMakeConf pc M.! "PORTDIR"
+checkForRepository pc (p, lv) repo mbBranch =
+  if length rx > 3
+    then checkForRepository' pc (rx !! 2)
+                                (rx !! 3)
+                                (p, lv)
+                                (repo, mbBranch)
+    else do putStrLn $ show p ++ ": ERROR ON PARSING: " ++ repo
+            pure Nothing
+ where rx ∷ [String]
+       rx = getAllTextSubmatches $
+              repo =~ [r|([^/]+)/([^/]+)/([^/]+)(.git)?|] :: [String]
 
 smartLiveRebuild ∷ PortageConfig
                 -> Package
                 -> [PackageVersion]
+                -> Bool             -- verbose
                 -> IO (Maybe (Package, [PackageVersion]))
-smartLiveRebuild _ _ []             = pure Nothing
-smartLiveRebuild pc package (ver:_) = -- TODO: many versions
+smartLiveRebuild _ _ [] _                   = pure Nothing
+smartLiveRebuild pc package (ver:_) verbose = -- TODO: many versions
   findVersionedEbuild pc package ver >>=
     \case Nothing -> do putStrLn $ show package ++ ": Can't find ebuild"
                         pure $ Just (package, [ver])
           Just eb ->
             case eGit_uri eb of
-              []     -> do putStrLn $ show package ++ ": Can't find EGIT SRC"
+              []     -> do when verbose $ putStrLn $ show package ++ ": Can't find EGIT SRC"
                            pure Nothing -- not git?
-              (rp:_) -> checkForRepository pc (package, [ver])
+              (rp:_) -> -- TODO: check for all repository links
+                        checkForRepository pc (package, [ver])
                                            rp (eGit_branch eb)
 
 liveUpdateMap ∷ Package
@@ -152,7 +169,7 @@ liveUpdateMap package pc lss =
               then pure Nothing
               else if liveForce lss
                     then pure $ Just (package, liveVersions)
-                    else smartLiveRebuild pc package liveVersions
+                    else smartLiveRebuild pc package liveVersions (liveVerbose lss)
 
 liveUpdateIO ∷ IORef PortageConfig -> LiveState -> [String] -> IO ()
 liveUpdateIO rpc lss filterPackages = readIORef rpc >>= \pc -> do
@@ -180,7 +197,8 @@ liveCmd = Command
             { command = ["live"]
             , description = "Live rebuild"
             , usage = ("haku " ++)
-            , state = LiveState { livePreview    = False
-                                , liveForce  = False }
+            , state = LiveState { liveVerbose = False
+                                , livePreview = False
+                                , liveForce   = False }
             , options = liveOpts
             , handler = liveUpdate }

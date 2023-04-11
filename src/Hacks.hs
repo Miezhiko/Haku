@@ -21,8 +21,22 @@ import qualified Data.Map        as M
 rstrip ∷ String -> String
 rstrip = reverse . dropWhile isSpace . reverse
 
+lstrip ∷ String -> String
+lstrip = dropWhile isSpace
+
+dropSpaceTail ∷ String -> String -> String
+dropSpaceTail _ "" = ""
+dropSpaceTail maybeStuff (χ:xs)
+  | isSpace χ       = dropSpaceTail (χ:maybeStuff) xs
+  | null maybeStuff = χ : dropSpaceTail "" xs
+  | otherwise       = reverse maybeStuff ++ χ : dropSpaceTail "" xs
+
+trim ∷ String -> String
+trim xs = dropSpaceTail "" $ lstrip xs
+
 readStringMap ∷ [String] -> M.Map String String
-readStringMap = M.fromList ∘ map (second tail . break (=='='))
+readStringMap = M.fromList ∘ map (first lstrip ∘ second tail
+                                               ∘ break (=='='))
 
 splitOnAnyOf ∷ Eq α ⇒ [[α]] -> [α] -> [[α]]
 splitOnAnyOf ds xs = foldl' ((∘ splitOn) ∘ (>>=)) [xs] ds
