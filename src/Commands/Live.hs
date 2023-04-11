@@ -35,8 +35,8 @@ data LiveState
 
 liveOpts ∷ Bool -> [OptDescr (LiveState -> LiveState)]
 liveOpts _ =
-  [ Option "p" ["preview"] (NoArg (\s -> s { livePreview = True })) "check live packages to update"
-  , Option "f" ["force"] (NoArg (\s -> s { liveForce = True })) "update all live packages"
+  [ Option "p" ["preview"]  (NoArg (\s -> s { livePreview = True }))  "check live packages to update"
+  , Option "f" ["force"]    (NoArg (\s -> s { liveForce = True }))    "update all live packages"
   ]
 
 isLiveVersion ∷ Version -> Bool
@@ -101,6 +101,7 @@ checkForRepository ∷ PortageConfig
                   -> IO (Maybe (Package, [PackageVersion]))
 checkForRepository pc (package, liveVersions) repo mbBranch = do
   let rx = getAllTextSubmatches $ repo =~ [r|https://github.com/([^/]+)/([^/]+)(.git)?|] :: [String]
+      -- TODO: ensure about number of variables
       rOwner          = rx !! 1
       rNameGit        = rx !! 2
       -- TODO: this is because I can't write proper regex in POSIX style
@@ -110,7 +111,8 @@ checkForRepository pc (package, liveVersions) repo mbBranch = do
       repoPath        = treePath </> "distfiles/git3-src" </> rOwner ++ "_" ++ rName ++ ".git"
       repoFilePath    = repoPath </> "FETCH_HEAD"
   doesFileExist repoFilePath >>=
-      \case False -> pure $ Just (package, liveVersions) 
+      \case False -> do putStrLn $ show package ++ ": not downloaded on " ++ repoFilePath
+                        pure $ Just (package, liveVersions)
             True  -> do
               gitUpdates <- isThereGitUpdates repo repoFilePath rName mbBranch
               if gitUpdates
@@ -126,7 +128,8 @@ smartLiveRebuild ∷ PortageConfig
 smartLiveRebuild _ _ []             = pure Nothing
 smartLiveRebuild pc package (ver:_) = -- TODO: many versions
   findVersionedEbuild pc package ver >>=
-    \case Nothing -> pure $ Just (package, [ver])
+    \case Nothing -> do putStrLn $ show package ++ ": Can't find ebuild"
+                        pure $ Just (package, [ver])
           Just eb ->
             case eGit_uri eb of
               []     -> do putStrLn $ show package ++ ": Can't find EGIT SRC"
