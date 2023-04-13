@@ -102,11 +102,8 @@ checkForRepository' ∷ PortageConfig
                   -> (Package, [PackageVersion])
                   -> (String, [String])
                   -> IO (Maybe (Package, [PackageVersion]))
-checkForRepository' pc rOwner rNameGit (p, lv) (repo, mbBranch) =
-  let rName           = if ".git" `isSuffixOf` rNameGit
-                          then take (length rNameGit - 4) rNameGit
-                          else rNameGit
-      repoPath        = treePath </> "distfiles/git3-src" </> rOwner ++ "_" ++ rName ++ ".git"
+checkForRepository' pc rOwner rName (p, lv) (repo, mbBranch) =
+  let repoPath        = treePath </> "distfiles/git3-src" </> rOwner ++ "_" ++ rName ++ ".git"
       repoFilePath    = repoPath </> "FETCH_HEAD"
   in doesFileExist repoFilePath >>=
       \case False -> do putStrLn $ show p ++ ": not downloaded on " ++ repoFilePath
@@ -134,7 +131,7 @@ checkForRepository pc (p, lv) repo mbBranch =
             pure Nothing
  where rx ∷ [String]
        rx = getAllTextSubmatches $
-              repo =~ [r|([^/]+)/([^/]+)/([^/]+)(.git)?|] :: [String]
+              repo =~ [r|([^/]+)/([^/]+)/([^/.]+)(\.git)?|] :: [String]
 
 smartLiveRebuild ∷ PortageConfig
                 -> Package
