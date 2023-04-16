@@ -1,7 +1,6 @@
 {-# LANGUAGE
     FlexibleContexts
   , LambdaCase
-  , QuasiQuotes
   , UnicodeSyntax
   #-}
 
@@ -19,13 +18,20 @@ import qualified Data.Map            as M
 import           Data.Maybe
 import qualified Data.Set            as S
 
-import           Text.RawString.QQ
-import           Text.Regex.TDFA
+import           Text.Parsec
+import           Text.Parsec.String
 
 import           System.Console.ANSI
 import           System.Directory
 import           System.FilePath
 import           System.Posix.User   (getRealUserID)
+
+data RepoInfo
+  = RepoInfo
+      { _host     :: String
+      , _owner    :: String
+      , _repoName :: String
+      }
 
 data LiveState
   = LiveState
@@ -33,6 +39,17 @@ data LiveState
       , livePreview :: Bool
       , liveForce   :: Bool
       }
+
+repoParser ∷ Parser RepoInfo
+repoParser = do
+  _         <- string "https://"
+  hostName  <- many1 (noneOf "/")
+  _         <- string "/"
+  ownerName <- many1 (noneOf "/")
+  _         <- char '/'
+  repoName  <- manyTill anyChar (lookAhead (string ".git"))
+  _         <- string ".git"
+  pure $ RepoInfo hostName ownerName repoName
 
 liveOpts ∷ Bool -> [OptDescr (LiveState -> LiveState)]
 liveOpts _ =
@@ -122,16 +139,12 @@ checkForRepository ∷ PortageConfig
                   -> [String]
                   -> IO (Maybe (Package, [PackageVersion]))
 checkForRepository pc (p, lv) repo mbBranch =
-  if length rx > 3
-    then checkForRepository' pc (rx !! 2)
-                                (rx !! 3)
-                                (p, lv)
-                                (repo, mbBranch)
-    else do putStrLn $ show p ++ ": ERROR ON PARSING: " ++ repo
-            pure Nothing
- where rx ∷ [String]
-       rx = getAllTextSubmatches $
-              repo =~ [r|([^/]+)/([^/]+)/([^/.]+)(\.git)?|] :: [String]
+  case parse repoParser "" repo of
+    Right (RepoInfo _ repoOwner repoName) ->
+      checkForRepository' pc repoOwner repoName (p, lv) (repo, mbBranch)
+    Left _ -> do
+      putStrLn $ show p ++ ": ERROR ON PARSING: " ++ repo
+      pure Nothing
 
 smartLiveRebuild ∷ PortageConfig
                 -> Package

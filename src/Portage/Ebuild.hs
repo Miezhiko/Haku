@@ -1,6 +1,5 @@
 {-# LANGUAGE
-    QuasiQuotes
-  , UnicodeSyntax
+    UnicodeSyntax
   #-}
 
 module Portage.Ebuild where
@@ -8,13 +7,12 @@ module Portage.Ebuild where
 import           Hacks
 
 import           Data.List
-import qualified Data.Map          as M
-import           Data.Text         (pack, replace, unpack)
+import qualified Data.Map            as M
+import           Data.Text           (pack, replace, unpack)
 
-import qualified System.IO.Strict  as Strict
+import qualified System.IO.Strict    as Strict
 
-import           Text.RawString.QQ
-import           Text.Regex.TDFA
+import           Text.Parsec
 
 data Ebuild
   = Ebuild
@@ -44,23 +42,27 @@ stringSeq ∷ String -> b -> b
 stringSeq []      c =  c
 stringSeq (_:xs)  c =  stringSeq xs c
 
--- TODO: make recursive
 (!.) ∷ M.Map String String -> String -> String
-m !. k =
-  let regX = getAllTextSubmatches $ varS =~ [r|\${[^}]*}|] :: [String]
-  in case regX of
-    []     -> varS
-    [v]    -> repl v (m !. (getV v)) varS
-    (v:_)  -> repl v (m !. (getV v)) varS -- TODO: handle many env variables
- where varS ∷ String
-       varS = maybe "" removeJunk (M.lookup k m)
+m !. k = case M.lookup k m of
+  Nothing -> ""
+  Just varS -> removeJunk $ case parse parseVars "" varS of
+    Left _     -> varS
+    Right vars -> foldl (\acc (v, rep) -> replaceVar v rep acc) varS vars
+  where
+    replaceVar ∷ String -> String -> String -> String
+    replaceVar v rep = unpack . replace (pack v) (pack rep) . pack
 
-       repl ∷ String -> String -> String -> String
-       repl w ww = unpack . replace (pack w) (pack ww) . pack
+    getV ∷ String -> String
+    getV envV = m !. envV
 
-       getV :: String -> String
-       getV envV = let dropLast = take (length envV - 1) envV
-                   in drop 2 dropLast
+    parseVars ∷ Parsec String () [(String, String)]
+    parseVars = many $ (,) <$> parseVar <*> (getV <$> parseVarContent)
+
+    parseVar ∷ Parsec String () String
+    parseVar = string "${" *> manyTill anyChar (char '}') <* char '}'
+
+    parseVarContent ∷ Parsec String () String
+    parseVarContent = string "${" *> manyTill anyChar (char '}')
 
 getEbuild ∷ FilePath -> IO Ebuild
 getEbuild f = do
