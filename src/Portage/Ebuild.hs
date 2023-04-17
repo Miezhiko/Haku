@@ -7,12 +7,13 @@ module Portage.Ebuild where
 import           Hacks
 
 import           Data.List
-import qualified Data.Map            as M
-import           Data.Text           (pack, replace, unpack)
+import qualified Data.Map           as M
+import           Data.Text          (pack, replace, unpack)
 
-import qualified System.IO.Strict    as Strict
+import qualified System.IO.Strict   as Strict
 
 import           Text.Parsec
+import           Text.Parsec.String (Parser)
 
 data Ebuild
   = Ebuild
@@ -42,27 +43,40 @@ stringSeq ∷ String -> b -> b
 stringSeq []      c =  c
 stringSeq (_:xs)  c =  stringSeq xs c
 
+varParser ∷ Parser String
+varParser = do
+  _       <- char '$'
+  _       <- char '{'
+  varName <- many (noneOf "}")
+  _       <- char '}'
+  pure varName
+
+varsParser ∷ Parser [String]
+varsParser = do
+  -- Skip characters until a variable is found
+  _ <- many (noneOf "${")
+  many1 (try varParser)
+
+parseVars ∷ String -> [String]
+parseVars s = case parse varsParser "" s of
+  Left _     -> []
+  Right vars -> vars
+
+repl ∷ String -> String -> String -> String
+repl w ww = unpack . replace (pack (setV w)) (pack ww) . pack
+ where setV ∷ String -> String
+       setV envV = "${" ++ envV ++ "}"
+
 (!.) ∷ M.Map String String -> String -> String
-m !. k = case M.lookup k m of
-  Nothing -> ""
-  Just varS -> removeJunk $ case parse parseVars "" varS of
-    Left _     -> varS
-    Right vars -> foldl (\acc (v, rep) -> replaceVar v rep acc) varS vars
-  where
-    replaceVar ∷ String -> String -> String -> String
-    replaceVar v rep = unpack . replace (pack v) (pack rep) . pack
-
-    getV ∷ String -> String
-    getV envV = m !. envV
-
-    parseVars ∷ Parsec String () [(String, String)]
-    parseVars = many $ (,) <$> parseVar <*> (getV <$> parseVarContent)
-
-    parseVar ∷ Parsec String () String
-    parseVar = string "${" *> manyTill anyChar (char '}') <* char '}'
-
-    parseVarContent ∷ Parsec String () String
-    parseVarContent = string "${" *> manyTill anyChar (char '}')
+m !. k =
+  let varS      = maybe "" id (M.lookup k m)
+      vars      = parseVars varS
+      replaced  = foldl' foldReplace varS vars
+  in case replaced of
+    [] -> []
+    rp -> removeJunk rp
+ where foldReplace ∷ String -> String -> String
+       foldReplace str var = repl var (m !. var) str
 
 getEbuild ∷ FilePath -> IO Ebuild
 getEbuild f = do

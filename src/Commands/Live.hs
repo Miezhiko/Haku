@@ -19,7 +19,7 @@ import           Data.Maybe
 import qualified Data.Set            as S
 
 import           Text.Parsec
-import           Text.Parsec.String
+import           Text.Parsec.String  (Parser)
 
 import           System.Console.ANSI
 import           System.Directory
@@ -40,16 +40,17 @@ data LiveState
       , liveForce   :: Bool
       }
 
-repoParser ∷ Parser RepoInfo
+repoParser :: Parser RepoInfo
 repoParser = do
   _         <- string "https://"
   hostName  <- many1 (noneOf "/")
   _         <- string "/"
   ownerName <- many1 (noneOf "/")
   _         <- char '/'
-  repoName  <- manyTill anyChar (lookAhead (string ".git"))
-  _         <- string ".git"
-  pure $ RepoInfo hostName ownerName repoName
+  repoName  <- manyTill anyChar (try (string ".git") <|> lookAhead (string "/")
+                                                     <|> ("" <$ eof))
+  _         <- optional (string ".git")
+  return $ RepoInfo hostName ownerName repoName
 
 liveOpts ∷ Bool -> [OptDescr (LiveState -> LiveState)]
 liveOpts _ =
