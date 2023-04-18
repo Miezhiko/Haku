@@ -1,7 +1,3 @@
-{-# LANGUAGE
-    UnicodeSyntax
-  #-}
-
 module Version
   ( isHelp
   , isHelps

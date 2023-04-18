@@ -1,7 +1,3 @@
-{-# LANGUAGE
-    UnicodeSyntax
-  #-}
-
 module Commands
   ( module CommandModules
   , commands

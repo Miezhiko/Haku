@@ -1,10 +1,6 @@
-{-# LANGUAGE
-    DeriveGeneric
-  , UnicodeSyntax
-  #-}
-
 module Shelter.Types
-  ( ShelterConfig
+  ( module Exported
+  , ShelterConfig
   , ShelterNode (..)
   , getShelterConfig
   , updateShelterConfig
@@ -13,6 +9,7 @@ module Shelter.Types
 import           Paths                 (getShelterConfPath)
 
 import           GHC.Generics
+import           Prelude.Unicode       as Exported
 
 import           Data.Aeson.Types      (defaultOptions, genericToJSON)
 import           Data.Yaml
@@ -44,7 +41,7 @@ ymlDecode ∷ FromJSON iFromJSONable ⇒ FilePath -> IO iFromJSONable
 ymlDecode = decodeThrow <=< BS.readFile
 
 ymlEncode ∷ ToJSON iToJSONable ⇒ FilePath -> iToJSONable -> IO()
-ymlEncode = (. encode) . BS.writeFile
+ymlEncode = (∘ encode) ∘ BS.writeFile
 
 getShelterConfig ∷ IO (Maybe ShelterConfig)
 getShelterConfig = getShelterConfPath >>= \shelterCfgPath ->

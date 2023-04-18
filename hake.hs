@@ -1,5 +1,7 @@
-{-# LANGUAGE MultiWayIf    #-}
-{-# LANGUAGE UnicodeSyntax #-}
+{-# LANGUAGE
+    MultiWayIf
+  , UnicodeSyntax
+  #-}
 
 import           Hake
 
@@ -8,13 +10,14 @@ main = hake $ do
   "clean | clean the project" ∫
     cabal ["clean"] >> removeDirIfExists buildPath
 
-  hakuExecutable ♯ do
-    cabal ["install", "--only-dependencies", "--overwrite-policy=always"]
-    cabal ["configure"]
-    cabal ["build"]
-    getCabalBuildPath appName >>=
-      \p -> copyFile p hakuExecutable
-    cleanCabalLocal
+  hakuExecutable ♯
+   let processBuild = do
+        cabal ["install", "--only-dependencies", "--overwrite-policy=always"]
+        cabal ["configure"]
+        cabal ["build"]
+        getCabalBuildPath appName >>=
+          \p -> copyFile p hakuExecutable
+    in processBuild `finally` cleanCabalLocal
 
   "install | install to system" ◉ [hakuExecutable] ∰
     cabal ["install", "--overwrite-policy=always"]

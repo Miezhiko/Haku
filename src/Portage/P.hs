@@ -1,6 +1,3 @@
-{-# LANGUAGE
-    UnicodeSyntax
-  #-}
 module Portage.P where
 
 import           Data.Bifunctor

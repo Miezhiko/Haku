@@ -1,6 +1,3 @@
-{-# LANGUAGE
-    UnicodeSyntax
-  #-}
 module Portage.Mask
   ( module Portage.Types.Masking
   , parseMask

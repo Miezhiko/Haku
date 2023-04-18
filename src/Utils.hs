@@ -1,8 +1,3 @@
-{-# LANGUAGE
-    LambdaCase
-  , UnicodeSyntax
-  #-}
-
 module Utils
   ( module ExportedUtils
   , hasSudo

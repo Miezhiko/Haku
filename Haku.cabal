@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.73
+version: 0.0.74
 license: AGPL-3
 
 build-type: Simple
@@ -8,6 +8,14 @@ cabal-version: 2.0
 Executable haku
   default-language: Haskell2010
   Main-Is: Haku.hs
+  default-extensions:
+    CPP
+    LambdaCase
+    MultiWayIf
+    UnicodeSyntax
+    FlexibleContexts
+    DeriveGeneric
+    TupleSections
   Other-Modules:
     Types,
     Constants,
@@ -65,5 +73,5 @@ Executable haku
       yaml,
       aeson,
       mtl
- ghc-options:
-    -Wall
+  ghc-options:
+    -Wall -threaded -rtsopts -with-rtsopts=-N

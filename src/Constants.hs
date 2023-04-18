@@ -1,6 +1,5 @@
 {-# LANGUAGE
     Safe
-  , UnicodeSyntax
   #-}
 module Constants where
 

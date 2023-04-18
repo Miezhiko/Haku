@@ -1,9 +1,3 @@
-{-# LANGUAGE
-    DeriveGeneric
-  , TupleSections
-  , UnicodeSyntax
-  #-}
-
 module Portage.Types.Version where
 
 import           GHC.Generics                  (Generic)

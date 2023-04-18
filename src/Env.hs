@@ -1,7 +1,3 @@
-{-# LANGUAGE
-    UnicodeSyntax
-  #-}
-
 module Env
   ( module ExportedTpyes
   , HakuEnv (..)

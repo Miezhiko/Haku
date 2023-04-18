@@ -1,7 +1,3 @@
-{-# LANGUAGE
-    DeriveGeneric
-  , UnicodeSyntax
-  #-}
 module Portage.Types.Package
   ( Package (..)
   , prettyPrintVersions

@@ -1,8 +1,3 @@
-{-# LANGUAGE
-    LambdaCase
-  , UnicodeSyntax
-  #-}
-
 module Shelter.Hashes
   ( ShelterConfig
   , getShelterConfig
@@ -28,8 +23,8 @@ getShelterHashes = getShelterConfig >>=
 isShelterRepositoryInSync ∷ ShelterHashes -> ShelterNode  -> Bool
 isShelterRepositoryInSync hashes n =
   case M.lookup (target n) hashes of
-    Just h  -> h == hash n
+    Just h  -> h ≡ hash n
     Nothing -> False
 
 isPortageConfigIsInSync ∷ PortageConfig -> ShelterConfig -> Bool
-isPortageConfigIsInSync = all . isShelterRepositoryInSync . pcShelterHashes
+isPortageConfigIsInSync = all ∘ isShelterRepositoryInSync ∘ pcShelterHashes

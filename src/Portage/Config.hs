@@ -1,7 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , UnicodeSyntax
-  #-}
 module Portage.Config
   ( module Portage.Types.Config
   , loadPortageConfig

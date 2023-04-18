@@ -1,7 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , UnicodeSyntax
-  #-}
 module Portage.Atom where
 
 import           Portage.P
@@ -19,10 +15,10 @@ blocking ∷ DepAtom -> Bool
 blocking (DepAtom b _ _ _ _ _ _) = b
 
 unblock ∷ DepAtom -> DepAtom
-unblock (DepAtom _b r m c p v s) = DepAtom False r m c p v s
+block   ∷ DepAtom -> DepAtom
 
-block ∷ DepAtom -> DepAtom
-block (DepAtom _b r m c p v s) = DepAtom True r m c p v s
+unblock (DepAtom _b r m c p v s) = DepAtom False r m c p v s
+block   (DepAtom _b r m c p v s) = DepAtom True r m c p v s
 
 pFromDepAtom ∷ DepAtom -> P
 pFromDepAtom (DepAtom _ _ _ cat pkg _ _) = P cat pkg

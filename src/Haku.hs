@@ -1,9 +1,6 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , UnicodeSyntax
-  #-}
-
-module Main where
+module Main
+  ( main
+  ) where
 
 import           Commands
 import           Logger

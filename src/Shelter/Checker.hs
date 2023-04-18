@@ -1,8 +1,3 @@
-{-# LANGUAGE
-    LambdaCase
-  , UnicodeSyntax
-  #-}
-
 module Shelter.Checker
   ( ShelterConfig
   , getShelterConfig
@@ -32,9 +27,9 @@ checkForHash rlc Nothing = do
   currentHash <- readProcess "git" ["log", "-n", "1"
                                   , "--pretty=format:%H"
                                   ] []
-  pure $ rlc == trim currentHash
+  pure $ rlc ≡ trim currentHash
 checkForHash rlc (Just shelterHash) =
-  pure $ rlc == shelterHash
+  pure $ rlc ≡ shelterHash
 
 updateNode ∷ ShelterNode -> IO ShelterNode
 updateNode node = do

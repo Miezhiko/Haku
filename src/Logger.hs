@@ -1,8 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , UnicodeSyntax
-  #-}
-
 module Logger
   ( hakuLog
   , hakuLogger

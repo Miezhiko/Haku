@@ -1,9 +1,7 @@
 {-# LANGUAGE
     ConstraintKinds
-  , FlexibleContexts
   , GADTs
   , RankNTypes
-  , UnicodeSyntax
   #-}
 
 module Types
