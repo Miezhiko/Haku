@@ -8,7 +8,7 @@ import           Hake
 main ∷ IO ()
 main = hake $ do
   "clean | clean the project" ∫
-    cabal ["clean"] >> removeDirIfExists buildPath
+    cabal ["clean"] ?> removeDirIfExists buildPath
 
   hakuExecutable ♯
    let processBuild = do
@@ -17,7 +17,7 @@ main = hake $ do
         cabal ["build"]
         getCabalBuildPath appName >>=
           \p -> copyFile p hakuExecutable
-    in processBuild `finally` cleanCabalLocal
+    in processBuild ?> cleanCabalLocal
 
   "install | install to system" ◉ [hakuExecutable] ∰
     cabal ["install", "--overwrite-policy=always"]

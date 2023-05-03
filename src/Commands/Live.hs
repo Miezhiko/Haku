@@ -114,13 +114,13 @@ isThereGitUpdates  repo repoFilePath rName mbBranch = do
         else do putStrLn $ rName ++ " will be updated to: " ++ remoteHash
                 pure True
 
-checkForRepository' ∷ PortageConfig
-                  -> String -- repo owner
-                  -> String -- repo name
-                  -> (Package, [PackageVersion])
-                  -> (String, [String])
-                  -> IO (Maybe (Package, [PackageVersion]))
-checkForRepository' pc rOwner rName (p, lv) (repo, mbBranch) =
+checkForRepository' ∷ String -- repo owner
+                   -> String -- repo name
+                   -> (Package, [PackageVersion])
+                   -> (String, [String])
+                   -> FilePath -- tree path
+                   -> IO (Maybe (Package, [PackageVersion]))
+checkForRepository' rOwner rName (p, lv) (repo, mbBranch) treePath =
   let repoPath        = treePath </> "distfiles/git3-src" </> rOwner ++ "_" ++ rName ++ ".git"
       repoFilePath    = repoPath </> "FETCH_HEAD"
   in doesFileExist repoFilePath >>=
@@ -131,18 +131,16 @@ checkForRepository' pc rOwner rName (p, lv) (repo, mbBranch) =
               if gitUpdates
                 then pure $ Just (p, lv) 
                 else pure Nothing
- where treePath ∷ String
-       treePath = pcMakeConf pc M.! "PORTDIR"
 
-checkForRepository ∷ PortageConfig
-                  -> (Package, [PackageVersion])
+checkForRepository ∷ (Package, [PackageVersion])
                   -> String
                   -> [String]
+                  -> FilePath
                   -> IO (Maybe (Package, [PackageVersion]))
-checkForRepository pc (p, lv) repo mbBranch =
+checkForRepository (p, lv) repo mbBranch treePath =
   case parse repoParser "" repo of
     Right (RepoInfo _ repoOwner repoName) ->
-      checkForRepository' pc repoOwner repoName (p, lv) (repo, mbBranch)
+      checkForRepository' repoOwner repoName (p, lv) (repo, mbBranch) treePath
     Left _ -> do
       putStrLn $ show p ++ ": ERROR ON PARSING: " ++ repo
       pure Nothing
@@ -159,11 +157,29 @@ smartLiveRebuild pc package (ver:_) verbose = -- TODO: many versions
                         pure $ Just (package, [ver])
           Just eb ->
             case eGit_uri eb of
-              []     -> do when verbose $ putStrLn $ show package ++ ": Can't find EGIT SRC"
+              []     -> do when verbose $ putStrLn $ show package ++ ": Can't find EGIT_SRC"
                            pure Nothing -- not git?
-              (rp:_) -> -- TODO: check for all repository links
-                        checkForRepository pc (package, [ver])
+              [rp]   -> checkForRepository (package, [ver])
                                            rp (eGit_branch eb)
+                                           treePath
+              xs     -> do
+                existingRepos <-
+                  filterM (\rp ->
+                    case parse repoParser "" rp of
+                      Right (RepoInfo _ rOwner rName) ->
+                        let repoPath     = treePath </> "distfiles/git3-src"
+                                                    </> rOwner ++ "_" ++ rName ++ ".git"
+                            repoFilePath = repoPath </> "FETCH_HEAD"
+                        in doesFileExist repoFilePath
+                      Left _ -> pure False) xs
+                case existingRepos of
+                  []     -> do putStrLn "There are several EGIT_SRC but none downloaded"
+                               pure $ Just (package, [ver])
+                  (rp:_) -> checkForRepository (package, [ver])
+                                               rp (eGit_branch eb)
+                                               treePath
+ where treePath ∷ FilePath
+       treePath = pcMakeConf pc M.! "PORTDIR"
 
 liveUpdateMap ∷ Package
              -> PortageConfig
