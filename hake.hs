@@ -9,14 +9,17 @@ main ∷ IO ()
 main = hake $ do
   "clean | clean the project" ∫
     cabal ["clean"] ?> removeDirIfExists buildPath
+                    >> cleanCabalLocal
+
+  "build deps | install all the dependencies" ∫
+    cabal ["install", "--only-dependencies", "--overwrite-policy=always"]
 
   hakuExecutable ♯
-   let processBuild = do
-        cabal ["install", "--only-dependencies", "--overwrite-policy=always"]
-        cabal ["configure"]
-        cabal ["build"]
-        getCabalBuildPath appName >>=
-          \p -> copyFile p hakuExecutable
+   let processBuild =
+           cabalConfigure
+        >> cabalBuild
+        >> getCabalBuildPath appName >>=
+            \p -> copyFile p hakuExecutable
     in processBuild ?> cleanCabalLocal
 
   "install | install to system" ◉ [hakuExecutable] ∰
