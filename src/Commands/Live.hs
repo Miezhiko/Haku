@@ -40,7 +40,7 @@ data LiveState
       , liveForce   :: Bool
       }
 
-repoParser :: Parser RepoInfo
+repoParser ∷ Parser RepoInfo
 repoParser = do
   _         <- string "https://"
   hostName  <- many1 (noneOf "/")
@@ -96,23 +96,34 @@ liveRebuild pvv = (== 0) <$> getRealUserID >>= \root ->
                              sv -> "=" ++ show p ++ "-" ++ sv
                           ) pvv
 
-isThereGitUpdates ∷ String -> String -> String -> [String] -> IO Bool
-isThereGitUpdates  repo repoFilePath rName mbBranch = do
+
+checkForRemoteRepositoryHash ∷ String -> [String] -> IO (Maybe String)
+checkForRemoteRepositoryHash repo [] = do
   putStrLn $ "Checking for: " ++ repo
-  rlm <- case mbBranch of
-    []     -> readIfSucc "git" ["ls-remote", repo, "HEAD"]
-    (rb:_) -> readIfSucc "git" ["ls-remote", repo, rb]
-  case rlm of
-    Nothing  -> pure True
-    Just rlc -> do
-      let remoteHash = head (splitOn "\t" rlc)
-      repoHashFile <- readFile repoFilePath
-      let currentHash = head (splitOn "\t" repoHashFile)
-      if currentHash == remoteHash
-        then do putStrLn $ rName ++ " is up to date, hash: " ++ currentHash
-                pure False
-        else do putStrLn $ rName ++ " will be updated to: " ++ remoteHash
-                pure True
+  readIfSucc "git" ["ls-remote", repo, "HEAD"]
+checkForRemoteRepositoryHash repo [rb] = do
+  putStrLn $ "Checking for: " ++ repo ++ " branch " ++ rb
+  readIfSucc "git" ["ls-remote", repo, rb]
+checkForRemoteRepositoryHash repo (x:xs) =
+  checkForRemoteRepositoryHash repo [x] >>=
+  \case Nothing -> checkForRemoteRepositoryHash repo xs
+        Just rl -> case rl of
+          [] -> checkForRemoteRepositoryHash repo xs
+          _  -> pure $ Just rl
+
+isThereGitUpdates ∷ String -> String -> String -> [String] -> IO Bool
+isThereGitUpdates repo repoFilePath rName mbBranch =
+  checkForRemoteRepositoryHash repo mbBranch >>=
+  \case Nothing  -> pure True
+        Just rlc -> do
+          let remoteHash = head (splitOn "\t" rlc)
+          repoHashFile <- readFile repoFilePath
+          let currentHash = head (splitOn "\t" repoHashFile)
+          if currentHash == remoteHash
+            then do putStrLn $ rName ++ " is up to date, hash: " ++ currentHash
+                    pure False
+            else do putStrLn $ rName ++ " will be updated to: " ++ remoteHash
+                    pure True
 
 checkForRepository' ∷ String -- repo owner
                    -> String -- repo name

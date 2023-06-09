@@ -34,8 +34,10 @@ trim ∷ String -> String
 trim xs = dropSpaceTail "" $ lstrip xs
 
 readStringMap ∷ [String] -> M.Map String String
-readStringMap = M.fromList ∘ map (first lstrip ∘ second tail
-                                               ∘ break (=='='))
+readStringMap xs = M.fromListWith (\old new -> new ++ " " ++ old)
+                 $ map parseKeyValue xs
+ where parseKeyValue ∷ String -> (String, String)
+       parseKeyValue = first lstrip ∘ second tail ∘ break (=='=')
 
 splitOnAnyOf ∷ Eq α ⇒ [[α]] -> [α] -> [[α]]
 splitOnAnyOf ds xs = foldl' ((∘ splitOn) ∘ (>>=)) [xs] ds
