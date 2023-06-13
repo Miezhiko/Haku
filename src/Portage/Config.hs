@@ -6,6 +6,7 @@ module Portage.Config
   , storeConfig
   ) where
 
+import           Console
 import           Constants
 import           Env
 import           Hacks
@@ -17,23 +18,24 @@ import           Portage.Version
 import           Shelter.Hashes
 
 import           Data.Binary
-import qualified Data.ByteString.Lazy  as BL
+import qualified Data.ByteString.Lazy     as BL
 import           Data.Function
 import           Data.Functor
 import           Data.List
-import qualified Data.Map              as M
+import qualified Data.Map                 as M
 import           Data.Maybe
-import           Data.Ord              (comparing)
-import qualified Data.Set              as S
+import           Data.Ord                 (comparing)
+import qualified Data.Set                 as S
 import           Data.Time.Clock
 
 import           System.Directory
 import           System.FilePath
-import qualified System.IO.Strict      as Strict
+import qualified System.IO.Strict         as Strict
 import           System.Posix.Files
 import           System.Process
 
 import           Control.Arrow
+import           Control.Concurrent.Async (async, cancel)
 import           Control.Monad
 
 parseEnvMap ∷ String -> ConfData
@@ -173,6 +175,8 @@ getInstalledPackages pkgdb categories = do
 
 loadPortageConfig ∷ IO PortageConfig
 loadPortageConfig = do
+  progressThread <- async $ progressIndicator "Regenerating Haku cache..."
+
   makeConf <- getConfigFile constMakeConfPath
   let treePath = makeConf M.! "PORTDIR"
 
@@ -206,6 +210,9 @@ loadPortageConfig = do
   shelterHashes <- getShelterHashes
 
   let finalTree = M.unionWith mergePackages installed merged
+
+  cancel progressThread
+  putStrLn []
 
   pure $ PortageConfig makeConf
                        categories

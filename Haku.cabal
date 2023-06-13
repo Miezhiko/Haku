@@ -1,5 +1,5 @@
 name: Haku
-version: 0.0.80
+version: 0.0.81
 license: AGPL-3
 
 build-type: Simple
@@ -25,6 +25,7 @@ Executable haku
     Utils,
     Version,
     Logger,
+    Console,
     Commands,
     Shelter.Types,
     Shelter.Hashes,
@@ -72,6 +73,8 @@ Executable haku
       base-unicode-symbols,
       yaml,
       aeson,
-      mtl
+      mtl,
+      async,
+      terminfo
   ghc-options:
     -Wall -threaded -rtsopts -with-rtsopts=-N
