@@ -1,12 +1,18 @@
 module Console
-  ( progressIndicator
+  ( finishProgress
+  , startProgress
   ) where
 
-import           Control.Concurrent      (threadDelay)
-import           Control.Exception       (bracket_)
-import           Control.Monad           (forM_)
-import           System.Console.Terminfo
-import           System.IO               (hFlush, stdout)
+import           Prelude.Unicode
+
+import           Control.Concurrent       (threadDelay)
+import           Control.Concurrent.Async (Async, async, cancel)
+import           Control.Exception        (bracket_)
+import           Control.Monad            (forM_)
+
+import           System.Console.ANSI
+import           System.Console.Terminfo  hiding (Red)
+import           System.IO
 
 runCapability ∷ Terminal -> String -> IO ()
 runCapability term cap =
@@ -24,8 +30,24 @@ spin = forM_ (cycle "|/-\\") $ \c ->
 
 progressIndicator ∷ String -> IO ()
 progressIndicator msg = do
-  -- TODO: this way it's hard to delete | from the end?
-  -- putStr $ "  " ++ msg
-  putStrLn msg
+  hSetBuffering stdout NoBuffering
+  setSGR [ SetColor Foreground Dull Red
+         , SetConsoleIntensity BoldIntensity
+         , SetItalicized True ]
+  putStr $ "  " ++ msg
   term <- setupTermFromEnv
-  bracket_ (cursorOff term) (cursorOn term) spin
+  putChar '\r'
+  hFlush stdout
+  setSGR [ SetColor Foreground Vivid Red
+         , SetConsoleIntensity NormalIntensity
+         , SetItalicized False ]
+  bracket_ (cursorOff term)
+           (cursorOn term) spin
+
+startProgress ∷ String -> IO (Async ())
+startProgress = async ∘ progressIndicator
+
+finishProgress ∷ Async a -> IO ()
+finishProgress p = cancel p
+                >> setSGR [ Reset ]
+                >> putStrLn []

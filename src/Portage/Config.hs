@@ -35,7 +35,6 @@ import           System.Posix.Files
 import           System.Process
 
 import           Control.Arrow
-import           Control.Concurrent.Async (async, cancel)
 import           Control.Monad
 
 parseEnvMap ∷ String -> ConfData
@@ -175,7 +174,7 @@ getInstalledPackages pkgdb categories = do
 
 loadPortageConfig ∷ IO PortageConfig
 loadPortageConfig = do
-  progressThread <- async $ progressIndicator "Regenerating Haku cache..."
+  progressThread <- startProgress "Regenerating Haku cache..."
 
   makeConf <- getConfigFile constMakeConfPath
   let treePath = makeConf M.! "PORTDIR"
@@ -211,8 +210,7 @@ loadPortageConfig = do
 
   let finalTree = M.unionWith mergePackages installed merged
 
-  cancel progressThread
-  putStrLn []
+  finishProgress progressThread
 
   pure $ PortageConfig makeConf
                        categories
