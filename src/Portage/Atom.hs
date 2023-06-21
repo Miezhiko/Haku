@@ -159,9 +159,8 @@ readUseDep expand =
           Nothing ->  pure (Use neg use thenf)
           Just el ->  pure (And [Use neg use thenf, Use (not neg) use el])
 
--- an atom can also be a parenthesized depstring, which is flattened
-readAtom ∷ Stream [Char] Identity t ⇒
-             (String -> [[Char]]) -> ParsecT [Char] u Identity DepTerm
+readAtom ∷ (String -> [[Char]])
+        -> ParsecT [Char] u Identity DepTerm
 readAtom expand =
     do  neg  <-  option "" (fmap (const "!") excl)
         dep  <-  ident
