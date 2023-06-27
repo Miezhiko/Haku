@@ -78,29 +78,31 @@ parseDepAtoms  expand  =  parse  (do  white
 readDepAtom  ∷ (String -> [[Char]])
                      -> Text.Parsec.Prim.ParsecT
                           [Char] u Data.Functor.Identity.Identity DepAtom
-readDepAtom expand
-             =  do  neg         <-  optchar '!'
-                    rev         <-  optchar '~'
-                    dmod        <-  readDepMod
-                    mcat        <-  option Nothing $ try $ do  cat <- readCat
-                                                               void $ char '/'
-                                                               pure (Just cat)
-                    (pkg,mver)  <-  readPkgAndVer
-                    cat <-  case mcat of
-                              Nothing -> case expand pkg of
-                                           [cat]  ->  pure cat
-                                           []     ->  fail $ "unknown package: " ++ pkg
-                                           cats   ->  fail $ "ambiguous name " ++ pkg ++ ", possible matches: " ++ unwords (map (\c -> c ++ "/" ++ pkg) cats)
-                              Just cat -> pure cat
-                    dver        <-  case mver of
-                                      Nothing   ->  case (rev, dmod) of
-                                                      (False,DNONE) -> pure NoVer
-                                                      _ -> unexpected "absence of version"
-                                      Just ver  ->  do ast <- try $ optchar '*'
-                                                       pure (DepVer ver ast)
-                    dslt        <-  option NoSlot $  do void $ char ':'
-                                                        readSlot <&> DepSlot
-                    pure (DepAtom neg rev dmod cat pkg dver dslt)
+readDepAtom expand = do
+  neg         <-  optchar '!'
+  rev         <-  optchar '~'
+  dmod        <-  readDepMod
+  mcat        <-  option Nothing $ try $ do cat <- readCat
+                                            void $ char '/'
+                                            pure (Just cat)
+  (pkg,mver)  <-  readPkgAndVer
+  cat <-  case mcat of
+            Nothing -> case expand pkg of
+                          [cat]  ->  pure cat
+                          []     ->  fail $ "unknown package: " ++ pkg
+                          cats   ->  fail $ "ambiguous name " ++ pkg ++ ", possible matches: " ++ unwords (map (\c -> c ++ "/" ++ pkg) cats)
+            Just cat -> pure cat
+  dver        <-  case mver of
+                    Nothing   ->  case (rev, dmod) of
+                                    (False,DNONE) -> pure NoVer
+                                    _ -> unexpected "absence of version"
+                    Just ver  -> do ast <- try $ optchar '*'
+                                    pure (DepVer ver ast)
+  --          ignore overlay dep atoms like ::gentoo
+  _ovl        <-  optional $ try $ string "::"
+  dslt        <-  option NoSlot $  do void $ char ':'
+                                      readSlot <&> DepSlot
+  pure (DepAtom neg rev dmod cat pkg dver dslt)
 
 readDepMod   ∷ ParsecT [Char] u Identity DepMod
 readDepMod   =  option DNONE $
