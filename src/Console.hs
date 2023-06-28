@@ -11,7 +11,7 @@ import           Control.Exception        (bracket_)
 import           Control.Monad            (forM_)
 
 import           System.Console.ANSI
-import           System.Console.Terminfo  hiding (Red)
+import           System.Console.Terminfo  hiding (Cyan)
 import           System.IO
 
 runCapability ∷ Terminal -> String -> IO ()
@@ -31,14 +31,14 @@ spin = forM_ (cycle "|/-\\") $ \c ->
 progressIndicator ∷ String -> IO ()
 progressIndicator msg = do
   hSetBuffering stdout NoBuffering
-  setSGR [ SetColor Foreground Dull Red
+  setSGR [ SetColor Foreground Dull Cyan
          , SetConsoleIntensity BoldIntensity
          , SetItalicized True ]
   putStr $ "  " ++ msg
   term <- setupTermFromEnv
   putChar '\r'
   hFlush stdout
-  setSGR [ SetColor Foreground Vivid Red
+  setSGR [ SetColor Foreground Vivid Cyan
          , SetConsoleIntensity NormalIntensity
          , SetItalicized False ]
   bracket_ (cursorOff term)
