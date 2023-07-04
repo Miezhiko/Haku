@@ -61,8 +61,8 @@ liveOpts _ =
 
 isLiveVersion ∷ Version -> Bool
 isLiveVersion (Version [] _ _ _ _)    = False
-isLiveVersion (Version [ver] _ _ _ _) = ver == 9999
-isLiveVersion (Version xs _ _ _ _)    = 9999 ∈ xs
+isLiveVersion (Version [ver] _ _ _ _) = ver ∈ [9999, 99999999]
+isLiveVersion (Version xs _ _ _ _)    = any (∈ [9999, 99999999]) xs
 
 showLivePackage ∷ (Package, [PackageVersion])
                -> IO ()
