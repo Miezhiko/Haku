@@ -3,7 +3,10 @@ module Portage.Version
   , getVersion
   , getVersionInstalled
   , isLive
+  , isLiveVersion
   ) where
+
+import           Prelude.Unicode
 
 import           Portage.Types.Version
 
@@ -24,7 +27,9 @@ getVersionInstalled overlay pn path =
       Right  x -> Right $ PackageVersion x overlay True
 
 isLiveVersion ∷ Version -> Bool
-isLiveVersion (Version ver _ _ _ _) = 9999 `elem` ver
+isLiveVersion (Version [] _ _ _ _)    = False
+isLiveVersion (Version [ver] _ _ _ _) = ver ∈ [9999, 99999999]
+isLiveVersion (Version xs _ _ _ _)    = any (∈ [9999, 99999999]) xs
 
 isLive ∷ PackageVersion -> Bool
-isLive pv = isLiveVersion (pvVersion pv)
+isLive = isLiveVersion ∘ pvVersion

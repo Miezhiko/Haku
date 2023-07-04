@@ -59,11 +59,6 @@ liveOpts _ =
   , Option "f" ["force"]    (NoArg (\s -> s { liveForce = True }))    "update all live packages"
   ]
 
-isLiveVersion ∷ Version -> Bool
-isLiveVersion (Version [] _ _ _ _)    = False
-isLiveVersion (Version [ver] _ _ _ _) = ver ∈ [9999, 99999999]
-isLiveVersion (Version xs _ _ _ _)    = any (∈ [9999, 99999999]) xs
-
 showLivePackage ∷ (Package, [PackageVersion])
                -> IO ()
 showLivePackage (package, vv) = do
