@@ -24,7 +24,10 @@ printHelp = do
   setSGR [ Reset ]
   putStrLn $ printCommands (commands False)
 
-hakuHandle ∷ Command τ (ReaderT HakuEnv IO) -> [τ -> τ] -> [String] -> HakuEnv -> IO ()
+hakuHandle ∷ Command τ (ReaderT HakuEnv IO)
+          -> [τ -> τ]
+          -> [String]
+          -> HakuEnv -> IO ()
 hakuHandle cmd ss xs = runReaderT (handleM cmd ss xs)
   where handleM ∷ HakuMonad m ⇒ Command τ m -> [τ -> τ] -> [String] -> m ()
         handleM = liftM2 (∘) handler (foldl (flip id) ∘ state)

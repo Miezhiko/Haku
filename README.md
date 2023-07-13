@@ -10,15 +10,18 @@ Portage helper, not replacing portage itself but partially replacing `eix`, `gen
 you should have `PORTDIR` and optionally `PORTDIR_OVERLAY` defined in `make.conf` for this to work.
 
 ```bash
-Haku v0.0.19
+Haku v0.0.85
 
-get         Merge one or more variants.             
-delete      Delete one or more variants.            
-u, update   Update world                            
-upgrade     Upgrade world                           
-clean       Clean world                             
+get         Merge one or more variants.
+delete      Delete one or more variants.
+u, update   Update world
+upgrade     Upgrade world
+updates     Show possible updates
+live        Live rebuild
+clean       Clean world
 f, find     Find some Atom in main tree and overlays
-b, belongs  Find owner-package for some file        
+b, belongs  Find owner-package for some file
+digest      update manifest hash for ebuilds
 ```
 
 # WORK IN PROGRESS

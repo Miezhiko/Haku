@@ -91,7 +91,6 @@ liveRebuild pvv = (== 0) <$> getRealUserID >>= \root ->
                              sv -> "=" ++ show p ++ "-" ++ sv
                           ) pvv
 
-
 checkForRemoteRepositoryHash ∷ String -> [String] -> IO (Maybe String)
 checkForRemoteRepositoryHash repo [] = do
   putStrLn $ "Checking for: " ++ repo
@@ -168,17 +167,16 @@ smartLiveRebuild pc package (ver:_) verbose = -- TODO: many versions
               [rp]   -> checkForRepository (package, [ver])
                                            rp (eGit_branch eb)
                                            treePath
-              xs     -> do
-                existingRepos <-
-                  filterM (\rp ->
-                    case parse repoParser "" rp of
-                      Right (RepoInfo _ rOwner rName) ->
-                        let repoPath     = treePath </> "distfiles/git3-src"
-                                                    </> rOwner ++ "_" ++ rName ++ ".git"
-                            repoFilePath = repoPath </> "FETCH_HEAD"
-                        in doesFileExist repoFilePath
-                      Left _ -> pure False) xs
-                case existingRepos of
+              xs     ->
+                filterM (\rp ->
+                  case parse repoParser "" rp of
+                    Right (RepoInfo _ rOwner rName) ->
+                      let repoPath     = treePath </> "distfiles/git3-src"
+                                                  </> rOwner ++ "_" ++ rName ++ ".git"
+                          repoFilePath = repoPath </> "FETCH_HEAD"
+                      in doesFileExist repoFilePath
+                    Left _ -> pure False) xs
+                >>= \case
                   []     -> do putStrLn "There are several EGIT_SRC but none downloaded"
                                pure $ Just (package, [ver])
                   (rp:_) -> checkForRepository (package, [ver])
