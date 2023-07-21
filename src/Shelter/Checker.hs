@@ -33,12 +33,13 @@ checkForHash rlc (Just shelterHash) =
 
 updateNode ∷ ShelterNode -> IO ShelterNode
 updateNode node = do
+  putStrLn $ target node
   getRemoteHash >>=
    \case Nothing  -> pure node
          Just r   -> checkForHash r (hash node) >>=
           \case False -> pure node
                 True  -> do
-                  rawAndIgnore "git" ["pull", upstream node]
+                  rawAndIgnore "git" ("pull" : words (upstream node))
                   pure $ node { hash = Just r }
 
 updateAll ∷ IO ()
@@ -48,6 +49,7 @@ updateAll = getShelterConfig >>= \case
     traverse (\node ->
       let path = target node
       in doesDirectoryExist (path </> ".git") >>=
-        \case True  -> setCurrentDirectory path >> updateNode node
+        \case True  -> setCurrentDirectory path
+                    >> updateNode node
               False -> pure node) shelter
     >>= updateShelterConfig
