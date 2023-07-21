@@ -48,6 +48,6 @@ updateAll = getShelterConfig >>= \case
     traverse (\node ->
       let path = target node
       in doesDirectoryExist (path </> ".git") >>=
-        \case True  -> withCurrentDirectory path (updateNode node)
+        \case True  -> setCurrentDirectory path >> updateNode node
               False -> pure node) shelter
     >>= updateShelterConfig

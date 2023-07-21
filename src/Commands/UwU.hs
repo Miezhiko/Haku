@@ -24,8 +24,8 @@ data UwuState
 
 uwuOpts ∷ Bool -> [OptDescr (UwuState -> UwuState)]
 uwuOpts _ =
-  [ Option "h" ["haskell-sync"] (NoArg (\s -> s { uwuHaskellSync = True })) "use haskell code to sync"
-  , Option "a" ["ask"]          (NoArg (\s -> s { uwuAsk = True })) "ask before upgrade"
+  [ Option "hs" ["haskell-sync"] (NoArg (\s -> s { uwuHaskellSync = True })) "use haskell code to sync"
+  , Option "a"  ["ask"]          (NoArg (\s -> s { uwuAsk = True })) "ask before upgrade"
   ]
 
 runUpgradeScriptsRoot ∷ UwuState -> IO ()
