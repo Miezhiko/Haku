@@ -1,9 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , LambdaCase
-  , UnicodeSyntax
-  #-}
-
 module Commands.Live
   ( liveCmd
   ) where
@@ -225,11 +219,11 @@ liveUpdate lss xs = ask >>= \env ->
 
 liveCmd ∷ Command LiveState m
 liveCmd = Command
-            { command = ["live"]
+            { command     = ["live"]
             , description = "Live rebuild"
-            , usage = ("haku " ++)
-            , state = LiveState { liveVerbose = False
-                                , livePreview = False
-                                , liveForce   = False }
-            , options = liveOpts
-            , handler = liveUpdate }
+            , usage       = ("haku " ++)
+            , state       = LiveState { liveVerbose = False
+                                      , livePreview = False
+                                      , liveForce   = False }
+            , options     = liveOpts
+            , handler     = liveUpdate }

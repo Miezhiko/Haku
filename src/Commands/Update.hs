@@ -1,8 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , UnicodeSyntax
-  #-}
-
 module Commands.Update
   ( updateCmd
   ) where
@@ -72,11 +67,11 @@ updateMyAss us _ = ask >>= \env ->
 
 updateCmd ∷ Command UpdateState m
 updateCmd = Command
-            { command = ["u", "update"]
+            { command     = ["u", "update"]
             , description = "Update world"
-            , usage = ("haku " ++)
-            , state = UpdateState { updUpgrade  = False
-                                  , updMinimal  = False
-                                  , updStore    = False }
-            , options = updateOpts
-            , handler = updateMyAss }
+            , usage       = ("haku " ++)
+            , state       = UpdateState { updUpgrade  = False
+                                        , updMinimal  = False
+                                        , updStore    = False }
+            , options     = updateOpts
+            , handler     = updateMyAss }

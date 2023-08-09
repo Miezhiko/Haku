@@ -1,8 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , UnicodeSyntax
-  #-}
-
 module Commands.Clean
   ( cleanCmd
   ) where
@@ -13,6 +8,7 @@ import           Utils
 import qualified Data.Map         as M
 
 import           System.Directory
+import           System.FilePath
 
 data CleanState
   = CleanState
@@ -32,11 +28,20 @@ depcleanIO = isRoot ( rawAndIgnore "emerge" [ "--depclean" ] )
 
 cleanDirIO ∷ FilePath -> IO ()
 cleanDirIO [] = pure ()
-cleanDirIO path = isRoot
-                    ( rawAndIgnore "rm" [ "-rf", insidePath ] )
-                    ( rawAndIgnore "sudo" [ "rm", "-rf", insidePath ] )
- where insidePath ∷ String
-       insidePath = path ++ "/*"
+cleanDirIO path = isRoot removeDircontent
+                       $ putStrLn "can't clean dirs as user"
+ where
+  removeDircontent ∷ IO ()
+  removeDircontent = listDirectory path
+                 >>= mapM_ removeEntry
+
+  removeEntry ∷ FilePath -> IO ()
+  removeEntry name = do
+    let fullPath = path </> name
+    isDirectory <- doesDirectoryExist fullPath
+    if isDirectory
+      then cleanDirIO fullPath
+      else removeFile fullPath
 
 cleanIfExists ∷ FilePath -> IO ()
 cleanIfExists p = doesDirectoryExist p >>= \exists ->
@@ -57,10 +62,10 @@ cleanM cs _ = ask >>= \env -> liftIO $ do
       cleanIfExists tmpDir
 
 cleanCmd ∷ Command CleanState m
-cleanCmd = Command { command = ["clean"]
-                   , description = "Clean world"
-                   , usage = ("haku " ++)
-                   , state = CleanState { cleanDirs     = False
-                                        , cleanVerbose  = False }
-                   , options = cleanOpts
-                   , handler = cleanM }
+cleanCmd = Command { command      = ["clean"]
+                   , description  = "Clean world"
+                   , usage        = ("haku " ++)
+                   , state        = CleanState { cleanDirs     = False
+                                               , cleanVerbose  = False }
+                   , options      = cleanOpts
+                   , handler      = cleanM }

@@ -1,8 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , UnicodeSyntax
-  #-}
-
 module Commands.Belongs
   ( belongsCmd
   ) where
@@ -82,9 +77,9 @@ belongsM s xs = liftIO ∘ belongs s xs =≪ asks config
 
 belongsCmd ∷ Command String m
 belongsCmd =
-  Command { command = ["b", "belongs"]
+  Command { command     = ["b", "belongs"]
           , description = "Find owner-package for some file"
-          , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
-          , state = 𝜀
-          , options = const 𝜀
-          , handler = belongsM }
+          , usage       = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
+          , state       = 𝜀
+          , options     = const 𝜀
+          , handler     = belongsM }

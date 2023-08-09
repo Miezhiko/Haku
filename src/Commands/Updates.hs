@@ -1,9 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , LambdaCase
-  , UnicodeSyntax
-  #-}
-
 module Commands.Updates
   ( updatesCmd
   ) where
@@ -204,12 +198,12 @@ showPossibleUpdates uss xs = ask >>= \env ->
 
 updatesCmd ∷ Command UpdatesState m
 updatesCmd = Command
-            { command = ["updates"]
+            { command     = ["updates"]
             , description = "Show possible updates"
-            , usage = ("haku " ++)
-            , state = UpdatesState { updsVerbose    = False
-                                   , updsShowMasks  = False
-                                   , updsOnlyMasks  = False
-                                   , updsWithBdeps  = False }
-            , options = updatesOpts
-            , handler = showPossibleUpdates }
+            , usage       = ("haku " ++)
+            , state       = UpdatesState { updsVerbose    = False
+                                         , updsShowMasks  = False
+                                         , updsOnlyMasks  = False
+                                         , updsWithBdeps  = False }
+            , options     = updatesOpts
+            , handler     = showPossibleUpdates }

@@ -1,7 +1,5 @@
 {-# LANGUAGE
-    FlexibleContexts
-  , TupleSections
-  , UnicodeSyntax
+    TupleSections
   #-}
 
 module Commands.Find
@@ -79,10 +77,10 @@ findM fs xs = liftIO ∘ findAction fs xs =≪ asks config
 
 findCmd ∷ Command FindState m
 findCmd = Command
-          { command = ["f", "find"]
+          { command     = ["f", "find"]
           , description = "Find some Atom in main tree and overlays"
-          , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
-          , state = FindState { fndExact      = False
-                              , fndInstalled  = False }
-          , options = findOpts
-          , handler = findM }
+          , usage       = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
+          , state       = FindState { fndExact      = False
+                                    , fndInstalled  = False }
+          , options     = findOpts
+          , handler     = findM }

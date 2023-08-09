@@ -1,8 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , UnicodeSyntax
-  #-}
-
 module Commands.UwU
   ( uwuCmd
   ) where
@@ -69,10 +64,10 @@ owo uws _ = ask >>= \env -> do
               writeIORef (config env) pc { pcUpdateCache = True }
 
 uwuCmd ∷ Command UwuState m
-uwuCmd = Command { command = ["uwu"]
-                 , description = "Update and upgrade the world (alias)"
-                 , usage = ("haku " ++)
-                 , state = UwuState { uwuHaskellSync = False
-                                    , uwuAsk = False }
-                 , options = uwuOpts
-                 , handler = owo }
+uwuCmd = Command { command      = ["uwu"]
+                 , description  = "Update and upgrade the world (alias)"
+                 , usage        = ("haku " ++)
+                 , state        = UwuState { uwuHaskellSync = False
+                                           , uwuAsk = False }
+                 , options      = uwuOpts
+                 , handler      = owo }

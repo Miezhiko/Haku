@@ -1,8 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , UnicodeSyntax
-  #-}
-
 module Commands.Get
   ( getCmd
   ) where
@@ -70,9 +65,9 @@ getPackageM gs xs =
 
 getCmd ∷ Command GetState m
 getCmd = Command
-          { command = ["get"]
+          { command     = ["get"]
           , description = "Merge one or more variants."
-          , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
+          , usage       = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
           , state = GetState  { gpretend = False
                               , gupdate  = False
                               , gask     = False

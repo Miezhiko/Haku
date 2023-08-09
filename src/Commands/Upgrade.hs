@@ -1,7 +1,3 @@
-{-# LANGUAGE
-    UnicodeSyntax
-  #-}
-
 module Commands.Upgrade
   ( upgradeCmd
   ) where
@@ -46,10 +42,10 @@ upgrade ∷ UpgradeState -> IO ()
 upgrade = liftM2 isRoot upgradeRoot upgradeSudo
 
 upgradeCmd ∷ Command UpgradeState m
-upgradeCmd = Command { command = ["upgrade"]
-                     , description = "Upgrade world"
-                     , usage = ("haku " ++)
-                     , state = UpgradeState { upgrdSelf     = False
-                                            , upgrdVerbose  = False }
-                     , options = upgradeOpts
-                     , handler = \ugrs _ -> liftIO $ upgrade ugrs }
+upgradeCmd = Command { command      = ["upgrade"]
+                     , description  = "Upgrade world"
+                     , usage        = ("haku " ++)
+                     , state        = UpgradeState { upgrdSelf     = False
+                                                   , upgrdVerbose  = False }
+                     , options      = upgradeOpts
+                     , handler      = \ugrs _ -> liftIO $ upgrade ugrs }

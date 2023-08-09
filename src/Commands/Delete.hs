@@ -1,8 +1,3 @@
-{-# LANGUAGE
-    FlexibleContexts
-  , UnicodeSyntax
-  #-}
-
 module Commands.Delete
   ( deleteCmd
   ) where
@@ -50,10 +45,10 @@ deleteM dels xs =
 
 deleteCmd ∷ Command DeleteState m
 deleteCmd = Command
-            { command = ["delete"]
+            { command     = ["delete"]
             , description = "Delete one or more variants."
-            , usage = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
-            , state = DeleteState { dpretend  = False
-                                  , dask      = False }
-            , options = deleteOpts
-            , handler = deleteM }
+            , usage       = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
+            , state       = DeleteState { dpretend  = False
+                                        , dask      = False }
+            , options     = deleteOpts
+            , handler     = deleteM }
