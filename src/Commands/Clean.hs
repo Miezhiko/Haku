@@ -26,10 +26,10 @@ depcleanIO ∷ IO ()
 depcleanIO = isRoot ( rawAndIgnore "emerge" [ "--depclean" ] )
                     ( rawAndIgnore "sudo" [ "emerge", "--depclean" ] )
 
-cleanDirIO ∷ FilePath -> IO ()
-cleanDirIO [] = pure ()
-cleanDirIO path = isRoot removeDircontent
-                       $ putStrLn "can't clean dirs as user"
+cleanDirIO ∷ FilePath -> Bool -> IO ()
+cleanDirIO [] _ = pure ()
+cleanDirIO path recursive = isRoot removeDircontent
+                                 $ putStrLn "can't clean dirs as user"
  where
   removeDircontent ∷ IO ()
   removeDircontent = listDirectory path
@@ -40,12 +40,12 @@ cleanDirIO path = isRoot removeDircontent
     let fullPath = path </> name
     isDirectory <- doesDirectoryExist fullPath
     if isDirectory
-      then cleanDirIO fullPath
+      then when recursive $ cleanDirIO fullPath True
       else removeFile fullPath
 
-cleanIfExists ∷ FilePath -> IO ()
-cleanIfExists p = doesDirectoryExist p >>= \exists ->
-                    when exists $ cleanDirIO p
+cleanIfExists ∷ FilePath -> Bool -> IO ()
+cleanIfExists p r = doesDirectoryExist p >>= \exists ->
+                      when exists $ cleanDirIO p r
 
 cleanM ∷ HakuMonad m ⇒ CleanState -> [String] -> m ()
 cleanM cs _ = ask >>= \env -> liftIO $ do
@@ -57,9 +57,9 @@ cleanM cs _ = ask >>= \env -> liftIO $ do
           tmpDir   = makeConf M.! "PORTAGE_TMPDIR"
           verbose  = cleanVerbose cs
       when verbose $ putStrLn ("Cleaning " ++ distDir)
-      cleanIfExists distDir
+      cleanIfExists distDir False
       when verbose $ putStrLn ("Cleaning " ++ tmpDir)
-      cleanIfExists tmpDir
+      cleanIfExists tmpDir True
 
 cleanCmd ∷ Command CleanState m
 cleanCmd = Command { command      = ["clean"]
