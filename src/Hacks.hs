@@ -18,7 +18,7 @@ import qualified Data.Map        as M
 (.:) f g x y = f (g x y)
 
 rstrip ∷ String -> String
-rstrip = reverse . dropWhile isSpace . reverse
+rstrip = reverse ∘ dropWhile isSpace ∘ reverse
 
 lstrip ∷ String -> String
 lstrip = dropWhile isSpace

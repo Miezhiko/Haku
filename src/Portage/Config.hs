@@ -38,28 +38,31 @@ import           Control.Arrow
 import           Control.Monad
 
 parseEnvMap ∷ String -> ConfData
-parseEnvMap s = M.fromList $
-                   [  (v,stripQuotes c) | 
-                      l <- lines s,
-                      (v,'=':c) <- pure $ break (=='=') l ]
-  where  stripQuotes ('\'':r@(_:_)) =  init r
-         stripQuotes x              =  x
+parseEnvMap s = M.fromList $ map parseLine (lines s)
+ where
+  parseLine l = 
+    case break (=='=') l of
+      (v, '=':c) -> (v, stripQuotes c)
+      (v, [])    -> (v, [])
+      (_, p:_)   -> error $ "Unexpected character: " ++ [p]
+
+  stripQuotes ('\'':r) = init r
+  stripQuotes x = x
 
 getFilteredDirectoryContents ∷ FilePath -> IO [FilePath]
 getFilteredDirectoryContents fp = filter (∉ [".",".."]) <$> getDirectoryContents fp
 
 getConfigFile ∷ FilePath -> IO ConfData
-getConfigFile f =  do  (_,r,_) <- readCreateProcessWithExitCode (
-                                    shell $  "unset $(set | sed 's/^\\([^=]*\\)=.*$/\\1/') 2>/dev/null;" ++
-                                             "source " ++ f ++ "; set" ) []
-                       pure $ parseEnvMap r
+getConfigFile f = do
+  (_,r,_) <- readCreateProcessWithExitCode (
+    shell $ "unset $(set | sed 's/^\\([^=]*\\)=.*$/\\1/') 2>/dev/null;" ++
+    "source " ++ f ++ "; set" ) []
+  pure $ parseEnvMap r
 
 getVersions ∷ String -> String -> String -> IO (S.Set PackageVersion)
-getVersions fp pn o = do
-  dirContent <- getFilteredDirectoryContents fp
-  let ebuilds   = filter (isSuffixOf ".ebuild") dirContent
-      versions  = map (getVersion o pn) ebuilds
-  pure $ S.fromList versions
+getVersions fp pn o =
+  liftM (S.fromList ∘ map (getVersion o pn) ∘ filter (isSuffixOf ".ebuild"))
+        (getFilteredDirectoryContents fp)
 
 parseOverlay ∷ FilePath -> IO (([Package], [String]), OverlayMeta)
 parseOverlay treePath = do
@@ -103,15 +106,14 @@ parseOverlays ∷ String -> IO (Tree, [OverlayMeta])
 parseOverlays input = do
   let overlys = filter (not ∘ null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] input
   parsed <- traverse parseOverlay overlys
-  let treePkgs  = concatMap (fst . fst) parsed
-      trees     = map (\p -> (pCategory p ++ "/" ++ pName p, p)) treePkgs
+  let treePkgs  = concatMap (fst ∘ fst) parsed
+      trees     = map (\p -> (pCategory p </> pName p, p)) treePkgs
       ovMetas   = map snd parsed
   pure (M.fromList trees, ovMetas)
 
 mergePackages ∷ Package -> Package -> Package
-mergePackages p1 p2 =
-  let versions = S.union (pVersions p1) (pVersions p2)
-  in Package (pCategory p1) versions (pName p1)
+mergePackages p1 p2 = p1 { pVersions = versions }
+  where versions = S.union (pVersions p1) (pVersions p2)
 
 findExactMax ∷ [String] -> Maybe String
 findExactMax [ ] = Nothing
@@ -125,8 +127,7 @@ getPackage fcat cat (Just pn) vp = do
   case getVersionInstalled overlay pn vp of
     Left err -> putStrLn err
              >> pure Nothing
-    Right vi -> let versions = S.singleton vi
-                in pure $ Just (cat ++ "/" ++ pn, Package cat versions pn)
+    Right vi -> pure ∘ Just $ (cat </> pn, Package cat (S.singleton vi) pn)
 
 concatPackageGroups ∷ [(Atom, Package)] -> [(Atom, Package)]
 concatPackageGroups [] = 𝜀
@@ -142,19 +143,14 @@ concatPackageGroups xs =
 
 findPackages ∷ String -> String -> [String] -> [String] -> IO Tree
 findPackages fcat cat versionedPkgs pkgs = do
-  l <- traverse (\vpkg -> let mb = filter (`isPrefixOf` vpkg) pkgs
-                        in getPackage fcat cat (findExactMax mb) vpkg
-               ) versionedPkgs
-  let srt = sortBy (\(a, _) (b, _) -> compare a b) (catMaybes l)
-      grp = groupBy (\(a, _) (b, _) -> a == b) srt
-      gmp = concatMap concatPackageGroups grp
+  results <- mapM (\vpkg ->
+    let mb = filter (`isPrefixOf` vpkg) pkgs
+    in getPackage' (findExactMax mb) vpkg) versionedPkgs
+  let sorted  = sortOn fst (catMaybes results)
+      grouped = groupBy ((==) `on` fst) sorted
+      gmp     = concatMap concatPackageGroups grouped
   pure $ M.fromList gmp
-
-concatMaps ∷ Tree -> [Tree] -> Tree
-concatMaps base []     = base
-concatMaps base [x]    = M.unionWith mergePackages base x
-concatMaps base (x:xs) = M.unionWith mergePackages (concatMaps base [x])
-                                                   (concatMaps base xs)
+ where getPackage' = getPackage fcat cat
 
 getInstalledPackages ∷ FilePath -> [(String, [String])] -> IO Tree
 getInstalledPackages pkgdb categories = do
@@ -170,7 +166,7 @@ getInstalledPackages pkgdb categories = do
         Just (_,pkgs) -> findPackages fcat cat pkgFiles pkgs
         Nothing       -> pure M.empty
     ) filteredCats
-  pure $ concatMaps M.empty catMaps
+  pure $ foldl' (M.unionWith mergePackages) M.empty catMaps
 
 loadPortageConfig ∷ IO PortageConfig
 loadPortageConfig = do
@@ -191,13 +187,14 @@ loadPortageConfig = do
                   Just o  -> parseOverlays o
                   Nothing -> pure (M.empty, 𝜀)
 
-  let atoms       = map (\p -> (pCategory p ++ "/" ++ pName p, p)) catMap
+  let atoms       = map (\p -> (pCategory p </> pName p, p)) catMap
       pkgs        = M.fromList atoms
       merged      = M.unionWith mergePackages pkgs ov
       metaList    = (treeName, treeData) : met
       maskData    = MaskingData
                       portageMask
                       [] -- for keywords
+
       overlays    = M.fromList metaList
       categories  = map (fst ∘ head &&& concatMap snd) 
                       ∘ groupBy ((==) `on` fst)

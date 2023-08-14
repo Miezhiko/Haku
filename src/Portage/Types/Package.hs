@@ -5,9 +5,13 @@ module Portage.Types.Package
   , prettyShowVersionsList
   ) where
 
+import           Prelude.Unicode
+
 import           Portage.Types.Version
 
 import           GHC.Generics          (Generic)
+
+import           System.FilePath       ((</>))
 
 import           Data.Binary
 import           Data.List             (intercalate)
@@ -24,13 +28,13 @@ data Package
 instance Binary Package
 
 instance Show Package where
-  show (Package c _ n) = c ++ "/" ++ n
+  show (Package c _ n) = c </> n
 
 prettyShowVersionsList ∷ [PackageVersion] -> String
-prettyShowVersionsList = intercalate ", " . map show
+prettyShowVersionsList = intercalate ", " ∘ map show
 
 prettyShowVersions ∷ S.Set PackageVersion -> String
-prettyShowVersions = prettyShowVersionsList . S.toList
+prettyShowVersions = prettyShowVersionsList ∘ S.toList
 
 prettyPrintVersions ∷ S.Set PackageVersion -> IO ()
-prettyPrintVersions = putStrLn . prettyShowVersions
+prettyPrintVersions = putStrLn ∘ prettyShowVersions

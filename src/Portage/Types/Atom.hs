@@ -6,6 +6,8 @@ import           GHC.Generics          (Generic)
 
 import           Data.Binary
 
+import           System.FilePath       ((</>))
+
 type Slot     = String
 type Category = String
 type UseFlag  = String
@@ -70,8 +72,8 @@ showDepTerm (Use neg flag depterm)    =  (if neg then "!" else "")
 showDepAtom ∷ DepAtom -> [Char]
 showDepAtom (DepAtom neg rev dmod cat pkg ver slt) = 
     (if neg then "!" else "") ++ (if rev then "~" else "") ++
-    showMod dmod ++ cat ++ "/" ++ pkg  ++ (if null sver then "" else "-") ++ sver
-                                       ++ (if null sslt then "" else ":") ++ sslt
+    showMod dmod ++ cat </> pkg  ++ (if null sver then "" else "-") ++ sver
+                                 ++ (if null sslt then "" else ":") ++ sslt
   where  sver  =  showDepVer ver
          sslt  =  showDepSlot slt
 

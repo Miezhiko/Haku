@@ -12,24 +12,20 @@ import           System.FilePath
 
 import           Data.List
 import qualified Data.Map              as M
+import           Data.Maybe            (isJust)
 import qualified Data.Set              as S
 
 findPackageByName ∷ PortageConfig -> String -> Maybe Package
-findPackageByName pc x =
-  let tree = pcTree pc
-      cat = find (\(c, _) -> case M.lookup (c ++ "/" ++ x) tree of
-                              Just _  -> True
-                              Nothing -> False
-                 ) $ pcCategories pc
-  in case cat of
-      Just (c,_) -> findPackage pc (c ++ "/" ++ x)
-      Nothing    -> Nothing
+findPackageByName pc x = do
+    (c, _) <- find (\(c, _) ->
+        isJust (M.lookup (c </> x) (pcTree pc))
+      ) (pcCategories pc)
+    findPackage pc (c </> x)
 
 findPackage ∷ PortageConfig -> String -> Maybe Package
-findPackage pc input =
-  if '/' ∈ input
-    then M.lookup input (pcTree pc)
-    else findPackageByName pc input
+findPackage pc input
+  | '/' ∈ input = M.lookup input (pcTree pc)
+  | otherwise   = findPackageByName pc input
 
 findVersionedEbuild ∷ PortageConfig -> Package -> PackageVersion -> IO (Maybe Ebuild)
 findVersionedEbuild pc package mv =

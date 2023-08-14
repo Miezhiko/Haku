@@ -3,6 +3,8 @@ module Portage.Mask
   , parseMask
   ) where
 
+import           Prelude.Unicode
+
 import           Portage.Atom
 import           Portage.Types.Masking
 
@@ -13,10 +15,10 @@ import           Text.ParserCombinators.Parsec as P
 
 -- | Strip empty lines and comments from a string.
 stripComments ∷ String -> String
-stripComments = unlines . filter (not . null) . map (takeWhile (/= '#')) . lines
+stripComments = unlines ∘ filter (not ∘ null) ∘ map (takeWhile (/= '#')) ∘ lines
 
 parseMask ∷ String -> [Masking]
-parseMask = map getProfilePackage . lines . stripComments
+parseMask = map getProfilePackage ∘ lines ∘ stripComments
 
 -- | Get a dependency atom which can be modified by an initial @*@,
 --   indicating a base system package, and by an additional initial @-@,

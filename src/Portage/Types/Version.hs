@@ -1,10 +1,14 @@
 module Portage.Types.Version where
 
+import           Prelude.Unicode
+
 import           GHC.Generics                  (Generic)
 
 import           Data.Bifunctor
 import           Data.Binary
 import           Data.List
+import           Data.List.NonEmpty            (nonEmpty)
+import           Data.Maybe                    (mapMaybe)
 
 import           Text.ParserCombinators.Parsec
 
@@ -27,28 +31,26 @@ data Version
   deriving (Generic)
 
 getPatchVersion ∷ [Suffix] -> Int
-getPatchVersion sfx =
-  case patches of
-    [] -> 0
-    xs -> maximum xs
- where patches ∷ [Int]
-       patches = [x | P_ x <- sfx]
+getPatchVersion = maybe 0 maximum ∘ nonEmpty
+                                  ∘ mapMaybe getPatch
+ where getPatch (P_ x) = Just x
+       getPatch _      = Nothing
 
 -- ensure that 1.0 > 1.0_rc
 instance Ord Version' where
-  compare (Version' v1 _ s1 r1)
-          (Version' v2 _ s2 r2) =
-    case compare v1 v2 of
-      EQ -> case compare s1 s2 of
-        EQ -> compare r1 r2
-        _  -> case compare (getPatchVersion s1) (getPatchVersion s2) of
-                EQ -> if null s1
-                        then GT
-                        else if null s2
-                          then LT
-                          else compare s2 s1
-                px -> px
-      unequal -> unequal
+  compare (Version' v1 _ s1 r1) (Version' v2 _ s2 r2) =
+    mconcat [ compare v1 v2
+            , compare s1 s2
+            , compare r1 r2
+            , comparePatchVersion s1 s2 ]
+    where
+      comparePatchVersion x y = case compare (getPatchVersion x) (getPatchVersion y) of
+        EQ  -> compareEmpty x y
+        res -> res
+      compareEmpty x y
+        | null x = GT
+        | null y = LT
+        | otherwise = compare y x
 
 instance Binary Version
 

@@ -11,6 +11,8 @@ import           Text.Parsec.Prim                    hiding (try)
 import           Text.ParserCombinators.Parsec       as P
 import           Text.ParserCombinators.Parsec.Token
 
+import           System.FilePath                     ((</>))
+
 blocking ∷ DepAtom -> Bool
 blocking (DepAtom b _ _ _ _ _ _) = b
 
@@ -90,12 +92,12 @@ readDepAtom expand = do
             Nothing -> case expand pkg of
                           [cat]  ->  pure cat
                           []     ->  fail $ "unknown package: " ++ pkg
-                          cats   ->  fail $ "ambiguous name " ++ pkg ++ ", possible matches: " ++ unwords (map (\c -> c ++ "/" ++ pkg) cats)
+                          cats   ->  fail $ "ambiguous name " ++ pkg ++ ", possible matches: " ++ unwords (map (\c -> c </> pkg) cats)
             Just cat -> pure cat
   dver        <-  case mver of
                     Nothing   ->  case (rev, dmod) of
                                     (False,DNONE) -> pure NoVer
-                                    _ -> unexpected "absence of version"
+                                    _             -> unexpected "absence of version"
                     Just ver  -> do ast <- try $ optchar '*'
                                     pure (DepVer ver ast)
   --          ignore overlay dep atoms like ::gentoo

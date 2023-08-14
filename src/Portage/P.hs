@@ -64,17 +64,15 @@ getP          ∷  String -> P
 showEbuildPV' ∷  PV     -> [Char]
 showEbuildPV  ∷  PV     -> FilePath
 
-showPV'        (PV _cat pkg ver)     =  pkg ++ "-" ++ showVersion ver
-showPV         pv@(PV cat _pkg _ver)  =  cat </> showPV' pv
-showEbuildPV'  pv                   =  showPV' pv ++ ".ebuild"
-showEbuildPV   pv@(PV cat pkg _ver)  =  cat </> pkg </> showEbuildPV' pv
-showP          (P cat pkg)          =  cat ++ "/" ++ pkg
-showPS         (PS cat pkg slot)    =
-    cat ++ "/" ++ pkg ++ showSlot slot
-showPVS        (PVS cat pkg ver slot) =
-    cat ++ "/" ++ pkg ++ "-" ++ showVersion ver ++ showSlot slot
+showPV'        (PV _cat pkg ver)      = pkg ++ "-" ++ showVersion ver
+showPV         pv@(PV cat _pkg _ver)  = cat </> showPV' pv
+showEbuildPV'  pv                     = showPV' pv ++ ".ebuild"
+showEbuildPV   pv@(PV cat pkg _ver)   = cat </> pkg </> showEbuildPV' pv
+showP          (P cat pkg)            = cat </> pkg
+showPS         (PS cat pkg slot)      = cat </> pkg ++ showSlot slot
+showPVS        (PVS cat pkg ver slot) = cat </> pkg ++ "-" ++ showVersion ver ++ showSlot slot
 
-showSlot   ∷  Slot -> String
+showSlot ∷ Slot -> String
 showSlot ['0'] = ""
 showSlot slot  = ":" ++ slot
 
