@@ -44,13 +44,14 @@ instance Ord Version' where
             , compare r1 r2
             , comparePatchVersion s1 s2 ]
     where
-      comparePatchVersion x y = case compare (getPatchVersion x) (getPatchVersion y) of
+      comparePatchVersion x y = case compare (getPatchVersion x)
+                                             (getPatchVersion y) of
         EQ  -> compareEmpty x y
         res -> res
       compareEmpty x y
         | null x = GT
         | null y = LT
-        | otherwise = compare y x
+        | otherwise = compare x y
 
 instance Binary Version
 
