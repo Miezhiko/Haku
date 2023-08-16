@@ -52,13 +52,14 @@ cleanM cs _ = ask >>= \env -> liftIO $ do
   depcleanIO
   when (cleanDirs cs) $
     readIORef (config env) >>= \pc -> do
-      let makeConf = pcMakeConf pc
+      let hlog     = logger env
+          makeConf = pcMakeConf pc
           distDir  = makeConf M.! "DISTDIR"
           tmpDir   = makeConf M.! "PORTAGE_TMPDIR"
           verbose  = cleanVerbose cs
-      when verbose $ putStrLn ("Cleaning " ++ distDir)
+      when verbose $ hlog ("Cleaning " ++ distDir)
       cleanIfExists distDir False
-      when verbose $ putStrLn ("Cleaning " ++ tmpDir)
+      when verbose $ hlog ("Cleaning " ++ tmpDir)
       cleanIfExists tmpDir True
 
 cleanCmd ∷ Command CleanState m

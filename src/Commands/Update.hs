@@ -59,7 +59,8 @@ updateSudo (rpc, upds) = do
                         ]
 
 update ∷ (IORef PortageConfig, UpdateState) -> IO ()
-update = liftM2 isRoot updateRoot updateSudo
+update = liftM2 isRoot updateRoot
+                       updateSudo
 
 updateMyAss ∷ HakuMonad m ⇒ UpdateState -> [String] -> m ()
 updateMyAss us _ = ask >>= \env ->

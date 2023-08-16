@@ -196,8 +196,12 @@ liveUpdateMap package pc lss =
                     then pure $ Just (package, liveVersions)
                     else smartLiveRebuild pc package liveVersions (liveVerbose lss)
 
-liveUpdateIO ∷ IORef PortageConfig -> LiveState -> [String] -> IO ()
-liveUpdateIO rpc lss filterPackages = readIORef rpc >>= \pc -> do
+liveUpdateIO ∷ IORef PortageConfig
+            -> (String -> IO ())
+            -> LiveState
+            -> [String]
+            -> IO ()
+liveUpdateIO rpc hlog lss filterPackages = readIORef rpc >>= \pc -> do
   llst <- traverse (\(a, package) ->
         case filterPackages of
           [] -> liveUpdateMap package pc lss
@@ -206,7 +210,7 @@ liveUpdateIO rpc lss filterPackages = readIORef rpc >>= \pc -> do
                   else pure Nothing
         ) (M.toList (pcTree pc))
   case catMaybes llst of
-    [] -> putStrLn "No live packages found"
+    [] -> hlog "<Yellow>No live packages found"
     xs -> if livePreview lss
             then do
               putStrLn []
@@ -215,7 +219,7 @@ liveUpdateIO rpc lss filterPackages = readIORef rpc >>= \pc -> do
 
 liveUpdate ∷ HakuMonad m ⇒ LiveState -> [String] -> m ()
 liveUpdate lss xs = ask >>= \env ->
-   liftIO $ liveUpdateIO (config env) lss xs
+   liftIO $ liveUpdateIO (config env) (logger env) lss xs
 
 liveCmd ∷ Command LiveState m
 liveCmd = Command

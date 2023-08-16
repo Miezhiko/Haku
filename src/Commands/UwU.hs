@@ -23,15 +23,17 @@ uwuOpts _ =
   , Option "a"  ["ask"]          (NoArg (\s -> s { uwuAsk = True })) "ask before upgrade"
   ]
 
-runUpgradeScriptsRoot ∷ UwuState -> IO ()
-runUpgradeScriptsRoot uws = do
+runUpgradeScriptsRoot ∷ UwuState
+                     -> (String -> IO ())
+                     -> IO ()
+runUpgradeScriptsRoot uws hlog = do
   if uwuHaskellSync uws
     then updateAll
     else doesFileExist "/usr/bin/shelter" >>= \shelterBinExists ->
           if shelterBinExists
             then rawAndIgnore "shelter" 𝜀
             else updateAll
-  putStrLn "regenerating Gentoo cache..."
+  hlog "<Green>regenerating Gentoo cache..."
   rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
   rawAndIgnore "eix-update" 𝜀
   rawAndIgnore "emerge" $ [ "-avuDN", "@world"
@@ -40,11 +42,13 @@ runUpgradeScriptsRoot uws = do
                           , "--quiet-build=n"
                           ] ++ ["-a" | uwuAsk uws]
 
-runUpgradeScriptsSudo ∷ UwuState -> IO ()
-runUpgradeScriptsSudo uws = do
-  when (uwuHaskellSync uws) $ putStrLn "WARNING: can't run sync with own code in sudo mode"
+runUpgradeScriptsSudo ∷ UwuState
+                    -> (String -> IO ())
+                    -> IO ()
+runUpgradeScriptsSudo uws hlog = do
+  when (uwuHaskellSync uws) $ hlog "<Red>WARNING: can't run sync with own code in sudo mode"
   runIfExists "/usr/bin/shelter" "sudo" ["shelter"]
-  putStrLn "regenerating Gentoo cache..."
+  hlog "<Green>regenerating Gentoo cache..."
   rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
   rawAndIgnore "sudo" ["eix-update"]
   rawAndIgnore "sudo" $ [ "emerge", "-avuDN", "@world"
@@ -53,13 +57,13 @@ runUpgradeScriptsSudo uws = do
                         , "--quiet-build=n"
                         ] ++ ["-a" | uwuAsk uws]
 
-runUpgradeScripts ∷ UwuState -> IO ()
-runUpgradeScripts = liftM2 isRoot runUpgradeScriptsRoot
-                                  runUpgradeScriptsSudo
+runUpgradeScripts ∷ UwuState -> (String -> IO ()) -> IO ()
+runUpgradeScripts = ap (ap ∘ (isRoot ∘) ∘ runUpgradeScriptsRoot)
+                                          runUpgradeScriptsSudo
 
 owo ∷ HakuMonad m ⇒ UwuState -> [String] -> m ()
 owo uws _ = ask >>= \env -> do
-  liftIO $ do runUpgradeScripts uws
+  liftIO $ do runUpgradeScripts uws (logger env)
               pc <- loadPortageConfig
               writeIORef (config env) pc { pcUpdateCache = True }
 

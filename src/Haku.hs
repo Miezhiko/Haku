@@ -38,9 +38,9 @@ handleCommand cname (Command' c) args env =
     then putStrLn (usageInfo (usage c cname) ∘ options c $ False)
     else let (fs,xs,es) = getOpt Permute (options c True) args
          in case es of
-          [] -> hakuLog ( "[CMD] executing " ++ cname
+          [] -> hakuLog ( "[CMD] executing <Magenta>" ++ cname
                 ++ case xs of [] -> []
-                              ss -> " with " ++ intercalate ", " ss
+                              ss -> "<Default> with <Magenta>" ++ intercalate ", " ss
                 ++ "\n" ) env
             ≫ hakuHandle c fs xs env
           _  -> putStrLn (unlines es)

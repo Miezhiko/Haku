@@ -39,7 +39,8 @@ upgradeSudo ugrs = if upgrdSelf ugrs
                            ]
 
 upgrade ∷ UpgradeState -> IO ()
-upgrade = liftM2 isRoot upgradeRoot upgradeSudo
+upgrade = liftM2 isRoot upgradeRoot
+                        upgradeSudo
 
 upgradeCmd ∷ Command UpgradeState m
 upgradeCmd = Command { command      = ["upgrade"]

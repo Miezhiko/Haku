@@ -173,8 +173,12 @@ showSingle package ovs mask pc uss =
       finalMasks = filter (filteredDep category name) masksForPkg
   in printOnlyInstalled package installed notInstalled finalMasks pc uss
 
-showU ∷ IORef PortageConfig -> UpdatesState -> [String] -> IO ()
-showU rpc uss filterPackages = readIORef rpc >>= \pc -> do
+showU ∷ IORef PortageConfig
+     -> (String -> IO ())
+     -> UpdatesState
+     -> [String]
+     -> IO ()
+showU rpc hlog uss filterPackages = readIORef rpc >>= \pc -> do
   let tree = pcTree pc
       mask = pcMasking pc
       ovls = M.toList (pcOverlays pc)
@@ -185,7 +189,7 @@ showU rpc uss filterPackages = readIORef rpc >>= \pc -> do
                   pure $ filter ( \(a, _) -> a ∈ lines world )
                                 (M.toList tree)
   case worldTree of
-    [] -> putStrLn "no updates available"
+    [] -> hlog "<Yellow>no updates available"
     wt -> for_ wt $ \(a, package) ->
             case filterPackages of
               [] -> showSingle package ovls mask pc uss
@@ -194,7 +198,7 @@ showU rpc uss filterPackages = readIORef rpc >>= \pc -> do
 
 showPossibleUpdates ∷ HakuMonad m ⇒ UpdatesState -> [String] -> m ()
 showPossibleUpdates uss xs = ask >>= \env ->
-   liftIO $ showU (config env) uss xs
+   liftIO $ showU (config env) (logger env) uss xs
 
 updatesCmd ∷ Command UpdatesState m
 updatesCmd = Command
