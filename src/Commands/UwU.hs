@@ -19,8 +19,8 @@ data UwuState
 
 uwuOpts ∷ Bool -> [OptDescr (UwuState -> UwuState)]
 uwuOpts _ =
-  [ Option "hs" ["haskell-sync"] (NoArg (\s -> s { uwuHaskellSync = True })) "use haskell code to sync"
-  , Option "a"  ["ask"]          (NoArg (\s -> s { uwuAsk = True })) "ask before upgrade"
+  [ Option "hs" ["haskell-sync"] (NoArg (\s -> s { uwuHaskellSync = True }))  "use haskell code to sync"
+  , Option "a"  ["ask"]          (NoArg (\s -> s { uwuAsk = True }))          "ask before upgrade"
   ]
 
 runUpgradeScriptsRoot ∷ UwuState
@@ -36,7 +36,7 @@ runUpgradeScriptsRoot uws hlog = do
   hlog "<Green>regenerating Gentoo cache..."
   rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
   rawAndIgnore "eix-update" 𝜀
-  rawAndIgnore "emerge" $ [ "-avuDN", "@world"
+  rawAndIgnore "emerge" $ [ "-vuDN", "@world"
                           , "--backtrack=100"
                           , "--with-bdeps=y"
                           , "--quiet-build=n"
@@ -51,7 +51,7 @@ runUpgradeScriptsSudo uws hlog = do
   hlog "<Green>regenerating Gentoo cache..."
   rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
   rawAndIgnore "sudo" ["eix-update"]
-  rawAndIgnore "sudo" $ [ "emerge", "-avuDN", "@world"
+  rawAndIgnore "sudo" $ [ "emerge", "-vuDN", "@world"
                         , "--backtrack=100"
                         , "--with-bdeps=y"
                         , "--quiet-build=n"
