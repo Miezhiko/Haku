@@ -58,7 +58,7 @@ emerge gs [x] pc  =
           Nothing -> putStrLn "Atom not found!"
 emerge gs xs _    = merge gs xs
 
-getPackageM ∷ HakuMonad m ⇒ GetState -> [String] -> m ()
+getPackageM ∷ GetState ~> m
 getPackageM gs xs =
   liftIO ∘ ( (liftIO ∘ emerge gs xs) ↢ readIORef
            ) =≪ asks config

@@ -9,6 +9,7 @@ module Types
   , Command' (..)
   , module ExportedTpyes
   , HakuMonad
+  , type (~>)
   ) where
 
 import           Env                   as ExportedTpyes
@@ -26,6 +27,9 @@ import           System.Console.GetOpt as ExportedTpyes
 
 type HakuMonad m = (MonadReader HakuEnv m, MonadIO m)
 
+infixl 1 ~>
+type τ ~> m = HakuMonad m => τ -> [String] -> m ()
+
 data Command τ m
   = Command
       { command     :: [String]
@@ -33,7 +37,7 @@ data Command τ m
       , usage       :: String -> String
       , state       :: τ
       , options     :: Bool -> [OptDescr (τ -> τ)]
-      , handler     :: HakuMonad m => τ -> [String] -> m ()
+      , handler     :: τ ~> m
       }
 
 data Command'

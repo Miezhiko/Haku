@@ -217,7 +217,7 @@ liveUpdateIO rpc hlog lss filterPackages = readIORef rpc >>= \pc -> do
               for_ xs showLivePackage
             else liveRebuild xs
 
-liveUpdate ∷ HakuMonad m ⇒ LiveState -> [String] -> m ()
+liveUpdate ∷ LiveState ~> m
 liveUpdate lss xs = ask >>= \env ->
    liftIO $ liveUpdateIO (config env) (logger env) lss xs
 

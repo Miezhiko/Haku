@@ -61,7 +61,7 @@ runUpgradeScripts ∷ UwuState -> (String -> IO ()) -> IO ()
 runUpgradeScripts = ap (ap ∘ (isRoot ∘) ∘ runUpgradeScriptsRoot)
                                           runUpgradeScriptsSudo
 
-owo ∷ HakuMonad m ⇒ UwuState -> [String] -> m ()
+owo ∷ UwuState ~> m
 owo uws _ = ask >>= \env -> do
   liftIO $ do runUpgradeScripts uws (logger env)
               pc <- loadPortageConfig

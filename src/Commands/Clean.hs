@@ -47,7 +47,7 @@ cleanIfExists ∷ FilePath -> Bool -> IO ()
 cleanIfExists p r = doesDirectoryExist p >>= \exists ->
                       when exists $ cleanDirIO p r
 
-cleanM ∷ HakuMonad m ⇒ CleanState -> [String] -> m ()
+cleanM ∷ CleanState ~> m
 cleanM cs _ = ask >>= \env -> liftIO $ do
   depcleanIO
   when (cleanDirs cs) $

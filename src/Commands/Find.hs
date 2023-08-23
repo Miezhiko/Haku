@@ -72,7 +72,7 @@ findAction fs [x] rpc = readIORef rpc >>= \pc ->
 findAction fs (x:xs) pc = findAction fs [x] pc
                        ≫ findAction fs xs pc
 
-findM ∷ HakuMonad m ⇒ FindState -> [String] -> m ()
+findM ∷ FindState ~> m
 findM fs xs = liftIO ∘ findAction fs xs =≪ asks config
 
 findCmd ∷ Command FindState m

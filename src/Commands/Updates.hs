@@ -196,7 +196,7 @@ showU rpc hlog uss filterPackages = readIORef rpc >>= \pc -> do
               xs -> when (any (`isInfixOf` a) xs) $
                       showSingle package ovls mask pc uss
 
-showPossibleUpdates ∷ HakuMonad m ⇒ UpdatesState -> [String] -> m ()
+showPossibleUpdates ∷ UpdatesState ~> m
 showPossibleUpdates uss xs = ask >>= \env ->
    liftIO $ showU (config env) (logger env) uss xs
 
