@@ -3,7 +3,9 @@ module Portage.Version
   , getVersion
   , getVersionInstalled
   , isLive
+  , isBeta
   , isLiveVersion
+  , isBetaVersion
   ) where
 
 import           Prelude.Unicode
@@ -32,3 +34,16 @@ isLiveVersion (Version xs _ _ _ _)    = any (∈ [9999, 99999999]) xs
 
 isLive ∷ PackageVersion -> Bool
 isLive = isLiveVersion ∘ pvVersion
+
+isAlphaOrBeta :: Suffix -> Bool
+isAlphaOrBeta (Alpha _) = True
+isAlphaOrBeta (Beta _)  = True
+isAlphaOrBeta _         = False
+
+isBetaVersion ∷ Version -> Bool
+isBetaVersion (Version _ _ [] _ _)    = False
+isBetaVersion (Version _ _ [x] _ _)   = isAlphaOrBeta x
+isBetaVersion (Version _ _ xs _ _)    = any isAlphaOrBeta xs
+
+isBeta ∷ PackageVersion -> Bool
+isBeta = isBetaVersion ∘ pvVersion

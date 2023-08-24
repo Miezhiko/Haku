@@ -20,6 +20,7 @@ data UpdatesState
       , updsShowMasks :: Bool
       , updsOnlyMasks :: Bool
       , updsWithBdeps :: Bool
+      , updsWithBeta  :: Bool
       }
 
 updatesOpts ∷ Bool -> [OptDescr (UpdatesState -> UpdatesState)]
@@ -27,7 +28,8 @@ updatesOpts _ =
   [ Option "v" ["verbose"]    (NoArg (\s -> s { updsVerbose = True }))    "verbose output"
   , Option "m" ["show-masks"] (NoArg (\s -> s { updsShowMasks = True }))  "show masked"
   , Option "o" ["only-masks"] (NoArg (\s -> s { updsOnlyMasks = True }))  "show only masked"
-  , Option "b" ["with-bdeps"] (NoArg (\s -> s { updsWithBdeps = True }))  "show build deps updates too"
+  , Option "w" ["with-bdeps"] (NoArg (\s -> s { updsWithBdeps = True }))  "show build deps updates too"
+  , Option "b" ["with-beta"]  (NoArg (\s -> s { updsWithBeta = True }))   "show alpha/beta updates too"
   ]
 
 {-
@@ -156,9 +158,13 @@ showSingle ∷ Package
 showSingle package ovs mask pc uss =
   let versions      = pVersions package
       versionsList  = S.toList versions
+
       installed     = filter pvInstalled versionsList
       notInstalled  = filter (\v -> not (pvInstalled v) 
                                  && not (isLive v)
+                                 && if updsWithBeta uss
+                                      then not (isBeta v)
+                                      else True
                              ) versionsList
       category      = pCategory package
       name          = pName package
@@ -208,6 +214,7 @@ updatesCmd = Command
             , state       = UpdatesState { updsVerbose    = False
                                          , updsShowMasks  = False
                                          , updsOnlyMasks  = False
-                                         , updsWithBdeps  = False }
+                                         , updsWithBdeps  = False
+                                         , updsWithBeta   = False }
             , options     = updatesOpts
             , handler     = showPossibleUpdates }
