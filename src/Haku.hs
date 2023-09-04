@@ -41,7 +41,7 @@ handleCommand cname (Command' c) args env =
           [] -> hakuLog ( "[CMD] executing <Magenta>" ++ cname
                 ++ case xs of [] -> []
                               ss -> "<Default> with <Magenta>" ++ intercalate ", " ss
-                ++ "\n" ) env
+                        ) env
             ≫ hakuHandle c fs xs env
           _  -> putStrLn (unlines es)
             ≫ putStrLn (usageInfo (usage c cname) ∘ options c $ False)
