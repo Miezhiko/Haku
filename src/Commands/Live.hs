@@ -145,12 +145,12 @@ checkForRepository (p, lv) repo mbBranch treePath =
   let pnRepo = replacePN (pName p) repo
   in case parse repoParser "" pnRepo of
     Right (RepoInfo _ repoOwner repoName) ->
-      checkForRepository' repoOwner repoName (p, lv) (repo, mbBranch) treePath
+      checkForRepository' repoOwner repoName (p, lv) (pnRepo, mbBranch) treePath
     Left _ -> do
-      putStrLn $ show p ++ ": ERROR ON PARSING: " ++ repo
+      putStrLn $ show p ++ ": ERROR ON PARSING: " ++ pnRepo
       pure Nothing
  where replacePN :: String -> String -> String
-       replacePN x = unpack . replace "${PN}" (pack x) . pack
+       replacePN x = unpack ∘ replace "${PN}" (pack x) ∘ pack
 
 smartLiveRebuild ∷ PortageConfig
                 -> Package
