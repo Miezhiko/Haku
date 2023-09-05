@@ -1,3 +1,7 @@
+{-# LANGUAGE
+    OverloadedStrings
+  #-}
+
 module Commands.Live
   ( liveCmd
   ) where
@@ -11,6 +15,7 @@ import           Data.List.Split     (splitOn)
 import qualified Data.Map            as M
 import           Data.Maybe
 import qualified Data.Set            as S
+import           Data.Text           (pack, replace, unpack)
 
 import           Text.Parsec
 import           Text.Parsec.String  (Parser)
@@ -137,12 +142,15 @@ checkForRepository ∷ (Package, [PackageVersion])
                   -> FilePath
                   -> IO (Maybe (Package, [PackageVersion]))
 checkForRepository (p, lv) repo mbBranch treePath =
-  case parse repoParser "" repo of
+  let pnRepo = replacePN (pName p) repo
+  in case parse repoParser "" pnRepo of
     Right (RepoInfo _ repoOwner repoName) ->
       checkForRepository' repoOwner repoName (p, lv) (repo, mbBranch) treePath
     Left _ -> do
       putStrLn $ show p ++ ": ERROR ON PARSING: " ++ repo
       pure Nothing
+ where replacePN :: String -> String -> String
+       replacePN x = unpack . replace "${PN}" (pack x) . pack
 
 smartLiveRebuild ∷ PortageConfig
                 -> Package
