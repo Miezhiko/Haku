@@ -74,9 +74,9 @@ repl w ww = unpack . replace (pack (setV w)) (pack ww) . pack
     [] -> []
     rp -> removeJunk rp
  where foldReplace ∷ String -> String -> String
-       foldReplace str "${PN}" = repl "${PN}" (pName p) str
-       foldReplace str "${PV}" = repl "${PV}" "9999" str -- TODO: pass or parse from filename
-       foldReplace str var     = repl var ((p, m) !. var) str
+       foldReplace str "PN" = repl "PN" (pName p) str
+       foldReplace str "PV" = repl "PV" "9999" str -- TODO: pass or parse from filename
+       foldReplace str var  = repl var ((p, m) !. var) str
 
 getEbuild ∷ Package -> FilePath -> IO Ebuild
 getEbuild p f = do
