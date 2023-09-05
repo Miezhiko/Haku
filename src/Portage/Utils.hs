@@ -39,7 +39,7 @@ findVersionedEbuild pc package mv =
       ep = op </> pp </> p
   in doesFileExist ep >>= parse ep
  where parse ∷ String -> Bool -> IO (Maybe Ebuild)
-       parse e True  = Just <$> getEbuild e
+       parse e True  = Just <$> getEbuild package e
        parse _ False = pure Nothing
 
 findEbuild ∷ PortageConfig -> Package -> IO (Maybe Ebuild)

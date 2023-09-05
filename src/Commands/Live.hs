@@ -15,7 +15,6 @@ import           Data.List.Split     (splitOn)
 import qualified Data.Map            as M
 import           Data.Maybe
 import qualified Data.Set            as S
-import           Data.Text           (pack, replace, unpack)
 
 import           Text.Parsec
 import           Text.Parsec.String  (Parser)
@@ -141,16 +140,13 @@ checkForRepository ∷ (Package, [PackageVersion])
                   -> [String]
                   -> FilePath
                   -> IO (Maybe (Package, [PackageVersion]))
-checkForRepository (p, lv) repo mbBranch treePath =
-  let pnRepo = replacePN (pName p) repo
-  in case parse repoParser "" pnRepo of
+checkForRepository (p, lv) repo mbBranch treePath = do
+  case parse repoParser "" repo of
     Right (RepoInfo _ repoOwner repoName) ->
-      checkForRepository' repoOwner repoName (p, lv) (pnRepo, mbBranch) treePath
+      checkForRepository' repoOwner repoName (p, lv) (repo, mbBranch) treePath
     Left _ -> do
-      putStrLn $ show p ++ ": ERROR ON PARSING: " ++ pnRepo
+      putStrLn $ show p ++ ": ERROR ON PARSING: " ++ repo
       pure Nothing
- where replacePN :: String -> String -> String
-       replacePN x = unpack ∘ replace "${PN}" (pack x) ∘ pack
 
 smartLiveRebuild ∷ PortageConfig
                 -> Package

@@ -1,15 +1,17 @@
 module Portage.Ebuild where
 
+import           Portage.Types.Package
+
 import           Hacks
 
 import           Data.List
-import qualified Data.Map           as M
-import           Data.Text          (pack, replace, unpack)
+import qualified Data.Map              as M
+import           Data.Text             (pack, replace, unpack)
 
-import qualified System.IO.Strict   as Strict
+import qualified System.IO.Strict      as Strict
 
 import           Text.Parsec
-import           Text.Parsec.String (Parser)
+import           Text.Parsec.String    (Parser)
 
 data Ebuild
   = Ebuild
@@ -63,8 +65,8 @@ repl w ww = unpack . replace (pack (setV w)) (pack ww) . pack
  where setV ∷ String -> String
        setV envV = "${" ++ envV ++ "}"
 
-(!.) ∷ M.Map String String -> String -> String
-m !. k =
+(!.) ∷ (Package, M.Map String String) -> String -> String
+(p, m) !. k =
   let varS      = maybe "" id (M.lookup k m)
       vars      = parseVars varS
       replaced  = foldl' foldReplace varS vars
@@ -72,16 +74,19 @@ m !. k =
     [] -> []
     rp -> removeJunk rp
  where foldReplace ∷ String -> String -> String
-       foldReplace str var = repl var (m !. var) str
+       foldReplace str "${PN}" = repl "${PN}" (pName p) str
+       foldReplace str "${PV}" = repl "${PV}" "9999" str -- TODO: pass or parse from filename
+       foldReplace str var     = repl var ((p, m) !. var) str
 
-getEbuild ∷ FilePath -> IO Ebuild
-getEbuild f = do
+getEbuild ∷ Package -> FilePath -> IO Ebuild
+getEbuild p f = do
   e <- lines <$> Strict.readFile f
-  let em = readStringMap e
+  let emm = readStringMap e
       inh = find (`isPrefixOf` "inherit ") e
       inherts = case inh of
                   Just s  -> drop 8 s
                   Nothing -> []
+      em = (p, emm)
   pure (Ebuild  (words (em !. "DEPEND"))
                 (words (em !. "RDEPEND"))
                 (em !. "SLOT")
