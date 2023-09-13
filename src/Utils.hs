@@ -19,7 +19,7 @@ import           System.Posix.User   (getRealUserID)
 import           System.Process
 
 import           Control.Exception
-import           Control.Monad
+import           Control.Monad       as ExportedUtils
 
 import           System.Console.ANSI
 

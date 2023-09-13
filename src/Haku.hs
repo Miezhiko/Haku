@@ -11,6 +11,9 @@ import           Version
 import           Portage.Config
 
 import           Data.List
+
+import           Control.Monad       (liftM2, when)
+
 import           System.Console.ANSI
 import           System.Directory    (doesFileExist)
 import           System.Environment
