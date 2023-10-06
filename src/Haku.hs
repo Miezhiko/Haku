@@ -12,7 +12,7 @@ import           Portage.Config
 
 import           Data.List
 
-import           Control.Monad       (liftM2, when)
+import           Control.Monad       (when)
 
 import           System.Console.ANSI
 import           System.Directory    (doesFileExist)
@@ -33,7 +33,7 @@ hakuHandle ∷ Command τ (ReaderT HakuEnv IO)
           -> HakuEnv -> IO ()
 hakuHandle cmd ss xs = runReaderT (handleM cmd ss xs)
   where handleM ∷ HakuMonad m ⇒ Command τ m -> [τ -> τ] -> [String] -> m ()
-        handleM = liftM2 (∘) handler (foldl (flip id) ∘ state)
+        handleM c = handler c ∘ foldl (flip id) (state c)
 
 handleCommand ∷ String -> Command' -> [String] -> HakuEnv -> IO ()
 handleCommand cname (Command' c) args env =
