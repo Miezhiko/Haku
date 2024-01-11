@@ -18,19 +18,19 @@ import           Portage.Version
 import           Shelter.Hashes
 
 import           Data.Binary
-import qualified Data.ByteString.Lazy     as BL
+import qualified Data.ByteString.Lazy  as BL
 import           Data.Function
 import           Data.Functor
 import           Data.List
-import qualified Data.Map                 as M
+import qualified Data.Map              as M
 import           Data.Maybe
-import           Data.Ord                 (comparing)
-import qualified Data.Set                 as S
+import           Data.Ord              (comparing)
+import qualified Data.Set              as S
 import           Data.Time.Clock
 
 import           System.Directory
 import           System.FilePath
-import qualified System.IO.Strict         as Strict
+import qualified System.IO.Strict      as Strict
 import           System.Posix.Files
 import           System.Process
 
@@ -47,7 +47,7 @@ parseEnvMap s = M.fromList $ map parseLine (lines s)
       (_, p:_)   -> error $ "Unexpected character: " ++ [p]
 
   stripQuotes ('\'':r) = init r
-  stripQuotes x = x
+  stripQuotes x        = x
 
 getFilteredDirectoryContents ∷ FilePath -> IO [FilePath]
 getFilteredDirectoryContents fp = filter (∉ [".",".."]) <$> getDirectoryContents fp
@@ -168,8 +168,13 @@ getInstalledPackages pkgdb categories = do
     ) filteredCats
   pure $ foldl' (M.unionWith mergePackages) M.empty catMaps
 
-loadPortageConfig ∷ IO PortageConfig
-loadPortageConfig = do
+loadPortageConfig ∷ [MetaData] -> IO PortageConfig
+loadPortageConfig [] = -- provide empty config for no metadata request
+  pure $ PortageConfig M.empty [] [] M.empty
+                       M.empty (MaskingData [] [])
+                       M.empty False -- update cahce
+-- TODO: meta config loading support for speed
+loadPortageConfig _meta = do
   progressThread <- startProgress "Regenerating Haku cache..."
 
   makeConf <- getConfigFile constMakeConfPath
@@ -221,25 +226,33 @@ loadPortageConfig = do
 storeConfig ∷ Handle -> PortageConfig -> IO ()
 storeConfig h = BL.hPut h ∘ encode
 
-restoreConfig ∷ Handle -> IO PortageConfig
-restoreConfig h = BL.hGetContents h >>= \c ->
+restoreConfig ∷ [MetaData] -> Handle -> IO PortageConfig
+restoreConfig meta h = BL.hGetContents h >>= \c ->
   case decodeOrFail c of
     Left (_,_,err) -> do putStrLn $ "Failed to decode cache: " ++ err
-                         loadPortageConfig
+                         loadPortageConfig meta
     Right (_,_,pc) -> pure pc
 
-updateWithMaybeShelter ∷ Maybe ShelterConfig -> PortageConfig -> IO PortageConfig
-updateWithMaybeShelter (Just shelter) binaryParsedConfig
+updateWithMaybeShelter ∷ [MetaData]
+                      -> Maybe ShelterConfig
+                      -> PortageConfig
+                      -> IO PortageConfig
+updateWithMaybeShelter _ (Just shelter) binaryParsedConfig
   | isPortageConfigIsInSync binaryParsedConfig shelter
     = pure $ binaryParsedConfig { pcUpdateCache = False }
-updateWithMaybeShelter _ _ = loadPortageConfig
+updateWithMaybeShelter meta _ _ = loadPortageConfig meta
 
-maybeUpdateConfig ∷ Handle -> IO PortageConfig
-maybeUpdateConfig h = getShelterConfig >>= \shelter ->
-  restoreConfig h >>= updateWithMaybeShelter shelter
+maybeUpdateConfig ∷ [MetaData] -> Handle -> IO PortageConfig
+maybeUpdateConfig meta h = getShelterConfig >>= \shelter ->
+  restoreConfig meta h >>= updateWithMaybeShelter meta shelter
 
-portageConfig ∷ FilePath -> Handle -> IO PortageConfig
-portageConfig hakuCachePath hakuCacheHandle = do
+portageConfig ∷ [MetaData]
+             -> FilePath
+             -> Handle
+             -> IO PortageConfig
+portageConfig [] _ hakuCacheHandle = restoreConfig [] hakuCacheHandle
+                                      >>= \pc -> pure pc { pcUpdateCache = False }
+portageConfig meta hakuCachePath hakuCacheHandle = do
   -- if cache is more than one minute old recheck if
   -- shelter hashes changed (update was made and was meaningful)
   currentTime <- getCurrentTime
@@ -247,6 +260,5 @@ portageConfig hakuCachePath hakuCacheHandle = do
   changemTime <- getModificationTime hakuCachePath
   let diff = diffUTCTime currentTime changemTime
   if diff > 60 -- conversion functions will treat it as seconds
-    then maybeUpdateConfig hakuCacheHandle
-    else restoreConfig hakuCacheHandle >>= \pc ->
-          pure pc { pcUpdateCache = False }
+    then maybeUpdateConfig meta hakuCacheHandle
+    else portageConfig [] hakuCachePath hakuCacheHandle

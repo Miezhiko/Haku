@@ -46,6 +46,7 @@ deleteM dels xs =
 deleteCmd ∷ Command DeleteState m
 deleteCmd = Command
             { command     = ["delete"]
+            , deps        = [PortageMeta, OverlayMeta, MiscMeta]
             , description = "Delete one or more variants."
             , usage       = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
             , state       = DeleteState { dpretend  = False

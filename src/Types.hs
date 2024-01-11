@@ -33,6 +33,7 @@ type τ ~> m = HakuMonad m => τ -> [String] -> m ()
 data Command τ m
   = Command
       { command     :: [String]
+      , deps        :: [MetaData]
       , description :: String
       , usage       :: String -> String
       , state       :: τ

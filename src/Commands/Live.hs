@@ -228,6 +228,7 @@ liveUpdate lss xs = ask >>= \env ->
 liveCmd ∷ Command LiveState m
 liveCmd = Command
             { command     = ["live"]
+            , deps        = [PortageMeta, OverlayMeta, MiscMeta]
             , description = "Live rebuild"
             , usage       = ("haku " ++)
             , state       = LiveState { liveVerbose = False

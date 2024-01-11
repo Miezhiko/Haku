@@ -64,6 +64,7 @@ cleanM cs _ = ask >>= \env -> liftIO $ do
 
 cleanCmd ∷ Command CleanState m
 cleanCmd = Command { command      = ["clean"]
+                   , deps         = []
                    , description  = "Clean world"
                    , usage        = ("haku " ++)
                    , state        = CleanState { cleanDirs     = False

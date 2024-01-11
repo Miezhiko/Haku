@@ -21,9 +21,10 @@ digest = filter (isSuffixOf ".ebuild") <$> (getDirectoryContents =<< getCurrentD
                    (x:_) -> digestEbuild x
 
 digestCmd ∷ Command String m
-digestCmd = Command { command     = ["digest"]
-                   , description  = "update manifest hash for ebuilds"
-                   , usage        = ("haku " ++)
-                   , state        = 𝜀
-                   , options      = const 𝜀
-                   , handler      = \_ _ -> liftIO digest }
+digestCmd = Command { command      = ["digest"]
+                    , deps         = []
+                    , description  = "update manifest hash for ebuilds"
+                    , usage        = ("haku " ++)
+                    , state        = 𝜀
+                    , options      = const 𝜀
+                    , handler      = \_ _ -> liftIO digest }

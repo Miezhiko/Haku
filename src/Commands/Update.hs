@@ -29,7 +29,7 @@ updateRoot (rpc, upds) = do
     runIfExists "/usr/bin/egencache" "egencache" [ "--repo=gentoo", "--update" ]
     runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
   when (updStore upds) $ do
-    pc <- loadPortageConfig
+    pc <- loadPortageConfig [PortageMeta, OverlayMeta, MiscMeta]
     writeIORef rpc pc { pcUpdateCache = True }
   when (updUpgrade upds) $
     rawAndIgnore "emerge" [ "-avuDN"
@@ -47,7 +47,7 @@ updateSudo (rpc, upds) = do
     runIfExists "/usr/bin/egencache" "sudo" [ "egencache", "--repo=gentoo", "--update" ]
     runIfExists "/usr/bin/eix-update" "sudo" [ "eix-update" ]
   when (updStore upds) $ do
-    pc <- loadPortageConfig
+    pc <- loadPortageConfig [PortageMeta, OverlayMeta, MiscMeta]
     writeIORef rpc pc { pcUpdateCache = True }
   when (updUpgrade upds) $
     rawAndIgnore "sudo" [ "emerge"
@@ -69,6 +69,7 @@ updateMyAss us _ = ask >>= \env ->
 updateCmd ∷ Command UpdateState m
 updateCmd = Command
             { command     = ["u", "update"]
+            , deps        = [PortageMeta, OverlayMeta, MiscMeta]
             , description = "Update world"
             , usage       = ("haku " ++)
             , state       = UpdateState { updUpgrade  = False

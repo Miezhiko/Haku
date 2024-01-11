@@ -66,11 +66,12 @@ runUpgradeScripts = ap (ap ∘ (isRoot ∘) ∘ runUpgradeScriptsRoot)
 owo ∷ UwuState ~> m
 owo uws _ = ask >>= \env -> do
   liftIO $ do runUpgradeScripts uws (logger env)
-              pc <- loadPortageConfig
+              pc <- loadPortageConfig [PortageMeta, OverlayMeta, MiscMeta]
               writeIORef (config env) pc { pcUpdateCache = True }
 
 uwuCmd ∷ Command UwuState m
 uwuCmd = Command { command      = ["uwu"]
+                 , deps         = [PortageMeta, OverlayMeta, MiscMeta]
                  , description  = "Update and upgrade the world (alias)"
                  , usage        = ("haku " ++)
                  , state        = UwuState { uwuHaskellSync = False

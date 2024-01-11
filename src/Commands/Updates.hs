@@ -209,6 +209,7 @@ showPossibleUpdates uss xs = ask >>= \env ->
 updatesCmd ∷ Command UpdatesState m
 updatesCmd = Command
             { command     = ["updates"]
+            , deps        = [PortageMeta, OverlayMeta, MiscMeta]
             , description = "Show possible updates"
             , usage       = ("haku " ++)
             , state       = UpdatesState { updsVerbose    = False

@@ -35,41 +35,45 @@ hakuHandle cmd ss xs = runReaderT (handleM cmd ss xs)
   where handleM ∷ HakuMonad m ⇒ Command τ m -> [τ -> τ] -> [String] -> m ()
         handleM c = handler c ∘ foldl (flip id) (state c)
 
-handleCommand ∷ String -> Command' -> [String] -> HakuEnv -> IO ()
-handleCommand cname (Command' c) args env =
+handleCommand ∷ String -> Command' -> [String] -> IO ()
+handleCommand cname (Command' c) args =
   if isHelps args
     then putStrLn (usageInfo (usage c cname) ∘ options c $ False)
     else let (fs,xs,es) = getOpt Permute (options c True) args
          in case es of
-          [] -> hakuLog ( "[CMD] executing <Magenta>" ++ cname
+          [] -> handleWIthEnv xs fs
+          _  -> putStrLn (unlines es)
+            ≫ putStrLn (usageInfo (usage c cname) ∘ options c $ False)
+ where
+  handleWIthEnv xs fs =
+    getHakuCachePath >>= \hakuCachePath -> do
+    cacheExists <- doesFileExist hakuCachePath
+    withBinaryFile hakuCachePath ReadWriteMode $ \h -> do
+      gentooConfig <-
+        if cacheExists then portageConfig (deps c) hakuCachePath h >>= newIORef
+                        else loadPortageConfig (deps c) >>= newIORef
+      let env = HakuEnv
+            { handle = h
+            , logger = hakuLogger
+            , config = gentooConfig
+            }
+      hakuLog ( "[CMD] executing <Magenta>" ++ cname
                 ++ case xs of [] -> []
                               ss -> "<Default> with <Magenta>" ++ intercalate ", " ss
                         ) env
-            ≫ hakuHandle c fs xs env
-          _  -> putStrLn (unlines es)
-            ≫ putStrLn (usageInfo (usage c cname) ∘ options c $ False)
+      hakuHandle c fs xs env
+      readIORef gentooConfig >>= \pc ->
+        when (pcUpdateCache pc) $
+          storeConfig h pc
 
 goWithArguments ∷ [String] -> IO ()
 goWithArguments []                =  printHelp
 goWithArguments [a] | isVersion a =  putStrLn showMyV
 goWithArguments [a] | isHelp a    =  printHelp
-goWithArguments (x:xs) = getHakuCachePath >>= \hakuCachePath -> do
-  cacheExists <- doesFileExist hakuCachePath
-  withBinaryFile hakuCachePath ReadWriteMode $ \h -> do
-    gentooConfig <-
-      if cacheExists then portageConfig hakuCachePath h >>= newIORef
-                     else loadPortageConfig >>= newIORef
-    let env = HakuEnv
-          { handle = h
-          , logger = hakuLogger
-          , config = gentooConfig
-          }
-    case findCommand x of
-      Nothing -> handleCommand  "get"  (Command' getCmd)  (x:xs) env
-      Just c  -> handleCommand  x      c                     xs  env
-    readIORef gentooConfig >>= \pc ->
-      when (pcUpdateCache pc) $
-        storeConfig h pc
+goWithArguments (x:xs) =
+  case findCommand x of
+    Nothing -> handleCommand  "get"  (Command' getCmd)  (x:xs)
+    Just c  -> handleCommand  x      c                     xs
 
 main ∷ IO ()
 main = getArgs >>= goWithArguments
