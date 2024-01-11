@@ -10,7 +10,7 @@ Portage helper, not replacing portage itself but partially replacing `eix`, `gen
 you should have `PORTDIR` and optionally `PORTDIR_OVERLAY` defined in `make.conf` for this to work.
 
 ```bash
-Haku v0.0.85
+Haku v2.0.0
 
 get         Merge one or more variants.
 delete      Delete one or more variants.
