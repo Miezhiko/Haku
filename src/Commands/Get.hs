@@ -66,7 +66,7 @@ getPackageM gs xs =
 getCmd ∷ Command GetState m
 getCmd = Command
           { command     = ["get"]
-          , deps        = [PortageMeta, OverlayMeta, MiscMeta]
+          , deps        = [UpdateMeta, PortageMeta, OverlayMeta, MiscMeta]
           , description = "Merge one or more variants."
           , usage       = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
           , state = GetState  { gpretend = False

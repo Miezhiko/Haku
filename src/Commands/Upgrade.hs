@@ -44,7 +44,7 @@ upgrade = liftM2 isRoot upgradeRoot
 
 upgradeCmd ∷ Command UpgradeState m
 upgradeCmd = Command { command      = ["upgrade"]
-                     , deps         = [PortageMeta, OverlayMeta, MiscMeta]
+                     , deps         = [UpdateMeta, PortageMeta, OverlayMeta, MiscMeta]
                      , description  = "Upgrade world"
                      , usage        = ("haku " ++)
                      , state        = UpgradeState { upgrdSelf     = False

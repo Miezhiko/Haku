@@ -9,7 +9,8 @@ import           Portage.Types.Config as ExportedTpyes
 import           Prelude.Unicode      as ExportedTpyes
 import           System.IO            as ExportedTpyes
 
-data MetaData = PortageMeta | OverlayMeta | MiscMeta
+data MetaData = UpdateMeta | PortageMeta | OverlayMeta | MiscMeta
+  deriving (Eq)
 
 data HakuEnv
   = HakuEnv

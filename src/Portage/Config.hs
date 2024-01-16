@@ -258,7 +258,8 @@ portageConfig meta hakuCachePath hakuCacheHandle = do
   currentTime <- getCurrentTime
   -- getModificationTime returns UTC time (as it's in type)
   changemTime <- getModificationTime hakuCachePath
+  -- conversion functions will treat it as seconds
   let diff = diffUTCTime currentTime changemTime
-  if diff > 60 -- conversion functions will treat it as seconds
+  if diff > 60 ∧ UpdateMeta ∈ meta
     then maybeUpdateConfig meta hakuCacheHandle
     else portageConfig [] hakuCachePath hakuCacheHandle

@@ -78,7 +78,7 @@ findM fs xs = liftIO ∘ findAction fs xs =≪ asks config
 findCmd ∷ Command FindState m
 findCmd = Command
           { command     = ["f", "find"]
-          , deps        = [PortageMeta, OverlayMeta, MiscMeta]
+          , deps        = [UpdateMeta, PortageMeta, OverlayMeta, MiscMeta]
           , description = "Find some Atom in main tree and overlays"
           , usage       = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
           , state       = FindState { fndExact      = False

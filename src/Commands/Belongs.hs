@@ -78,7 +78,7 @@ belongsM s xs = liftIO ∘ belongs s xs =≪ asks config
 belongsCmd ∷ Command String m
 belongsCmd =
   Command { command     = ["b", "belongs"]
-          , deps        = [PortageMeta, OverlayMeta, MiscMeta]
+          , deps        = [UpdateMeta, PortageMeta, OverlayMeta, MiscMeta]
           , description = "Find owner-package for some file"
           , usage       = \c -> "haku " ++ c ++ " [OPTIONS] <dependency atoms>"
           , state       = 𝜀
