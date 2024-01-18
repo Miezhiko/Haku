@@ -12,6 +12,7 @@ import           Commands.Belongs as CommandModules
 import           Commands.Clean   as CommandModules
 import           Commands.Delete  as CommandModules
 import           Commands.Digest  as CommandModules
+import           Commands.Test    as CommandModules
 import           Commands.Find    as CommandModules
 import           Commands.Get     as CommandModules
 import           Commands.Live    as CommandModules
@@ -29,7 +30,7 @@ commands showPrivate =
     , Command' updatesCmd, Command' liveCmd
     , Command' cleanCmd
     , Command' findCmd,    Command' belongsCmd
-    , Command' digestCmd
+    , Command' digestCmd,  Command' testCmd
     ] ++ concat
     [ [ Command' uwuCmd
       ] | showPrivate ]
