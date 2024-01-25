@@ -13,6 +13,7 @@ import           Commands.Clean   as CommandModules
 import           Commands.Delete  as CommandModules
 import           Commands.Digest  as CommandModules
 import           Commands.Test    as CommandModules
+import           Commands.Commit  as CommandModules
 import           Commands.Find    as CommandModules
 import           Commands.Get     as CommandModules
 import           Commands.Live    as CommandModules
@@ -28,7 +29,7 @@ commands showPrivate =
     [ Command' getCmd,     Command' deleteCmd
     , Command' updateCmd,  Command' upgradeCmd
     , Command' updatesCmd, Command' liveCmd
-    , Command' cleanCmd
+    , Command' cleanCmd,   Command' commitCmd
     , Command' findCmd,    Command' belongsCmd
     , Command' digestCmd,  Command' testCmd
     ] ++ concat
