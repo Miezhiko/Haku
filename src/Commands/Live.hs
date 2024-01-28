@@ -91,10 +91,16 @@ liveRebuild pvv = (== 0) <$> getRealUserID >>= \root ->
 
 checkForRemoteRepositoryHash ∷ String -> [String] -> IO (Maybe String)
 checkForRemoteRepositoryHash repo [] = do
+  setSGR [ SetColor Foreground Vivid Blue
+         , SetConsoleIntensity BoldIntensity ]
   putStrLn $ "Checking for: " ++ repo
+  setSGR [ Reset ]
   readIfSucc "git" ["ls-remote", repo, "HEAD"]
 checkForRemoteRepositoryHash repo [rb] = do
+  setSGR [ SetColor Foreground Vivid Cyan
+         , SetConsoleIntensity BoldIntensity ]
   putStrLn $ "Checking for: " ++ repo ++ " branch " ++ rb
+  setSGR [ Reset ]
   readIfSucc "git" ["ls-remote", repo, rb]
 checkForRemoteRepositoryHash repo (x:xs) =
   checkForRemoteRepositoryHash repo [x] >>=
