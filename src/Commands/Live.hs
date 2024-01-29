@@ -105,9 +105,7 @@ checkForRemoteRepositoryHash repo [rb] = do
 checkForRemoteRepositoryHash repo (x:xs) =
   checkForRemoteRepositoryHash repo [x] >>=
   \case Nothing -> checkForRemoteRepositoryHash repo xs
-        Just rl -> case rl of
-          [] -> checkForRemoteRepositoryHash repo xs
-          _  -> pure $ Just rl
+        Just rl -> pure $ Just rl
 
 isThereGitUpdates ∷ String -> String -> String -> [String] -> IO Bool
 isThereGitUpdates repo repoFilePath rName mbBranch =

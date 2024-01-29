@@ -51,7 +51,7 @@ readIfSucc    -- useless wrapper on readCheck to return Maybe
   -> IO (Maybe String)
 readIfSucc γ args =
   readCheck γ args
-  >>= \case Left _ -> pure Nothing
+  >>= \case Left _    -> pure Nothing
             Right val ->
               case val of
                 [] -> pure $ Nothing
