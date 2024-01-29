@@ -52,8 +52,11 @@ readIfSucc    -- useless wrapper on readCheck to return Maybe
 readIfSucc γ args =
   readCheck γ args
   >>= \case Left _ -> pure Nothing
-            Right val -> do putStr $ γ ++ " : " ++ val
-                            pure $ Just val
+            Right val ->
+              case val of
+                [] -> pure $ Nothing
+                xs -> do putStr $ γ ++ " : " ++ xs
+                         pure $ Just xs
 
 isRoot ∷ IO () -> IO () -> IO ()
 isRoot f1 f2 = getRealUserID >>=
