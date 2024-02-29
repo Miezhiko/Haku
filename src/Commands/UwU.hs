@@ -15,12 +15,14 @@ data UwuState
   = UwuState
       { uwuHaskellSync :: Bool
       , uwuAsk         :: Bool
+      , uwuPretend     :: Bool
       }
 
 uwuOpts ∷ Bool -> [OptDescr (UwuState -> UwuState)]
 uwuOpts _ =
   [ Option "hs" ["haskell-sync"] (NoArg (\s -> s { uwuHaskellSync = True }))  "use haskell code to sync"
   , Option "a"  ["ask"]          (NoArg (\s -> s { uwuAsk = True }))          "ask before upgrade"
+  , Option "p"  ["pretend"]      (NoArg (\s -> s { uwuPretend = True }))      "just show planned updates"
   ]
 
 runUpgradeScriptsRoot ∷ UwuState
@@ -42,6 +44,7 @@ runUpgradeScriptsRoot uws hlog = do
                           , "--with-bdeps=y"
                           , "--quiet-build=n"
                           ] ++ ["-a" | uwuAsk uws]
+                            ++ ["-p" | uwuPretend uws]
 
 runUpgradeScriptsSudo ∷ UwuState
                     -> (String -> IO ())
@@ -58,6 +61,7 @@ runUpgradeScriptsSudo uws hlog = do
                         , "--with-bdeps=y"
                         , "--quiet-build=n"
                         ] ++ ["-a" | uwuAsk uws]
+                          ++ ["-p" | uwuPretend uws]
 
 runUpgradeScripts ∷ UwuState -> (String -> IO ()) -> IO ()
 runUpgradeScripts = ap (ap ∘ (isRoot ∘) ∘ runUpgradeScriptsRoot)
@@ -75,6 +79,7 @@ uwuCmd = Command { command      = ["uwu"]
                  , description  = "Update and upgrade the world (alias)"
                  , usage        = ("haku " ++)
                  , state        = UwuState { uwuHaskellSync = False
-                                           , uwuAsk = False }
+                                           , uwuAsk = False
+                                           , uwuPretend = False }
                  , options      = uwuOpts
                  , handler      = owo }
