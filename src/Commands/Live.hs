@@ -132,7 +132,7 @@ checkForRepository' rOwner rName (p, lv) (repo, mbBranch) treePath =
       repoFilePath    = repoPath </> "FETCH_HEAD"
   in doesFileExist repoFilePath >>=
       \case False -> do putStrLn $ show p ++ ": not downloaded on " ++ repoFilePath
-                        pure $ Just (p, lv)
+                        pure Nothing
             True  -> do
               gitUpdates <- isThereGitUpdates repo repoFilePath rName mbBranch
               if gitUpdates
