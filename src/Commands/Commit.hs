@@ -7,6 +7,7 @@ import           Utils
 
 import           System.Directory (getCurrentDirectory)
 import           System.FilePath  (isPathSeparator, takeBaseName, takeDirectory)
+import           System.Environment (lookupEnv, setEnv, unsetEnv)
 
 dropTailingPathSeparator :: FilePath -> FilePath
 dropTailingPathSeparator path =
@@ -19,8 +20,14 @@ commitEbuild c =
       catEb   = catName ++ "/" ++ ebName ++ ": "
   in do
     rawAndIgnore "git" [ "add", "." ]
+    prevEditor <- lookupEnv "GIT_EDITOR"
+    setEnv "GIT_EDITOR" "nano +0,-1 -w"
     rawAndIgnore "git" [ "commit", "-asS", "-m", catEb, "-e" ]
-
+    maybe 
+      (unsetEnv "GIT_EDITOR") 
+      (\ed -> setEnv "GIT_EDITOR" ed)
+      prevEditor
+ 
 commit ∷ IO ()
 commit = getCurrentDirectory >>= commitEbuild
 
