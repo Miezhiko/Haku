@@ -33,9 +33,10 @@ data RepoInfo
 
 data LiveState
   = LiveState
-      { liveVerbose :: Bool
-      , livePreview :: Bool
-      , liveForce   :: Bool
+      { liveVerbose   :: Bool
+      , livePreview   :: Bool
+      , liveForce     :: Bool
+      , liveDownload  :: Bool
       }
 
 repoParser ∷ Parser RepoInfo
@@ -55,6 +56,7 @@ liveOpts _ =
   [ Option "v" ["verbose"]  (NoArg (\s -> s { liveVerbose = True }))  "verbose output" 
   , Option "p" ["preview"]  (NoArg (\s -> s { livePreview = True }))  "check live packages to update"
   , Option "f" ["force"]    (NoArg (\s -> s { liveForce = True }))    "update all live packages"
+  , Option "d" ["download"] (NoArg (\s -> s { liveDownload = True })) "download not downloaded"
   ]
 
 showLivePackage ∷ (Package, [PackageVersion])
@@ -126,13 +128,15 @@ checkForRepository' ∷ String -- repo owner
                    -> (Package, [PackageVersion])
                    -> (String, [String])
                    -> FilePath -- tree path
+                   -> Bool     -- download
                    -> IO (Maybe (Package, [PackageVersion]))
-checkForRepository' rOwner rName (p, lv) (repo, mbBranch) treePath =
+checkForRepository' rOwner rName (p, lv) (repo, mbBranch) treePath dl =
   let repoPath        = treePath </> "distfiles/git3-src" </> rOwner ++ "_" ++ rName ++ ".git"
       repoFilePath    = repoPath </> "FETCH_HEAD"
   in doesFileExist repoFilePath >>=
       \case False -> do putStrLn $ show p ++ ": not downloaded on " ++ repoFilePath
-                        pure Nothing
+                        if dl then pure $ Just (p, lv) 
+                              else pure Nothing
             True  -> do
               gitUpdates <- isThereGitUpdates repo repoFilePath rName mbBranch
               if gitUpdates
@@ -143,11 +147,12 @@ checkForRepository ∷ (Package, [PackageVersion])
                   -> String
                   -> [String]
                   -> FilePath
+                  -> Bool     -- download
                   -> IO (Maybe (Package, [PackageVersion]))
-checkForRepository (p, lv) repo mbBranch treePath = do
+checkForRepository (p, lv) repo mbBranch treePath dl = do
   case parse repoParser "" repo of
     Right (RepoInfo _ repoOwner repoName) ->
-      checkForRepository' repoOwner repoName (p, lv) (repo, mbBranch) treePath
+      checkForRepository' repoOwner repoName (p, lv) (repo, mbBranch) treePath dl
     Left _ -> do
       putStrLn $ show p ++ ": ERROR ON PARSING: " ++ repo
       pure Nothing
@@ -156,9 +161,10 @@ smartLiveRebuild ∷ PortageConfig
                 -> Package
                 -> [PackageVersion]
                 -> Bool             -- verbose
+                -> Bool             -- download
                 -> IO (Maybe (Package, [PackageVersion]))
-smartLiveRebuild _ _ [] _                   = pure Nothing
-smartLiveRebuild pc package (ver:_) verbose = -- TODO: many versions
+smartLiveRebuild _ _ [] _ _                    = pure Nothing
+smartLiveRebuild pc package (ver:_) verbose dl = -- TODO: many versions
   findVersionedEbuild pc package ver >>=
     \case Nothing -> do putStrLn $ show package ++ ": Can't find ebuild"
                         pure $ Just (package, [ver])
@@ -168,7 +174,7 @@ smartLiveRebuild pc package (ver:_) verbose = -- TODO: many versions
                            pure Nothing -- not git?
               [rp]   -> checkForRepository (package, [ver])
                                            rp (eGit_branch eb)
-                                           treePath
+                                           treePath dl
               xs     ->
                 filterM (\rp ->
                   case parse repoParser "" rp of
@@ -183,7 +189,7 @@ smartLiveRebuild pc package (ver:_) verbose = -- TODO: many versions
                                pure $ Just (package, [ver])
                   (rp:_) -> checkForRepository (package, [ver])
                                                rp (eGit_branch eb)
-                                               treePath
+                                               treePath dl
  where treePath ∷ FilePath
        treePath = pcMakeConf pc M.! "PORTDIR"
 
@@ -202,7 +208,10 @@ liveUpdateMap package pc lss =
               then pure Nothing
               else if liveForce lss
                     then pure $ Just (package, liveVersions)
-                    else smartLiveRebuild pc package liveVersions (liveVerbose lss)
+                    else smartLiveRebuild pc package
+                                          liveVersions
+                                          (liveVerbose lss)
+                                          (liveDownload lss)
 
 liveUpdateIO ∷ IORef PortageConfig
             -> (String -> IO ())
@@ -235,8 +244,9 @@ liveCmd = Command
             , deps        = [PortageMeta, OverlayMeta, MiscMeta]
             , description = "Live rebuild"
             , usage       = ("haku " ++)
-            , state       = LiveState { liveVerbose = False
-                                      , livePreview = False
-                                      , liveForce   = False }
+            , state       = LiveState { liveVerbose   = False
+                                      , livePreview   = False
+                                      , liveForce     = False
+                                      , liveDownload  = False }
             , options     = liveOpts
             , handler     = liveUpdate }
