@@ -34,8 +34,9 @@ unmerge dels xs =
 delete ∷ DeleteState -> [Atom] -> PortageConfig -> IO ()
 delete _ [] _       = putStrLn "specify atom!"
 delete dels [x] pc  = case findPackage pc x of
-                        Just p  -> unmerge dels [show p]
-                        Nothing -> putStrLn "Atom not found!"
+                        []  -> putStrLn "Atom not found!"
+                        [p] -> unmerge dels [show p]
+                        pxs -> putStrLn $ "found multiple atoms: " ++ show pxs
 delete dels xs _    = unmerge dels xs
 
 deleteM ∷ DeleteState ~> m

@@ -9,7 +9,7 @@ module Commands.Find
 import           Types
 import           Utils
 
-import           Data.Foldable       (traverse_)
+import           Data.Foldable       (for_, traverse_)
 import           Data.List
 import qualified Data.Map            as M
 import qualified Data.Set            as S
@@ -58,14 +58,16 @@ findAction _ [] _     = putStrLn "you should specify what to search!"
 findAction fs [x] rpc = readIORef rpc >>= \pc ->
   if fndExact fs || '/' ∈ x -- find exact is mostly useless but fast
     then case findPackage pc x of
-          Just p -> do print p
-                       mbeb <- findEbuild pc p
-                       setSGR [SetColor Foreground Vivid Blue]
-                       maybePrint mbeb
-                       setSGR [SetColor Foreground Vivid Red]
-                       prettyPrintVersions $ pVersions p
-                       setSGR [Reset]
-          Nothing -> putStrLn "Atom not found!"
+          []  -> putStrLn "Atom not found!"
+          pxs ->
+            for_ pxs $ \p ->
+              do print p
+                 mbeb <- findEbuild pc p
+                 setSGR [SetColor Foreground Vivid Blue]
+                 maybePrint mbeb
+                 setSGR [SetColor Foreground Vivid Red]
+                 prettyPrintVersions $ pVersions p
+                 setSGR [Reset]
     else traverse_ (maybePrintFind (fndInstalled fs))
          =<< traverse (\p -> (p,) <$> findEbuild pc p
                       ) (M.filter ((x `isInfixOf`) ∘ pName) (pcTree pc))

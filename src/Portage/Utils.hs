@@ -10,21 +10,22 @@ import           Portage.Version
 import           System.Directory
 import           System.FilePath
 
-import           Data.List
 import qualified Data.Map              as M
-import           Data.Maybe            (isJust)
+import           Data.Maybe            (catMaybes, isJust)
 import qualified Data.Set              as S
 
-findPackageByName ∷ PortageConfig -> String -> Maybe Package
+findPackageByName ∷ PortageConfig -> String -> [Package]
 findPackageByName pc x = do
-    (c, _) <- find (\(c, _) ->
-        isJust (M.lookup (c </> x) (pcTree pc))
-      ) (pcCategories pc)
-    findPackage pc (c </> x)
+  let categories = filter (\(c, _) ->
+                      isJust (M.lookup (c </> x) (pcTree pc))
+                    ) (pcCategories pc)
+      atoms = map (\(c, _) -> (c </> x)) categories
+      mbpkg = map (\a -> M.lookup a (pcTree pc)) atoms
+  catMaybes mbpkg
 
-findPackage ∷ PortageConfig -> String -> Maybe Package
+findPackage ∷ PortageConfig -> String -> [Package]
 findPackage pc input
-  | '/' ∈ input = M.lookup input (pcTree pc)
+  | '/' ∈ input = catMaybes [M.lookup input (pcTree pc)]
   | otherwise   = findPackageByName pc input
 
 findVersionedEbuild ∷ PortageConfig -> Package -> PackageVersion -> IO (Maybe Ebuild)

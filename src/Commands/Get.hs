@@ -54,8 +54,9 @@ emerge gs [x] pc  =
   if head x == '@'
     then merge gs [x]
     else case findPackage pc x of
-          Just p  -> merge gs [show p]
-          Nothing -> putStrLn "Atom not found!"
+          [p] -> merge gs [show p]
+          []  -> putStrLn "Atom not found!"
+          pxs -> putStrLn $ "found multiple atoms: " ++ show pxs
 emerge gs xs _    = merge gs xs
 
 getPackageM ∷ GetState ~> m
