@@ -8,7 +8,6 @@ import           Utils
 import qualified Data.Map         as M
 
 import           System.Directory
-import           System.FilePath
 
 data CleanState
   = CleanState
@@ -26,26 +25,17 @@ depcleanIO ∷ IO ()
 depcleanIO = isRoot ( rawAndIgnore "emerge" [ "--depclean" ] )
                     ( rawAndIgnore "sudo" [ "emerge", "--depclean" ] )
 
-cleanDirIO ∷ FilePath -> Bool -> IO ()
-cleanDirIO [] _ = pure ()
-cleanDirIO path recursive = isRoot removeDircontent
-                                 $ putStrLn "can't clean dirs as user"
+cleanDirIO ∷ FilePath -> IO ()
+cleanDirIO []   = pure ()
+cleanDirIO path = isRoot removeDircontent
+                    $ putStrLn "can't clean dirs as user"
  where
   removeDircontent ∷ IO ()
-  removeDircontent = listDirectory path
-                 >>= mapM_ removeEntry
+  removeDircontent = rawAndIgnore "rm" [ "-rf", path ++ "/*" ]
 
-  removeEntry ∷ FilePath -> IO ()
-  removeEntry name = do
-    let fullPath = path </> name
-    isDirectory <- doesDirectoryExist fullPath
-    if isDirectory
-      then when recursive $ cleanDirIO fullPath True
-      else removeFile fullPath
-
-cleanIfExists ∷ FilePath -> Bool -> IO ()
-cleanIfExists p r = doesDirectoryExist p >>= \exists ->
-                      when exists $ cleanDirIO p r
+cleanIfExists ∷ FilePath -> IO ()
+cleanIfExists p = doesDirectoryExist p >>= \exists ->
+                      when exists $ cleanDirIO p
 
 cleanM ∷ CleanState ~> m
 cleanM cs _ = ask >>= \env -> liftIO $ do
@@ -58,9 +48,9 @@ cleanM cs _ = ask >>= \env -> liftIO $ do
           tmpDir   = makeConf M.! "PORTAGE_TMPDIR"
           verbose  = cleanVerbose cs
       when verbose $ hlog ("Cleaning " ++ distDir)
-      cleanIfExists distDir False
+      cleanIfExists distDir
       when verbose $ hlog ("Cleaning " ++ tmpDir)
-      cleanIfExists tmpDir True
+      cleanIfExists tmpDir
 
 cleanCmd ∷ Command CleanState m
 cleanCmd = Command { command      = ["clean"]
