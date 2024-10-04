@@ -37,7 +37,7 @@ readStringMap ∷ [String] -> M.Map String String
 readStringMap xs = M.fromListWith (\old new -> new ++ " " ++ old)
                  $ map parseKeyValue xs
  where parseKeyValue ∷ String -> (String, String)
-       parseKeyValue ys = case break (=='=') ys of
+       parseKeyValue ys = case break (== '=') ys of
                             (_, []) -> error "empty list"
                             (_, zs) -> first lstrip (zs, drop 1 zs)
 
