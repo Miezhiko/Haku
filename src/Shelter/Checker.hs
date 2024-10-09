@@ -8,7 +8,7 @@ import           Utils
 
 import           Shelter.Types
 
-import           Data.List.Split
+import           Data.List.Split  (splitOn)
 
 import           System.Directory
 import           System.FilePath
@@ -20,7 +20,9 @@ getRemoteHash = do
   rlm <- readIfSucc "git" ["ls-remote", "origin", trim currentBranch]
   case rlm of
     Nothing  -> pure Nothing
-    Just rlc -> pure $ Just (head (splitOn "\t" rlc))
+    Just rlc -> case splitOn "\t" rlc of
+                  []    -> pure Nothing
+                  (x:_) -> pure $ Just x
 
 checkForHash ∷ String -> Maybe String -> IO Bool
 checkForHash rlc Nothing = do

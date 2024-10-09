@@ -37,6 +37,7 @@ data LiveState
       , livePreview   :: Bool
       , liveForce     :: Bool
       , liveDownload  :: Bool
+      , liveAsk       :: Bool
       }
 
 repoParser ∷ Parser RepoInfo
@@ -57,6 +58,7 @@ liveOpts _ =
   , Option "p" ["preview"]  (NoArg (\s -> s { livePreview = True }))  "check live packages to update"
   , Option "f" ["force"]    (NoArg (\s -> s { liveForce = True }))    "update all live packages"
   , Option "d" ["download"] (NoArg (\s -> s { liveDownload = True })) "download not downloaded"
+  , Option "a" ["ask"]      (NoArg (\s -> s { liveAsk = True }))      "ask before update"
   ]
 
 showLivePackage ∷ (Package, [PackageVersion])
@@ -74,11 +76,12 @@ showLivePackage (package, vv) = do
 
 {- HLINT ignore "Redundant <$>" -}
 liveRebuild ∷ [(Package, [PackageVersion])]
+           -> Bool
            -> IO ()
-liveRebuild pvv = (== 0) <$> getRealUserID >>= \root ->
+liveRebuild pvv a = (== 0) <$> getRealUserID >>= \root ->
   if root
-    then rawAndIgnore "emerge" ("-av" : packagesList)
-    else hasSudo $ rawAndIgnore "sudo" ("emerge" : ("-av" : packagesList))
+    then rawAndIgnore "emerge" ("-av" :(["-a" | a] ++ packagesList))
+    else hasSudo $ rawAndIgnore "sudo" ("emerge" : ("-av" : (["-a" | a] ++ packagesList)))
  where getOneVersion ∷ [PackageVersion] -> String
        getOneVersion []    = []
        getOneVersion [pv]  = show (pvVersion pv)
@@ -114,9 +117,15 @@ isThereGitUpdates repo repoFilePath rName mbBranch =
   checkForRemoteRepositoryHash repo mbBranch >>=
   \case Nothing  -> pure True
         Just rlc -> do
-          let remoteHash = head (splitOn "\t" rlc)
+          let rlcParts   = splitOn "\t" rlc
+          let remoteHash = case rlcParts of
+                            (h : _) -> h
+                            []      -> []
           repoHashFile <- readFile repoFilePath
-          let currentHash = head (splitOn "\t" repoHashFile)
+          let repoHashParts = splitOn "\t" repoHashFile
+              currentHash   = case repoHashParts of
+                                (h : _) -> h
+                                []      -> []
           if currentHash == remoteHash
             then do putStrLn $ rName ++ " is up to date, hash: " ++ currentHash
                     pure False
@@ -232,7 +241,7 @@ liveUpdateIO rpc hlog lss filterPackages = readIORef rpc >>= \pc -> do
             then do
               putStrLn []
               for_ xs showLivePackage
-            else liveRebuild xs
+            else liveRebuild xs $ liveAsk lss
 
 liveUpdate ∷ LiveState ~> m
 liveUpdate lss xs = ask >>= \env ->
@@ -247,6 +256,7 @@ liveCmd = Command
             , state       = LiveState { liveVerbose   = False
                                       , livePreview   = False
                                       , liveForce     = False
-                                      , liveDownload  = False }
+                                      , liveDownload  = False
+                                      , liveAsk       = False }
             , options     = liveOpts
             , handler     = liveUpdate }

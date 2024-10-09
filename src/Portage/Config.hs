@@ -34,7 +34,6 @@ import qualified System.IO.Strict      as Strict
 import           System.Posix.Files
 import           System.Process
 
-import           Control.Arrow
 import           Control.Monad
 
 parseEnvMap ∷ String -> ConfData
@@ -132,9 +131,8 @@ getPackage fcat cat (Just pn) vp = do
 concatPackageGroups ∷ [(Atom, Package)] -> [(Atom, Package)]
 concatPackageGroups [] = 𝜀
 concatPackageGroups [(a, p)] = [(a, p)]
-concatPackageGroups xs =
-  let headTuple = head xs
-      anyAtom   = fst headTuple
+concatPackageGroups xs@(headTuple : _) =
+  let anyAtom   = fst headTuple
       firstPkg  = snd headTuple
       anyCat    = pCategory firstPkg
       anyName   = pName firstPkg
@@ -201,11 +199,13 @@ loadPortageConfig _meta = do
                       [] -- for keywords
 
       overlays    = M.fromList metaList
-      categories  = map (fst ∘ head &&& concatMap snd) 
-                      ∘ groupBy ((==) `on` fst)
-                      ∘ sortBy (comparing fst)
-                      ∘ concatMap (\(_, oDt) -> ovCategories oDt)
-                      $ metaList
+
+      categories  = map groupCat ∘ groupBy ((==) `on` fst)
+                                 ∘ sortBy (comparing fst)
+                                 ∘ concatMap (\(_, oDt) -> ovCategories oDt)
+                                 $ metaList
+                      where groupCat []       = error "Empty Group"
+                            groupCat xs@(x:_) = (fst x, concatMap snd xs)
 
   installed     <- getInstalledPackages constInstalledPath categories
   shelterHashes <- getShelterHashes

@@ -11,12 +11,13 @@ import           Data.List        (isSuffixOf, sortBy)
 import           System.Directory (getCurrentDirectory, getDirectoryContents)
 import           System.FilePath  (isPathSeparator, takeBaseName, takeDirectory)
 
-nSort   ∷  [String] -> [String]
-nSort s =  if all allFloat s then    
+nSort    ∷  [String] -> [String]
+nSort [] = []
+nSort s  = if all allFloat s then    
                let { readFloat = read ∷ String → Float } 
                in  (map show ∘ sortBy compare ∘ map readFloat) s
            else sortBy natComp s
-    where allFloat  =   all (\x -> isDigit x || '.' == 'x')
+    where allFloat = all (\x -> isDigit x || '.' == x)
 
 natComp                                 ∷  String → String → Ordering
 natComp [] []                           =   EQ
@@ -49,7 +50,9 @@ testEbuild c [x]  =
     ( do rawAndIgnore "sudo" [ "ebuild", x, "digest" ]
          rawAndIgnore "sudo" [ "emerge", "-av1", catEb ] )
 -- maybe unneeded but maybe we want to get last version
-testEbuild c xs   = testEbuild c $ tail $ nSort xs
+testEbuild c xs = case nSort xs of
+                    [] -> pure ()
+                    ys -> testEbuild c [last ys]
 
 {- HLINT ignore "Redundant <$>" -}
 test ∷ IO ()

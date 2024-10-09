@@ -51,12 +51,14 @@ merge gs xs =
 emerge ∷ GetState -> [Atom] -> PortageConfig -> IO ()
 emerge _ [] _     = putStrLn "specify atom!"
 emerge gs [x] pc  =
-  if head x == '@'
-    then merge gs [x]
-    else case findPackage pc x of
-          [p] -> merge gs [show p]
-          []  -> putStrLn "Atom not found!"
-          pxs -> putStrLn $ "found multiple atoms: " ++ show pxs
+  case x of
+    (h : _) -> if h == '@'
+                then merge gs [x]
+                else case findPackage pc x of
+                      [p] -> merge gs [show p]
+                      []  -> putStrLn "Atom not found!"
+                      pxs -> putStrLn $ "found multiple atoms: " ++ show pxs
+    []      -> pure ()
 emerge gs xs _    = merge gs xs
 
 getPackageM ∷ GetState ~> m
