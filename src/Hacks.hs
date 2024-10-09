@@ -38,7 +38,7 @@ readStringMap xs = M.fromListWith (\old new -> new ++ " " ++ old)
                  $ map parseKeyValue xs
  where parseKeyValue ∷ String -> (String, String)
        parseKeyValue ys = case break (== '=') ys of
-                            (_, []) -> error "empty list"
+                            (_, []) -> ([], [])
                             (_, zs) -> first lstrip (zs, drop 1 zs)
 
 splitOnAnyOf ∷ Eq α ⇒ [[α]] -> [α] -> [[α]]
