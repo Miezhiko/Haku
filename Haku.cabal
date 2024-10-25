@@ -1,6 +1,6 @@
 name: Haku
 version: 2.0.6.0
-license: AGPL-3
+license: QUADROBER
 
 build-type: Simple
 cabal-version: 2.0
