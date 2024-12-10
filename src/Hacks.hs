@@ -37,7 +37,7 @@ readStringMap ∷ [String] -> M.Map String String
 readStringMap xs = M.fromListWith (\old new -> new ++ " " ++ old)
                  $ map parseKeyValue xs
  where parseKeyValue ∷ String -> (String, String)
-       parseKeyValue = first lstrip ∘ second tail ∘ break (== '=')
+       parseKeyValue = first lstrip ∘ second (drop 1) ∘ break (== '=')
 
 splitOnAnyOf ∷ Eq α ⇒ [[α]] -> [α] -> [[α]]
 splitOnAnyOf ds xs = foldl' ((∘ splitOn) ∘ (>>=)) [xs] ds
