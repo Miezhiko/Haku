@@ -39,12 +39,12 @@ runUpgradeScriptsRoot uws hlog = do
   hlog "<Green>regenerating Gentoo cache..."
   rawAndIgnore "egencache" ["--repo=gentoo", "--update"]
   rawAndIgnore "eix-update" 𝜀
-  rawAndIgnore "emerge" $ [ "-vuDN", "@world"
+  rawAndIgnore "emerge" $ [ "-uDN", "@world"
                           , "--backtrack=100"
                           , "--with-bdeps=y"
                           , "--quiet-build=n"
-                          ] ++ ["-a" | uwuAsk uws]
-                            ++ ["-p" | uwuPretend uws]
+                          ] ++ ["-av" | uwuAsk uws]
+                            ++ ["-pv" | uwuPretend uws]
 
 runUpgradeScriptsSudo ∷ UwuState
                     -> (String -> IO ())
@@ -56,12 +56,12 @@ runUpgradeScriptsSudo uws hlog = do
   hlog "<Green>regenerating Gentoo cache..."
   rawAndIgnore "sudo" ["egencache", "--repo=gentoo", "--update"]
   rawAndIgnore "sudo" ["eix-update"]
-  rawAndIgnore "sudo" $ [ "emerge", "-vuDN", "@world"
+  rawAndIgnore "sudo" $ [ "emerge", "-uDN", "@world"
                         , "--backtrack=100"
                         , "--with-bdeps=y"
                         , "--quiet-build=n"
-                        ] ++ ["-a" | uwuAsk uws]
-                          ++ ["-p" | uwuPretend uws]
+                        ] ++ ["-av" | uwuAsk uws]
+                          ++ ["-pv" | uwuPretend uws]
 
 runUpgradeScripts ∷ UwuState -> (String -> IO ()) -> IO ()
 runUpgradeScripts = ap (ap ∘ (isRoot ∘) ∘ runUpgradeScriptsRoot)

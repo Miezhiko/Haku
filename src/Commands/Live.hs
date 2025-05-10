@@ -80,8 +80,8 @@ liveRebuild ∷ [(Package, [PackageVersion])]
            -> IO ()
 liveRebuild pvv a = (== 0) <$> getRealUserID >>= \root ->
   if root
-    then rawAndIgnore "emerge" ("-av" :(["-a" | a] ++ packagesList))
-    else hasSudo $ rawAndIgnore "sudo" ("emerge" : ("-av" : (["-a" | a] ++ packagesList)))
+    then rawAndIgnore "emerge" ("-v" :(["-a" | a] ++ packagesList))
+    else hasSudo $ rawAndIgnore "sudo" ("emerge" : ("-v" : (["-a" | a] ++ packagesList)))
  where getOneVersion ∷ [PackageVersion] -> String
        getOneVersion []    = []
        getOneVersion [pv]  = show (pvVersion pv)
