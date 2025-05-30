@@ -20,7 +20,6 @@ import           Shelter.Hashes
 import           Data.Binary
 import qualified Data.ByteString.Lazy  as BL
 import           Data.Function
-import           Data.Functor
 import           Data.List
 import qualified Data.Map              as M
 import           Data.Maybe
@@ -31,10 +30,12 @@ import           Data.Time.Clock
 import           System.Directory
 import           System.FilePath
 import qualified System.IO.Strict      as Strict
-import           System.Posix.Files
 import           System.Process
 
 import           Control.Monad
+
+import           UnliftIO.Async
+
 
 parseEnvMap ∷ String -> ConfData
 parseEnvMap s = M.fromList $ map parseLine (lines s)
@@ -65,41 +66,46 @@ getVersions fp pn o =
 
 parseOverlay ∷ FilePath -> IO (([Package], [String]), OverlayMeta)
 parseOverlay treePath = do
-  overlayName <- rstrip <$> readFile (treePath </> constProfilesRepoName)
-  let profilesMaskFile = treePath </> constProfilesPackageMask
-  profilesMask <- doesFileExist profilesMaskFile >>= \pmfExists ->
-    if pmfExists
-      then do fileData <- rstrip <$> readFile profilesMaskFile
-              pure $ parseMask fileData
-      else pure []
-  treeCats     <- getFilteredDirectoryContents treePath
-  filteredCats <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
-                      $ map (\c -> (treePath </> c, c))
-                            (filter (∉ [".git","eclass","metadata","profiles"]) treeCats)
-  catMap <- traverse (\(fcat, cat) -> do
-      packages <- getFilteredDirectoryContents fcat
-      packagesFiltered <- filterM (\(fp, _) -> getFileStatus fp <&> isDirectory)
-                              $ map (\p -> (fcat </> p, p))
-                                    (filter (∉ ["metadata.xml"]) packages)
-      parsed <- traverse (\(fp, pn) -> do
-          versions <- getVersions fp pn overlayName
-          pure $ Package cat versions pn
-        ) packagesFiltered
-      pure (parsed, (cat, map snd packagesFiltered))
-    ) filteredCats -- [[package], a]
-  let pkgs = concatMap fst catMap
-      cpkg = map snd catMap
-      ecls = "eclass" ∈ treeCats
+  (overlayName, profilesMask) <- concurrently
+    (rstrip <$> readFile (treePath </> constProfilesRepoName))
+    (do
+      let profilesMaskFile = treePath </> constProfilesPackageMask
+      pmfExists <- doesFileExist profilesMaskFile
+      if pmfExists
+        then parseMask . rstrip <$> readFile profilesMaskFile
+        else pure []
+    )
 
+  treeCats <- getFilteredDirectoryContents treePath
+  let ecls = "eclass" `elem` treeCats
   eclasses <- if ecls
-    then getFilteredDirectoryContents $ treePath </> "eclass"
-    else pure 𝜀
+    then getFilteredDirectoryContents (treePath </> "eclass")
+    else pure []
 
-  let packagesEclasses = (pkgs, eclasses)
-      overlayMeta = ( overlayName
-                    , OverlayData treePath cpkg profilesMask )
+  let filteredCats = filter (`notElem` [".git","eclass","metadata","profiles"]) treeCats
+  catMap <- forConcurrently filteredCats $ \cat -> do
+    let fcat = treePath </> cat
+    isDir <- doesDirectoryExist fcat
+    if not isDir
+      then pure ([], (cat, []))
+      else do
+        packages <- getFilteredDirectoryContents fcat
+        let filteredPackages = filter (/= "metadata.xml") packages
+        pkgs <- forConcurrently filteredPackages $ \pn -> do
+          let fp = fcat </> pn
+          isPkgDir <- doesDirectoryExist fp
+          if not isPkgDir
+            then pure Nothing
+            else do
+              versions <- getVersions fp pn overlayName
+              pure $ Just (Package cat versions pn)
+        pure (catMaybes pkgs, (cat, filteredPackages))
 
-  pure (packagesEclasses, overlayMeta)
+  let pkgs        = concatMap fst catMap
+      cpkg        = map snd catMap
+      overlayMeta = (overlayName, OverlayData treePath cpkg profilesMask)
+
+  pure ((pkgs, eclasses), overlayMeta)
 
 parseOverlays ∷ String -> IO (Tree, [OverlayMeta])
 parseOverlays input = do
@@ -152,18 +158,18 @@ findPackages fcat cat versionedPkgs pkgs = do
 
 getInstalledPackages ∷ FilePath -> [(String, [String])] -> IO Tree
 getInstalledPackages pkgdb categories = do
-  treeCats      <- getFilteredDirectoryContents pkgdb
-  filteredCats  <- filterM (\(f, _) -> getFileStatus f <&> isDirectory)
-                      $ map (\c -> (pkgdb </> c, c))
-                            treeCats
-  catMaps <- traverse (\(fcat, cat) -> do
-      pkgFiles <- getFilteredDirectoryContents fcat
-      let myCat = find ((cat ==) ∘ fst
-                        ) categories
-      case myCat of
-        Just (_,pkgs) -> findPackages fcat cat pkgFiles pkgs
-        Nothing       -> pure M.empty
-    ) filteredCats
+  let catMap = M.fromList categories
+  treeCats <- getFilteredDirectoryContents pkgdb
+  catMaps <- forConcurrently treeCats $ \cat -> do
+    let fcat = pkgdb </> cat
+    isDir <- doesDirectoryExist fcat
+    if not isDir
+      then pure M.empty
+      else case M.lookup cat catMap of
+        Just pkgs -> do
+          pkgFiles <- getFilteredDirectoryContents fcat
+          findPackages fcat cat pkgFiles pkgs
+        Nothing -> pure M.empty
   pure $ foldl' (M.unionWith mergePackages) M.empty catMaps
 
 loadPortageConfig ∷ [MetaData] -> IO PortageConfig
@@ -171,7 +177,6 @@ loadPortageConfig [] = -- provide empty config for no metadata request
   pure $ PortageConfig M.empty [] [] M.empty
                        M.empty (MaskingData [] [])
                        M.empty False -- update cahce
--- TODO: meta config loading support for speed
 loadPortageConfig _meta = do
   progressThread <- startProgress "Regenerating Haku cache..."
 
