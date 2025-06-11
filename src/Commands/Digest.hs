@@ -1,5 +1,6 @@
 module Commands.Digest
   ( digestCmd
+  , digest
   ) where
 
 import           Types

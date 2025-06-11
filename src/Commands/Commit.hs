@@ -5,6 +5,8 @@ module Commands.Commit
 import           Types
 import           Utils
 
+import           Commands.Digest    (digest)
+
 import           Data.Char          (isDigit)
 import           Data.List          (isSuffixOf, maximumBy)
 import           Data.Maybe         (mapMaybe)
@@ -29,9 +31,11 @@ compareVersions a b = compare (splitVersion a) (splitVersion b)
 
 extractVersion ∷ FilePath -> Maybe String
 extractVersion name = 
-  case name =~ "([0-9]+(\\.[0-9]+)*)" ∷ [[String]] of
+  case name =~ "([0-9]+(\\.[0-9]+)+)" ∷ [[String]] of
     ((_:_:version:_):_) -> Just version
-    _                   -> Nothing
+    _ -> case name =~ "([0-9]+)" ∷ [[String]] of
+           ((_:_:version:_):_) -> Just version
+           _                   -> Nothing
 
 getHighestVersion ∷ FilePath -> IO (Maybe String)
 getHighestVersion dir = do
@@ -57,6 +61,7 @@ commitEbuild c = do
                     Just ver -> catEb ++ ": " ++ ver
                     Nothing  -> catEb ++ ": "
 
+  digest
   rawAndIgnore "git" [ "add", "." ]
   prevEditor <- lookupEnv "GIT_EDITOR"
   setEnv "GIT_EDITOR" "nano +0,-1 -w"
