@@ -1,5 +1,5 @@
 name: Haku
-version: 2.0.6.3
+version: 2.0.6.4
 license: QUADROBER
 
 build-type: Simple
@@ -79,6 +79,7 @@ Executable haku
       mtl,
       async,
       terminfo,
-      unliftio
+      unliftio,
+      regex-posix
   ghc-options:
     -Wall -threaded -rtsopts -with-rtsopts=-N
