@@ -17,23 +17,41 @@ import           System.Directory   (getCurrentDirectory, listDirectory)
 import           System.Environment (lookupEnv, setEnv, unsetEnv)
 import           System.FilePath    (isPathSeparator, takeBaseName, takeDirectory)
 
-splitVersion ∷ String -> [Int]
-splitVersion = map read ∘ splitOn '.' ∘ takeWhile (\c -> isDigit c || c == '.')
+splitVersion ∷ String -> [Either Int String]
+splitVersion = map classify ∘splitVersion' ∘takeWhile isVersionChar
+  where
+    isVersionChar c = isDigit c || c == '.' || c == '_' || c == '-'
+    classify s = if all isDigit s then Left (read s) else Right s
 
-splitOn ∷ Char -> String -> [String]
-splitOn delim s = case dropWhile (== delim) s of
+splitVersion' ∷ String -> [String]
+splitVersion' s = case dropWhile (== '.') s of
   "" -> []
-  s' -> w : splitOn delim s''
-    where (w, s'') = break (== delim) s'
+  s' -> w : splitVersion' s''
+    where (w, s'') = break (== '.') s'
+
+compareVersionComponents ∷ Either Int String -> Either Int String -> Ordering
+compareVersionComponents (Left a) (Left b)   = compare a b
+compareVersionComponents (Right a) (Right b) = compare a b
+compareVersionComponents (Left _) (Right _)  = LT  -- Numbers come before strings
+compareVersionComponents (Right _) (Left _)  = GT  -- Strings come after numbers
 
 compareVersions ∷ String -> String -> Ordering
-compareVersions a b = compare (splitVersion a) (splitVersion b)
+compareVersions a b = 
+  compareLists (splitVersion a) (splitVersion b)
+  where
+    compareLists [] [] = EQ
+    compareLists [] _  = LT
+    compareLists _  [] = GT
+    compareLists (x:xs) (y:ys) = 
+      case compareVersionComponents x y of
+        EQ  -> compareLists xs ys
+        res -> res
 
 extractVersion ∷ FilePath -> Maybe String
 extractVersion name = 
-  case name =~ "([0-9]+(\\.[0-9]+)+)" ∷ [[String]] of
+  case name =~ "-([0-9]+(\\.[0-9]+)*[a-z]?(-(pre|alpha|beta|rc|p)\\d*)?(_[a-z]+\\d*)?(-r\\d+)?" :: [[String]] of
     ((_:_:version:_):_) -> Just version
-    _ -> case name =~ "([0-9]+)" ∷ [[String]] of
+    _ -> case name =~ "-([0-9]+)" ∷ [[String]] of
            ((_:_:version:_):_) -> Just version
            _                   -> Nothing
 
@@ -41,12 +59,12 @@ getHighestVersion ∷ FilePath -> IO (Maybe String)
 getHighestVersion dir = do
   files <- listDirectory dir
   let ebuilds = filter (".ebuild" `isSuffixOf`) files
-      versions = mapMaybe (extractVersion ∘ takeBaseName) ebuilds
+      versions = mapMaybe (extractVersion ∘takeBaseName) ebuilds
   pure $ if null versions
-           then Nothing
-           else Just (maximumBy compareVersions versions)
+             then Nothing
+             else Just (maximumBy compareVersions versions)
 
-dropTailingPathSeparator :: FilePath -> FilePath
+dropTailingPathSeparator ∷ FilePath -> FilePath
 dropTailingPathSeparator path =
   reverse ∘ dropWhile isPathSeparator ∘ reverse $ path
 
