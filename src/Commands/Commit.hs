@@ -8,17 +8,15 @@ import           Utils
 import           Commands.Digest    (digest)
 
 import           Data.Char          (isDigit)
-import           Data.List          (isSuffixOf, maximumBy)
+import           Data.List          (isPrefixOf, isSuffixOf, maximumBy)
 import           Data.Maybe         (mapMaybe)
-
-import           Text.Regex.Posix   ((=~))
 
 import           System.Directory   (getCurrentDirectory, listDirectory)
 import           System.Environment (lookupEnv, setEnv, unsetEnv)
 import           System.FilePath    (isPathSeparator, takeBaseName, takeDirectory)
 
 splitVersion ∷ String -> [Either Int String]
-splitVersion = map classify ∘splitVersion' ∘takeWhile isVersionChar
+splitVersion = map classify ∘ splitVersion' ∘ takeWhile isVersionChar
   where
     isVersionChar c = isDigit c || c == '.' || c == '_' || c == '-'
     classify s = if all isDigit s then Left (read s) else Right s
@@ -47,13 +45,12 @@ compareVersions a b =
         EQ  -> compareLists xs ys
         res -> res
 
-extractVersion ∷ FilePath -> Maybe String
-extractVersion name = 
-  case name =~ "-([0-9]+(\\.[0-9]+)*[a-z]?(-(pre|alpha|beta|rc|p)\\d*)?(_[a-z]+\\d*)?(-r\\d+)?" :: [[String]] of
-    ((_:_:version:_):_) -> Just version
-    _ -> case name =~ "-([0-9]+)" ∷ [[String]] of
-           ((_:_:version:_):_) -> Just version
-           _                   -> Nothing
+extractVersion ∷ String -> Maybe String
+extractVersion = fmap (drop 1) ∘ stripPrefix "-" ∘ reverse ∘ takeWhile (/= '-') ∘ reverse
+  where
+    stripPrefix prefix str
+      | prefix `isPrefixOf` str = Just (drop (length prefix) str)
+      | otherwise = Nothing
 
 getHighestVersion ∷ FilePath -> IO (Maybe String)
 getHighestVersion dir = do
