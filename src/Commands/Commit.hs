@@ -80,7 +80,8 @@ commitEbuild c = do
   rawAndIgnore "git" [ "add", "." ]
   prevEditor <- lookupEnv "GIT_EDITOR"
   setEnv "GIT_EDITOR" "nano +0,-1 -w"
-  rawAndIgnore "git" [ "commit", "-asS", "-m", commitMsg, "-e" ]
+  rawAndIgnore "git" [ "commit", "-asS"
+                     , "-F", "-", "-e", commitMsg ++ "\n" ]
   maybe 
     (unsetEnv "GIT_EDITOR") 
     (\ed -> setEnv "GIT_EDITOR" ed)
