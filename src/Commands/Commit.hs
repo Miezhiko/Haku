@@ -100,7 +100,7 @@ gitCommitWithEditor commitMsg = do
   writeFile tmpPath commitMsg
 
   Exception.handle ignoreGitAbort $
-    callProcess "git" ["commit", "-a", "-S", "-e", "-F", tmpPath]
+    callProcess "git" ["commit", "-a", "-s", "-S", "-e", "-F", tmpPath]
 
   shouldAbort <- checkEmptyMessage tmpPath
   when shouldAbort $ do
