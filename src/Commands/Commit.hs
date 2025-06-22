@@ -14,61 +14,35 @@ import           Commands.Digest    (digest)
 import           Control.Exception  (IOException, catch)
 import qualified Control.Exception  as Exception
 
-import           Data.Char          (isDigit)
-import           Data.List          (isPrefixOf, isSuffixOf, maximumBy)
+import           Data.List          (isPrefixOf, isSuffixOf)
 import           Data.Maybe         (mapMaybe)
 
 import           System.Directory   (doesFileExist, getCurrentDirectory, getTemporaryDirectory,
                                      listDirectory, removeFile)
 import           System.Environment (lookupEnv, setEnv, unsetEnv)
-import           System.FilePath    (isPathSeparator, takeBaseName, takeDirectory, (</>))
+import           System.FilePath    (isPathSeparator, takeBaseName, takeDirectory, takeExtension,
+                                     (</>))
 import           System.Process     (callProcess)
 
-splitVersion ∷ String -> [Either Int String]
-splitVersion = map classify ∘ splitVersion' ∘ takeWhile isVersionChar
-  where
-    isVersionChar c = isDigit c || c == '.' || c == '_' || c == '-'
-    classify s = if all isDigit s then Left (read s) else Right s
-
-splitVersion' ∷ String -> [String]
-splitVersion' s = case dropWhile (== '.') s of
-  "" -> []
-  s' -> w : splitVersion' s''
-    where (w, s'') = break (== '.') s'
-
-compareVersionComponents ∷ Either Int String -> Either Int String -> Ordering
-compareVersionComponents (Left a) (Left b)   = compare a b
-compareVersionComponents (Right a) (Right b) = compare a b
-compareVersionComponents (Left _) (Right _)  = LT  -- Numbers come before strings
-compareVersionComponents (Right _) (Left _)  = GT  -- Strings come after numbers
-
-compareVersions ∷ String -> String -> Ordering
-compareVersions a b = 
-  compareLists (splitVersion a) (splitVersion b)
-  where
-    compareLists [] [] = EQ
-    compareLists [] _  = LT
-    compareLists _  [] = GT
-    compareLists (x:xs) (y:ys) = 
-      case compareVersionComponents x y of
-        EQ  -> compareLists xs ys
-        res -> res
-
 extractVersion ∷ String -> Maybe String
-extractVersion = fmap (drop 1) ∘ stripPrefix "-" ∘ reverse ∘ takeWhile (/= '-') ∘ reverse
-  where
-    stripPrefix prefix str
-      | prefix `isPrefixOf` str = Just (drop (length prefix) str)
-      | otherwise = Nothing
+extractVersion filename = 
+    if takeExtension filename == ".ebuild"
+    then Just $ takeBaseName filename
+    else Nothing
 
-getHighestVersion ∷ FilePath -> IO (Maybe String)
+parseVersionSafe ∷ String -> Maybe Version
+parseVersionSafe s = case parseVersion s of
+    Right v -> Just v
+    Left _  -> Nothing
+
+getHighestVersion ∷ FilePath -> IO (Maybe Version)
 getHighestVersion dir = do
-  files <- listDirectory dir
-  let ebuilds = filter (".ebuild" `isSuffixOf`) files
-      versions = mapMaybe (extractVersion ∘takeBaseName) ebuilds
-  pure $ if null versions
-             then Nothing
-             else Just (maximumBy compareVersions versions)
+    files <- listDirectory dir
+    let ebuilds = filter (".ebuild" `isSuffixOf`) files
+        versions = mapMaybe (extractVersion >=> parseVersionSafe) ebuilds
+    pure $ if null versions
+           then Nothing
+           else Just (maximum versions)
 
 dropTailingPathSeparator ∷ FilePath -> FilePath
 dropTailingPathSeparator path =
@@ -121,7 +95,7 @@ commitEbuild c = do
 
   highestVersion <- getHighestVersion c
   let commitMsg = case highestVersion of
-                    Just ver -> catEb ++ ": " ++ ver
+                    Just ver -> catEb ++ ": " ++ showVersion ver
                     Nothing  -> catEb ++ ": "
 
   digest
