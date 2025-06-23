@@ -26,9 +26,18 @@ import           System.Process     (callProcess)
 
 extractVersion ∷ String -> Maybe String
 extractVersion filename = 
-    if takeExtension filename == ".ebuild"
-    then Just $ takeBaseName filename
+  if takeExtension filename == ".ebuild"
+    then let base = takeBaseName filename
+          in case reverse (splitBase '-' base) of
+              (ver:_) -> Just ver
+              []      -> Nothing
     else Nothing
+ where splitBase ∷ Char -> String -> [String]
+       splitBase delimiter = foldr f [""]
+          where
+            f c [] = [[c]]
+            f c (x:xs) | c == delimiter = "":x:xs
+            f c (x:xs) = (c:x):xs
 
 parseVersionSafe ∷ String -> Maybe Version
 parseVersionSafe s = case parseVersion s of
