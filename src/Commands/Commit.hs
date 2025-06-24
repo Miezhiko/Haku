@@ -13,7 +13,7 @@ import           Commands.Digest    (digest)
 
 import           Control.Exception  (IOException, catch)
 
-import           Data.Char          (isDigit, isSpace)
+import           Data.Char          (isDigit)
 import           Data.List          (isPrefixOf, isSuffixOf, maximumBy)
 import           Data.Maybe         (mapMaybe)
 
@@ -21,7 +21,7 @@ import           System.Directory   (doesFileExist, getCurrentDirectory, getTemp
                                      listDirectory, removeFile)
 import           System.Environment (lookupEnv, setEnv, unsetEnv)
 import           System.FilePath    (isPathSeparator, takeBaseName, takeDirectory, (</>))
-import           System.Process
+import           System.Process     (callProcess)
 
 splitVersion ∷ String -> [Either Int String]
 splitVersion = map classify ∘ splitVersion' ∘ takeWhile isVersionChar
@@ -73,45 +73,33 @@ dropTailingPathSeparator ∷ FilePath -> FilePath
 dropTailingPathSeparator path =
   reverse ∘ dropWhile isPathSeparator ∘ reverse $ path
 
-resetFailedCommit ∷ IO ()
-resetFailedCommit = do
-  (_, _, _, ph) <- createProcess (proc "git" ["reset", "--mixed", "HEAD~1"])
-  _ <- waitForProcess ph
-  pure ()
-
-isEffectivelyEmpty ∷ String -> Bool
-isEffectivelyEmpty content =
-  let lines' = filter (not ∘ null) (lines content)  -- Remove empty lines
-      isComment = ("#" `isPrefixOf`) . dropWhile isSpace
-  in null lines' || all isComment lines'
-
-readFinalMessage ∷ FilePath -> IO (Maybe String)
-readFinalMessage path = do
+checkEmptyMessage ∷ FilePath -> IO Bool
+checkEmptyMessage path = do
   exists <- doesFileExist path
-  if exists then Just <$> readFile path
-            else pure Nothing
+  if not exists
+    then pure True  -- File was deleted, consider empty
+    else do
+      content <- readFile path
+      let messageLines = filter (not ∘ null) (lines content)  -- Remove empty lines
+      pure $ null messageLines || all isCommented messageLines
+  where isCommented line = "#" `isPrefixOf` trim line
 
 gitCommitWithEditor ∷ String -> IO ()
 gitCommitWithEditor commitMsg = do
   tmpDir <- getTemporaryDirectory
-  let tmpPath = tmpDir </> "GIT_COMMIT_MSG"
+  let tmpPath = tmpDir </> "COMMIT_MSG"
+
   writeFile tmpPath commitMsg
 
-  (_, _, _, ph) <- createProcess
-                    (proc "git" ["commit", "-a", "-S", "-e", "-F", tmpPath])
-  _exitCode <- waitForProcess ph
+  callProcess "git" ["commit", "-a", "-S", "-e", "-F", tmpPath]
 
-  finalMessage <- readFinalMessage tmpPath
+  shouldAbort <- checkEmptyMessage tmpPath
 
-  case finalMessage of
-    Nothing -> putStrLn "Commit aborted (no message file)"
-    Just msg
-      | isEffectivelyEmpty msg -> do
-          putStrLn "Commit aborted (empty message)"
-          resetFailedCommit
-      | otherwise -> return ()  -- Commit succeeded
+  when shouldAbort $ do
+    putStrLn "Aborting commit due to empty commit message"
+    callProcess "git" ["reset", "--mixed", "HEAD~1"]
 
-  removeFile tmpPath `catch` \(_ ∷ IOException) -> return ()
+  removeFile tmpPath `catch` \(_ ∷ IOException) -> pure ()
 
 commitEbuild ∷ String -> IO ()
 commitEbuild c = do
