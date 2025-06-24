@@ -94,20 +94,25 @@ resetGitCommit = Exception.handle ignoreResetError $ do
 
 gitCommitWithEditor ∷ String -> IO ()
 gitCommitWithEditor commitMsg = do
+  tmpDir <- getTemporaryDirectory
+  let tmpPath = tmpDir </> "COMMIT_MSG"
+
+  writeFile tmpPath commitMsg
+
   Exception.handle ignoreGitAbort $
-    withSystemTempFile "COMMIT_MSG" $ \tmpPath tmpHandle -> do
-      hPutStr tmpHandle commitMsg
-      hClose tmpHandle
-      callProcess "git" ["commit", "-a", "-S", "-e", "-F", tmpPath]
+    callProcess "git" ["commit", "-a", "-S", "-e", "-F", tmpPath]
 
-      shouldAbort <- checkEmptyMessage tmpPath
+  shouldAbort <- checkEmptyMessage tmpPath
 
-      when shouldAbort $ do
-        putStrLn "Aborting commit due to empty commit message"
-        resetGitCommit
-     where
-      ignoreGitAbort ∷ Exception.IOException -> IO ()
-      ignoreGitAbort _ = putStrLn "Commit aborted (empty message)"
+  when shouldAbort $ do
+    putStrLn "Aborting commit due to empty commit message"
+    resetGitCommit
+
+  removeFile tmpPath `catch` \(_ ∷ IOException) -> pure ()
+
+ where
+  ignoreGitAbort :: Exception.IOException -> IO ()
+  ignoreGitAbort _ = putStrLn "Commit aborted"
 
 commitEbuild ∷ String -> IO ()
 commitEbuild c = do
