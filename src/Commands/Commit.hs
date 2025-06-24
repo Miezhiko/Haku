@@ -12,6 +12,7 @@ import           Utils
 import           Commands.Digest    (digest)
 
 import           Control.Exception  (IOException, catch)
+import qualified Control.Exception  as Exception
 
 import           Data.Char          (isDigit)
 import           Data.List          (isPrefixOf, isSuffixOf, maximumBy)
@@ -84,22 +85,29 @@ checkEmptyMessage path = do
       pure $ null messageLines || all isCommented messageLines
   where isCommented line = "#" `isPrefixOf` trim line
 
+resetGitCommit ∷ IO ()
+resetGitCommit = Exception.handle ignoreResetError $ do
+  callProcess "git" ["reset", "--mixed", "HEAD~1"]
+  where
+    ignoreResetError ∷ IOException -> IO ()
+    ignoreResetError _ = pure ()
+
 gitCommitWithEditor ∷ String -> IO ()
 gitCommitWithEditor commitMsg = do
-  tmpDir <- getTemporaryDirectory
-  let tmpPath = tmpDir </> "COMMIT_MSG"
+  Exception.handle ignoreGitAbort $
+    withSystemTempFile "COMMIT_MSG" $ \tmpPath tmpHandle -> do
+      hPutStr tmpHandle commitMsg
+      hClose tmpHandle
+      callProcess "git" ["commit", "-a", "-S", "-e", "-F", tmpPath]
 
-  writeFile tmpPath commitMsg
+      shouldAbort <- checkEmptyMessage tmpPath
 
-  callProcess "git" ["commit", "-a", "-S", "-e", "-F", tmpPath]
-
-  shouldAbort <- checkEmptyMessage tmpPath
-
-  when shouldAbort $ do
-    putStrLn "Aborting commit due to empty commit message"
-    callProcess "git" ["reset", "--mixed", "HEAD~1"]
-
-  removeFile tmpPath `catch` \(_ ∷ IOException) -> pure ()
+      when shouldAbort $ do
+        putStrLn "Aborting commit due to empty commit message"
+        resetGitCommit
+     where
+      ignoreGitAbort ∷ Exception.IOException -> IO ()
+      ignoreGitAbort _ = putStrLn "Commit aborted (empty message)"
 
 commitEbuild ∷ String -> IO ()
 commitEbuild c = do
