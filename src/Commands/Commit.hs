@@ -110,7 +110,7 @@ commitEbuild c = do
   highestVersion <- getHighestVersion c
   let commitMsg = case highestVersion of
                     Just ver -> catEb ++ ": " ++ ver
-                    Nothing  -> catEb ++ ": gregregre"
+                    Nothing  -> catEb ++ ": "
 
   digest
   rawAndIgnore "git" [ "add", "." ]
