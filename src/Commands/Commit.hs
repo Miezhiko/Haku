@@ -1,3 +1,7 @@
+{-# LANGUAGE
+    ScopedTypeVariables
+  #-}
+
 module Commands.Commit
   ( commitCmd
   ) where
@@ -7,13 +11,17 @@ import           Utils
 
 import           Commands.Digest    (digest)
 
+import           Control.Exception  (IOException, catch)
+
 import           Data.Char          (isDigit)
 import           Data.List          (isPrefixOf, isSuffixOf, maximumBy)
 import           Data.Maybe         (mapMaybe)
 
-import           System.Directory   (getCurrentDirectory, listDirectory)
+import           System.Directory   (doesFileExist, getCurrentDirectory, getTemporaryDirectory,
+                                     listDirectory, removeFile)
 import           System.Environment (lookupEnv, setEnv, unsetEnv)
-import           System.FilePath    (isPathSeparator, takeBaseName, takeDirectory)
+import           System.FilePath    (isPathSeparator, takeBaseName, takeDirectory, (</>))
+import           System.Process     (callProcess)
 
 splitVersion ∷ String -> [Either Int String]
 splitVersion = map classify ∘ splitVersion' ∘ takeWhile isVersionChar
@@ -65,6 +73,34 @@ dropTailingPathSeparator ∷ FilePath -> FilePath
 dropTailingPathSeparator path =
   reverse ∘ dropWhile isPathSeparator ∘ reverse $ path
 
+checkEmptyMessage ∷ FilePath -> IO Bool
+checkEmptyMessage path = do
+  exists <- doesFileExist path
+  if not exists
+    then pure True  -- File was deleted, consider empty
+    else do
+      content <- readFile path
+      let messageLines = filter (not ∘ null) (lines content)  -- Remove empty lines
+      pure $ null messageLines || all isCommented messageLines
+  where isCommented line = "#" `isPrefixOf` trim line
+
+gitCommitWithEditor ∷ String -> IO ()
+gitCommitWithEditor commitMsg = do
+  tmpDir <- getTemporaryDirectory
+  let tmpPath = tmpDir </> "COMMIT_MSG"
+
+  writeFile tmpPath commitMsg
+
+  callProcess "git" ["commit", "-a", "-S", "-e", "-F", tmpPath]
+
+  shouldAbort <- checkEmptyMessage tmpPath
+
+  when shouldAbort $ do
+    putStrLn "Aborting commit due to empty commit message"
+    callProcess "git" ["reset", "--mixed", "HEAD~1"]
+
+  removeFile tmpPath `catch` \(_ ∷ IOException) -> pure ()
+
 commitEbuild ∷ String -> IO ()
 commitEbuild c = do
   let ebName  = takeBaseName c
@@ -74,15 +110,14 @@ commitEbuild c = do
   highestVersion <- getHighestVersion c
   let commitMsg = case highestVersion of
                     Just ver -> catEb ++ ": " ++ ver
-                    Nothing  -> catEb ++ ": "
+                    Nothing  -> catEb ++ ": gregregre"
 
   digest
   rawAndIgnore "git" [ "add", "." ]
   prevEditor <- lookupEnv "GIT_EDITOR"
   setEnv "GIT_EDITOR" "nano +0,-1 -w"
-  rawAndIgnore "git" [ "commit", "-asS"
-                     , "-F", "-", "-e", commitMsg ++ "\n" ]
-  maybe 
+  gitCommitWithEditor $ commitMsg ++ "\n"
+  maybe
     (unsetEnv "GIT_EDITOR") 
     (\ed -> setEnv "GIT_EDITOR" ed)
     prevEditor
