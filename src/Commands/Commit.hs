@@ -81,16 +81,16 @@ checkEmptyMessage path = do
     then pure True  -- File was deleted, consider empty
     else do
       content <- readFile path
-      let messageLines = filter (not ∘ null) (lines content)  -- Remove empty lines
+      let messageLines = filter (not ∘ null) (lines content)
       pure $ null messageLines || all isCommented messageLines
-  where isCommented line = "#" `isPrefixOf` trim line
+  where isCommented []   = True
+        isCommented line = "#" `isPrefixOf` trim line
 
 resetGitCommit ∷ IO ()
 resetGitCommit = Exception.handle ignoreResetError $ do
   callProcess "git" ["reset", "--mixed", "HEAD~1"]
-  where
-    ignoreResetError ∷ IOException -> IO ()
-    ignoreResetError _ = pure ()
+  where ignoreResetError ∷ IOException -> IO ()
+        ignoreResetError _ = pure ()
 
 gitCommitWithEditor ∷ String -> IO ()
 gitCommitWithEditor commitMsg = do
@@ -103,7 +103,6 @@ gitCommitWithEditor commitMsg = do
     callProcess "git" ["commit", "-a", "-S", "-e", "-F", tmpPath]
 
   shouldAbort <- checkEmptyMessage tmpPath
-
   when shouldAbort $ do
     putStrLn "Aborting commit due to empty commit message"
     resetGitCommit
