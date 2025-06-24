@@ -137,7 +137,7 @@ commitEbuild c = do
  
 commit ∷ IO ()
 commit = getCurrentDirectory >>= commitEbuild
- 
+
 commitCmd ∷ Command String m
 commitCmd = Command { command      = ["commit"]
                     , deps         = []
