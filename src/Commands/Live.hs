@@ -33,11 +33,11 @@ data RepoInfo
 
 data LiveState
   = LiveState
-      { liveVerbose   :: Bool
-      , livePreview   :: Bool
-      , liveForce     :: Bool
-      , liveDownload  :: Bool
-      , liveAsk       :: Bool
+      { liveVerbose  :: Bool
+      , livePreview  :: Bool
+      , liveForce    :: Bool
+      , liveDownload :: Bool
+      , liveAsk      :: Bool
       }
 
 repoParser ∷ Parser RepoInfo

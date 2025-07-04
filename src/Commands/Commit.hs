@@ -14,7 +14,7 @@ import           Commands.Digest    (digest)
 import           Control.Exception  (IOException, catch)
 import qualified Control.Exception  as Exception
 
-import           Data.List          (isPrefixOf, isSuffixOf)
+import           Data.List          (isPrefixOf, isSuffixOf, intercalate)
 import           Data.Maybe         (mapMaybe)
 
 import           System.Directory   (doesFileExist, getCurrentDirectory, getTemporaryDirectory,
@@ -25,19 +25,22 @@ import           System.FilePath    (isPathSeparator, takeBaseName, takeDirector
 import           System.Process     (callProcess)
 
 extractVersion ∷ String -> Maybe String
-extractVersion filename = 
+extractVersion filename =
   if takeExtension filename == ".ebuild"
-    then let base = takeBaseName filename
-          in case reverse (splitBase '-' base) of
-              (ver:_) -> Just ver
-              []      -> Nothing
+    then let base  = takeBaseName filename
+             parts = splitBase '-' base
+          in case parts of
+               (_:rest) -> Just (intercalate "-" rest)
+               _        -> Nothing
     else Nothing
- where splitBase ∷ Char -> String -> [String]
-       splitBase delimiter = foldr f [""]
-          where
-            f c [] = [[c]]
-            f c (x:xs) | c == delimiter = "":x:xs
-            f c (x:xs) = (c:x):xs
+  where
+    splitBase ∷ Char -> String -> [String]
+    splitBase delimiter = foldr f [""]
+      where
+        f c [] = [[c]]
+        f c (x:xs)
+          | c == delimiter = "":x:xs
+          | otherwise      = (c:x):xs
 
 parseVersionSafe ∷ String -> Maybe Version
 parseVersionSafe s = case parseVersion s of
@@ -113,10 +116,10 @@ commitEbuild c = do
   setEnv "GIT_EDITOR" "nano +0,-1 -w"
   gitCommitWithEditor $ commitMsg ++ "\n"
   maybe
-    (unsetEnv "GIT_EDITOR") 
+    (unsetEnv "GIT_EDITOR")
     (\ed -> setEnv "GIT_EDITOR" ed)
     prevEditor
- 
+
 commit ∷ IO ()
 commit = getCurrentDirectory >>= commitEbuild
 
