@@ -14,7 +14,7 @@ import           Commands.Digest    (digest)
 import           Control.Exception  (IOException, catch)
 import qualified Control.Exception  as Exception
 
-import           Data.List          (isPrefixOf, isSuffixOf, intercalate)
+import           Data.List          (isPrefixOf, isSuffixOf)
 import           Data.Maybe         (mapMaybe)
 
 import           System.Directory   (doesFileExist, getCurrentDirectory, getTemporaryDirectory,
@@ -29,9 +29,9 @@ extractVersion filename =
   if takeExtension filename == ".ebuild"
     then let base  = takeBaseName filename
              parts = splitBase '-' base
-          in case parts of
-               (_:rest) -> Just (intercalate "-" rest)
-               _        -> Nothing
+          in if null parts
+             then Nothing
+             else Just (last parts)
     else Nothing
   where
     splitBase ∷ Char -> String -> [String]
