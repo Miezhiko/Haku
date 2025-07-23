@@ -14,7 +14,8 @@ import           Commands.Digest    (digest)
 import           Control.Exception  (IOException, catch)
 import qualified Control.Exception  as Exception
 
-import           Data.List          (isPrefixOf, isSuffixOf)
+import           Data.Char          (isDigit)
+import           Data.List          (intercalate, isPrefixOf, isSuffixOf)
 import           Data.Maybe         (mapMaybe)
 
 import           System.Directory   (doesFileExist, getCurrentDirectory, getTemporaryDirectory,
@@ -29,10 +30,17 @@ extractVersion filename
   | takeExtension filename /= ".ebuild" = Nothing
   | otherwise =
       let base = takeBaseName filename
-          (_, ver) = break (== '-') (reverse base)
-      in case ver of
-           (_:rest) -> Just (reverse rest)
-           _        -> Nothing
+          parts = splitOn '-' base
+          findVersion [] = Nothing
+          findVersion (x:xs)
+            | any isDigit x = Just (intercalate "-" (x:xs))
+            | otherwise     = findVersion xs
+      in findVersion parts
+  where
+    splitOn ∷ Char -> String -> [String]
+    splitOn c s = case break (== c) s of
+                    (before, [])      -> [before]
+                    (before, _:after) -> before : splitOn c after
 
 parseVersionSafe ∷ String -> Maybe Version
 parseVersionSafe s = case parseVersion s of
