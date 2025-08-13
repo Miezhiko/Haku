@@ -194,7 +194,7 @@ smartLiveRebuild pc package (ver:_) verbose dl = -- TODO: many versions
                       in doesFileExist repoFilePath
                     Left _ -> pure False) xs
                 >>= \case
-                  []     -> do putStrLn "There are several EGIT_SRC but none downloaded"
+                  []     -> do putStrLn $ show package ++ ": There are several EGIT_SRC but none downloaded"
                                pure $ Just (package, [ver])
                   (rp:_) -> checkForRepository (package, [ver])
                                                rp (eGit_branch eb)
