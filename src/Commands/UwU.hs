@@ -43,6 +43,7 @@ runUpgradeScriptsRoot uws hlog = do
                           , "--backtrack=100"
                           , "--with-bdeps=y"
                           , "--quiet-build=n"
+                          , "--exclude=nvidia-drivers"
                           ] ++ ["-av" | uwuAsk uws]
                             ++ ["-pv" | uwuPretend uws]
 
@@ -60,6 +61,7 @@ runUpgradeScriptsSudo uws hlog = do
                         , "--backtrack=100"
                         , "--with-bdeps=y"
                         , "--quiet-build=n"
+                        , "--exclude=nvidia-drivers"
                         ] ++ ["-av" | uwuAsk uws]
                           ++ ["-pv" | uwuPretend uws]
 
