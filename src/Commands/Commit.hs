@@ -110,15 +110,16 @@ commitEbuild c = do
                     Just ver -> catEb ++ ": " ++ showVersion ver
                     Nothing  -> catEb ++ ": "
 
-  digest
-  rawAndIgnore "git" [ "add", "." ]
-  prevEditor <- lookupEnv "GIT_EDITOR"
-  setEnv "GIT_EDITOR" "nano +0,-1 -w"
-  gitCommitWithEditor $ commitMsg ++ "\n"
-  maybe
-    (unsetEnv "GIT_EDITOR")
-    (\ed -> setEnv "GIT_EDITOR" ed)
-    prevEditor
+  digestSuccess <- digest
+  when digestSuccess $ do
+    rawAndIgnore "git" [ "add", "." ]
+    prevEditor <- lookupEnv "GIT_EDITOR"
+    setEnv "GIT_EDITOR" "nano +0,-1 -w"
+    gitCommitWithEditor $ commitMsg ++ "\n"
+    maybe
+      (unsetEnv "GIT_EDITOR")
+      (\ed -> setEnv "GIT_EDITOR" ed)
+      prevEditor
 
 commit ∷ IO ()
 commit = getCurrentDirectory >>= commitEbuild
