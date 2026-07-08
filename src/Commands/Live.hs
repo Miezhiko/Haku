@@ -178,27 +178,30 @@ smartLiveRebuild pc package (ver:_) verbose dl = -- TODO: many versions
     \case Nothing -> do putStrLn $ show package ++ ": Can't find ebuild"
                         pure $ Just (package, [ver])
           Just eb ->
-            case eGit_uri eb of
-              []     -> do when verbose $ putStrLn $ show package ++ ": Can't find EGIT_SRC"
-                           pure Nothing -- not git?
-              [rp]   -> checkForRepository (package, [ver])
-                                           rp (eGit_branch eb)
-                                           treePath dl
-              xs     ->
-                filterM (\rp ->
-                  case parse repoParser "" rp of
-                    Right (RepoInfo _ rOwner rName) ->
-                      let repoPath     = treePath </> "distfiles/git3-src"
-                                                  </> rOwner ++ "_" ++ rName ++ ".git"
-                          repoFilePath = repoPath </> "FETCH_HEAD"
-                      in doesFileExist repoFilePath
-                    Left _ -> pure False) xs
-                >>= \case
-                  []     -> do putStrLn $ show package ++ ": There are several EGIT_SRC but none downloaded"
-                               pure $ Just (package, [ver])
-                  (rp:_) -> checkForRepository (package, [ver])
-                                               rp (eGit_branch eb)
-                                               treePath dl
+            case eGit_commit eb of
+              (_:_)  -> do when verbose $ putStrLn $ show package ++ ": EGIT_COMMIT is set, skipping"
+                           pure Nothing
+              []     -> case eGit_uri eb of
+                          []     -> do when verbose $ putStrLn $ show package ++ ": Can't find EGIT_SRC"
+                                       pure Nothing -- not git?
+                          [rp]   -> checkForRepository (package, [ver])
+                                                       rp (eGit_branch eb)
+                                                       treePath dl
+                          xs     ->
+                            filterM (\rp ->
+                              case parse repoParser "" rp of
+                                Right (RepoInfo _ rOwner rName) ->
+                                  let repoPath     = treePath </> "distfiles/git3-src"
+                                                              </> rOwner ++ "_" ++ rName ++ ".git"
+                                      repoFilePath = repoPath </> "FETCH_HEAD"
+                                  in doesFileExist repoFilePath
+                                Left _ -> pure False) xs
+                            >>= \case
+                              []     -> do putStrLn $ show package ++ ": There are several EGIT_SRC but none downloaded"
+                                           pure $ Just (package, [ver])
+                              (rp:_) -> checkForRepository (package, [ver])
+                                                           rp (eGit_branch eb)
+                                                           treePath dl
  where treePath ∷ FilePath
        treePath = pcMakeConf pc M.! "PORTDIR"
 
