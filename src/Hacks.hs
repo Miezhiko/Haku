@@ -12,6 +12,8 @@ import           Data.List
 import           Data.List.Split
 import qualified Data.Map        as M
 
+import           System.FilePath (isPathSeparator)
+
 -- black bird operator
 -- it's a book about combinatory logic that names combinators after birds
 (.:) ∷ (α -> β) -> (γ -> δ -> α) -> γ -> δ -> β
@@ -32,6 +34,9 @@ dropSpaceTail maybeStuff (χ:xs)
 
 trim ∷ String -> String
 trim xs = dropSpaceTail "" $ lstrip xs
+
+dropTailingPathSeparator ∷ FilePath -> FilePath
+dropTailingPathSeparator = reverse ∘ dropWhile isPathSeparator ∘ reverse
 
 readStringMap ∷ [String] -> M.Map String String
 readStringMap xs = M.fromListWith (\old new -> new ++ " " ++ old)

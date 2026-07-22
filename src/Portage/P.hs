@@ -95,7 +95,7 @@ readPV        =  do  cat         <-  readCat
                      void $ char '/'
                      (pkg,mver)  <-  readPkgAndVer
                      case mver of
-                       Nothing  ->  error "readPV: version expected"
+                       Nothing  ->  fail "readPV: version expected"
                        Just ver ->  pure (PV cat pkg ver)
 
 parseP        ∷ [Char] -> Either ParseError P
@@ -108,7 +108,7 @@ readP         =  do  cat         <-  readCat
                      (pkg,mver)  <-  readPkgAndVer
                      case mver of
                        Nothing ->  pure (P cat pkg)
-                       Just _  ->  error "readCatPkg: unexpected version"
+                       Just _  ->  fail "readCatPkg: unexpected version"
 
 readCat        ∷  CharParser st Category
 readPkgAndVer  ∷  CharParser st (String, Maybe Version)

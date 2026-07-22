@@ -38,10 +38,6 @@ data Ebuild
 removeJunk ∷ String -> String
 removeJunk xs = [ x | x <- xs, x /= '\"' ]
 
-stringSeq ∷ String -> b -> b
-stringSeq []      c = c
-stringSeq (_:xs)  c = stringSeq xs c
-
 varParser ∷ Parser String
 varParser = do
   _       <- char '$'

@@ -9,6 +9,8 @@ module Commands.Live
 import           Types
 import           Utils
 
+import           Portage.Config      (resolveDistDir)
+
 import           Data.Foldable       (for_)
 import           Data.List
 import           Data.List.Split     (splitOn)
@@ -22,7 +24,6 @@ import           Text.Parsec.String  (Parser)
 import           System.Console.ANSI
 import           System.Directory
 import           System.FilePath
-import           System.Posix.User   (getRealUserID)
 
 data RepoInfo
   = RepoInfo
@@ -74,18 +75,17 @@ showLivePackage (package, vv) = do
   setSGR [ Reset ]
   putStrLn []
 
-{- HLINT ignore "Redundant <$>" -}
 liveRebuild ∷ [(Package, [PackageVersion])]
            -> Bool
            -> IO ()
-liveRebuild pvv a = (== 0) <$> getRealUserID >>= \root ->
-  if root
-    then rawAndIgnore "emerge" ("-v" :(["-a" | a] ++ packagesList))
-    else hasSudo $ rawAndIgnore "sudo" ("emerge" : ("-v" : (["-a" | a] ++ packagesList)))
- where getOneVersion ∷ [PackageVersion] -> String
-       getOneVersion []    = []
-       getOneVersion [pv]  = show (pvVersion pv)
-       getOneVersion (x:_) = getOneVersion [x]
+liveRebuild pvv a = isRoot (rawAndIgnore "emerge" opts)
+                           (rawAndIgnore "sudo" ("emerge" : opts))
+ where opts ∷ [String]
+       opts = "-v" : (["-a" | a] ++ packagesList)
+
+       getOneVersion ∷ [PackageVersion] -> String
+       getOneVersion []     = []
+       getOneVersion (pv:_) = show (pvVersion pv)
 
        packagesList ∷ [String]
        packagesList = map (\(p, vv) ->
@@ -136,11 +136,11 @@ checkForRepository' ∷ String -- repo owner
                    -> String -- repo name
                    -> (Package, [PackageVersion])
                    -> (String, [String])
-                   -> FilePath -- tree path
+                   -> FilePath -- DISTDIR
                    -> Bool     -- download
                    -> IO (Maybe (Package, [PackageVersion]))
-checkForRepository' rOwner rName (p, lv) (repo, mbBranch) treePath dl =
-  let repoPath        = treePath </> "distfiles/git3-src" </> rOwner ++ "_" ++ rName ++ ".git"
+checkForRepository' rOwner rName (p, lv) (repo, mbBranch) distDir dl =
+  let repoPath        = distDir </> "git3-src" </> rOwner ++ "_" ++ rName ++ ".git"
       repoFilePath    = repoPath </> "FETCH_HEAD"
   in doesFileExist repoFilePath >>=
       \case False -> do putStrLn $ show p ++ ": not downloaded on " ++ repoFilePath
@@ -158,22 +158,23 @@ checkForRepository ∷ (Package, [PackageVersion])
                   -> FilePath
                   -> Bool     -- download
                   -> IO (Maybe (Package, [PackageVersion]))
-checkForRepository (p, lv) repo mbBranch treePath dl = do
+checkForRepository (p, lv) repo mbBranch distDir dl = do
   case parse repoParser "" repo of
     Right (RepoInfo _ repoOwner repoName) ->
-      checkForRepository' repoOwner repoName (p, lv) (repo, mbBranch) treePath dl
+      checkForRepository' repoOwner repoName (p, lv) (repo, mbBranch) distDir dl
     Left _ -> do
       putStrLn $ show p ++ ": ERROR ON PARSING: " ++ repo
       pure Nothing
 
 smartLiveRebuild ∷ PortageConfig
+                -> FilePath         -- DISTDIR
                 -> Package
                 -> [PackageVersion]
                 -> Bool             -- verbose
                 -> Bool             -- download
                 -> IO (Maybe (Package, [PackageVersion]))
-smartLiveRebuild _ _ [] _ _                    = pure Nothing
-smartLiveRebuild pc package (ver:_) verbose dl = -- TODO: many versions
+smartLiveRebuild _ _ _ [] _ _                          = pure Nothing
+smartLiveRebuild pc distDir package (ver:_) verbose dl = -- TODO: many versions
   findVersionedEbuild pc package ver >>=
     \case Nothing -> do putStrLn $ show package ++ ": Can't find ebuild"
                         pure $ Just (package, [ver])
@@ -186,13 +187,13 @@ smartLiveRebuild pc package (ver:_) verbose dl = -- TODO: many versions
                                        pure Nothing -- not git?
                           [rp]   -> checkForRepository (package, [ver])
                                                        rp (eGit_branch eb)
-                                                       treePath dl
+                                                       distDir dl
                           xs     ->
                             filterM (\rp ->
                               case parse repoParser "" rp of
                                 Right (RepoInfo _ rOwner rName) ->
-                                  let repoPath     = treePath </> "distfiles/git3-src"
-                                                              </> rOwner ++ "_" ++ rName ++ ".git"
+                                  let repoPath     = distDir </> "git3-src"
+                                                             </> rOwner ++ "_" ++ rName ++ ".git"
                                       repoFilePath = repoPath </> "FETCH_HEAD"
                                   in doesFileExist repoFilePath
                                 Left _ -> pure False) xs
@@ -201,15 +202,14 @@ smartLiveRebuild pc package (ver:_) verbose dl = -- TODO: many versions
                                            pure $ Just (package, [ver])
                               (rp:_) -> checkForRepository (package, [ver])
                                                            rp (eGit_branch eb)
-                                                           treePath dl
- where treePath ∷ FilePath
-       treePath = pcMakeConf pc M.! "PORTDIR"
+                                                           distDir dl
 
-liveUpdateMap ∷ Package
+liveUpdateMap ∷ FilePath -- DISTDIR
+             -> Package
              -> PortageConfig
              -> LiveState
              -> IO (Maybe (Package, [PackageVersion]))
-liveUpdateMap package pc lss =
+liveUpdateMap distDir package pc lss =
   let versions      = pVersions package
       versionsList  = S.toList versions
       installed     = filter pvInstalled versionsList
@@ -220,7 +220,7 @@ liveUpdateMap package pc lss =
               then pure Nothing
               else if liveForce lss
                     then pure $ Just (package, liveVersions)
-                    else smartLiveRebuild pc package
+                    else smartLiveRebuild pc distDir package
                                           liveVersions
                                           (liveVerbose lss)
                                           (liveDownload lss)
@@ -231,11 +231,12 @@ liveUpdateIO ∷ IORef PortageConfig
             -> [String]
             -> IO ()
 liveUpdateIO rpc hlog lss filterPackages = readIORef rpc >>= \pc -> do
+  distDir <- resolveDistDir pc
   llst <- traverse (\(a, package) ->
         case filterPackages of
-          [] -> liveUpdateMap package pc lss
+          [] -> liveUpdateMap distDir package pc lss
           xs -> if any (`isInfixOf` a) xs
-                  then liveUpdateMap package pc lss
+                  then liveUpdateMap distDir package pc lss
                   else pure Nothing
         ) (M.toList (pcTree pc))
   case catMaybes llst of

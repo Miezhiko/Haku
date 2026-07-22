@@ -9,7 +9,7 @@ import           Data.Char        (isDigit)
 import           Data.List        (isSuffixOf, sortBy)
 
 import           System.Directory (getCurrentDirectory, getDirectoryContents)
-import           System.FilePath  (isPathSeparator, takeBaseName, takeDirectory)
+import           System.FilePath  (takeBaseName, takeDirectory)
 
 nSort    ∷  [String] -> [String]
 nSort [] = []
@@ -33,10 +33,6 @@ natComp xxs@(x:xs) yys@(y:ys)
             noDigit     =   not ∘ isDigit
             getNumber s =   let { digits = takeWhile isDigit s }
                             in (read digits ∷ Integer, drop (length digits) s)
-
-dropTailingPathSeparator :: FilePath -> FilePath
-dropTailingPathSeparator path =
-  reverse ∘ dropWhile isPathSeparator ∘ reverse $ path
 
 testEbuild ∷ String -> [String] -> IO ()
 testEbuild _ []   = putStrLn "no ebuilds found"

@@ -5,8 +5,6 @@ module Commands.Delete
 import           Types
 import           Utils
 
-import           System.Posix.User (getRealUserID)
-
 data DeleteState
   = DeleteState
       { dpretend :: Bool
@@ -19,17 +17,15 @@ deleteOpts _ =
   , Option "a" ["ask"]      (NoArg (\s -> s { dask = True }))       "ask before run"
   ]
 
-{- HLINT ignore "Redundant <$>" -}
 unmerge ∷ DeleteState -> [Atom] -> IO ()
 unmerge dels xs =
   let pretend = dpretend dels
       opts = ["-C"]
           ++ ["-p" | pretend]
           ++ ["-a" | dask dels]
-  in (== 0) <$> getRealUserID >>= \root ->
-      if root ∨ pretend
-        then rawAndIgnore "emerge" (opts ++ xs)
-        else hasSudo $ rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
+  in isRootOrPretend pretend
+      (rawAndIgnore "emerge" (opts ++ xs))
+      (rawAndIgnore "sudo" ("emerge" : (opts ++ xs)))
 
 delete ∷ DeleteState -> [Atom] -> PortageConfig -> IO ()
 delete _ [] _       = putStrLn "specify atom!"

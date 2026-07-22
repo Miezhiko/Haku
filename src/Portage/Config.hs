@@ -2,6 +2,8 @@ module Portage.Config
   ( module Portage.Types.Config
   , loadPortageConfig
   , portageConfig
+  , resolveDistDir
+  , resolvePortageTmpDir
   , restoreConfig
   , storeConfig
   ) where
@@ -32,6 +34,7 @@ import           System.FilePath
 import qualified System.IO.Strict      as Strict
 import           System.Process
 
+import           Control.Exception     (SomeException, try)
 import           Control.Monad
 
 import           UnliftIO.Async
@@ -46,8 +49,8 @@ parseEnvMap s = M.fromList $ map parseLine (lines s)
       (v, [])    -> (v, [])
       (_, p:_)   -> error $ "Unexpected character: " ++ [p]
 
-  stripQuotes ('\'':r) = init r
-  stripQuotes x        = x
+  stripQuotes ('\'':r) | not (null r) = init r
+  stripQuotes x                       = x
 
 getFilteredDirectoryContents ∷ FilePath -> IO [FilePath]
 getFilteredDirectoryContents fp = filter (∉ [".",".."]) <$> getDirectoryContents fp
@@ -58,6 +61,60 @@ getConfigFile f = do
     shell $ "unset $(set | sed 's/^\\([^=]*\\)=.*$/\\1/') 2>/dev/null;" ++
     "source " ++ f ++ "; set" ) []
   pure $ parseEnvMap r
+
+-- | Ask portageq, since a lot of stock installs never write these
+--   variables into make.conf and just rely on Portage's own defaults
+--   (which can also depend on repos.conf, not just make.conf).
+queryPortageq ∷ [String] -> IO (Maybe String)
+queryPortageq args = do
+  result ← try (readProcess "portageq" args []) ∷ IO (Either SomeException String)
+  pure $ case result of
+    Left  _   -> Nothing
+    Right out -> case rstrip out of
+                  [] -> Nothing
+                  xs -> Just xs
+
+-- | Look a variable up in make.conf, falling back to `portageq envvar`
+--   when it isn't explicitly set.
+resolveConfVar ∷ ConfData -> String -> IO (Maybe String)
+resolveConfVar makeConf var =
+  case M.lookup var makeConf of
+    v@(Just _) -> pure v
+    Nothing    -> queryPortageq ["envvar", var]
+
+resolveDistDir ∷ PortageConfig -> IO FilePath
+resolveDistDir pc = resolveConfVar (pcMakeConf pc) "DISTDIR" >>=
+  \case Just d  -> pure d
+        Nothing -> error "Haku: can't determine DISTDIR (set it in make.conf or ensure portageq works)"
+
+resolvePortageTmpDir ∷ PortageConfig -> IO FilePath
+resolvePortageTmpDir pc = resolveConfVar (pcMakeConf pc) "PORTAGE_TMPDIR" >>=
+  \case Just d  -> pure d
+        Nothing -> error "Haku: can't determine PORTAGE_TMPDIR (set it in make.conf or ensure portageq works)"
+
+-- | The main repo path (legacy PORTDIR), falling back to portageq when
+--   it isn't set explicitly -- most modern installs configure it only
+--   via repos.conf and never touch PORTDIR at all.
+resolveMainRepoPath ∷ ConfData -> IO FilePath
+resolveMainRepoPath makeConf =
+  case M.lookup "PORTDIR" makeConf of
+    Just p  -> pure p
+    Nothing -> queryPortageq ["get_repo_path", "/", "gentoo"] >>=
+      \case Just p  -> pure p
+            Nothing -> error "Haku: can't determine main repo path (set PORTDIR in make.conf or ensure portageq works)"
+
+-- | Overlay/extra-repo paths (legacy PORTDIR_OVERLAY), falling back to
+--   every repo portageq knows about besides the main one.
+resolveOverlayPaths ∷ ConfData -> FilePath -> IO [FilePath]
+resolveOverlayPaths makeConf mainRepoPath =
+  case M.lookup "PORTDIR_OVERLAY" makeConf of
+    Just o  -> pure $ filter (not ∘ null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] o
+    Nothing -> queryPortageq ["get_repos", "/"] >>=
+      \case Nothing -> pure 𝜀
+            Just rs -> do
+              let repoNames = filter (≠ "gentoo") (words rs)
+              paths <- traverse (\r -> queryPortageq ["get_repo_path", "/", r]) repoNames
+              pure [ p | Just p <- paths, p ≠ mainRepoPath ]
 
 getVersions ∷ String -> String -> String -> IO (S.Set PackageVersion)
 getVersions fp pn o =
@@ -107,9 +164,8 @@ parseOverlay treePath = do
 
   pure ((pkgs, eclasses), overlayMeta)
 
-parseOverlays ∷ String -> IO (Tree, [OverlayMeta])
-parseOverlays input = do
-  let overlys = filter (not ∘ null) $ splitOnAnyOf ["\\n","\\t"," ","'","$"] input
+parseOverlays ∷ [FilePath] -> IO (Tree, [OverlayMeta])
+parseOverlays overlys = do
   parsed <- traverse parseOverlay overlys
   let treePkgs  = concatMap (fst ∘ fst) parsed
       trees     = map (\p -> (pCategory p </> pName p, p)) treePkgs
@@ -181,7 +237,7 @@ loadPortageConfig _meta = do
   progressThread <- startProgress "Regenerating Haku cache..."
 
   makeConf <- getConfigFile constMakeConfPath
-  let treePath = makeConf M.! "PORTDIR"
+  treePath <- resolveMainRepoPath makeConf
 
   ((catMap, eclasses), (treeName, treeData)) <- parseOverlay treePath
 
@@ -191,9 +247,10 @@ loadPortageConfig _meta = do
               pure $ parseMask fileData
       else pure []
 
-  (ov, met) <- case M.lookup "PORTDIR_OVERLAY" makeConf of
-                  Just o  -> parseOverlays o
-                  Nothing -> pure (M.empty, 𝜀)
+  overlayPaths <- resolveOverlayPaths makeConf treePath
+  (ov, met) <- if null overlayPaths
+                then pure (M.empty, 𝜀)
+                else parseOverlays overlayPaths
 
   let atoms       = map (\p -> (pCategory p </> pName p, p)) catMap
       pkgs        = M.fromList atoms

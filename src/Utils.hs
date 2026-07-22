@@ -2,9 +2,11 @@ module Utils
   ( module ExportedUtils
   , hasSudo
   , isRoot
+  , isRootOrPretend
   , raw
   , rawAndIgnore
   , readIfSucc
+  , readQuiet
   , runIfExists
   ) where
 
@@ -12,6 +14,7 @@ import           Constants           (cosntSudoPath)
 
 import           Hacks               as ExportedUtils
 import           Portage.Utils       as ExportedUtils
+import           Prelude.Unicode
 
 import           System.Directory    (doesFileExist)
 import           System.Exit
@@ -58,10 +61,29 @@ readIfSucc γ args =
                 xs -> do putStr $ γ ++ " : " ++ xs
                          pure $ Just xs
 
+readQuiet     -- like readIfSucc, but without the stdout echo,
+              -- for querying tools (e.g. portageq) as plain config lookups
+   ∷ String   -- command
+  -> [String] -- arguments
+  -> IO (Maybe String)
+readQuiet γ args =
+  readCheck γ args
+  >>= \case Left _    -> pure Nothing
+            Right val -> case rstrip val of
+                          [] -> pure Nothing
+                          xs -> pure $ Just xs
+
 isRoot ∷ IO () -> IO () -> IO ()
 isRoot f1 f2 = getRealUserID >>=
   (\r -> if r then f1
               else hasSudo f2) . (== 0)
+
+-- like 'isRoot', but a pretend run needs neither root nor sudo
+-- since nothing is actually mutated
+isRootOrPretend ∷ Bool -> IO () -> IO () -> IO ()
+isRootOrPretend pretend f1 f2 = getRealUserID >>=
+  (\r -> if r ∨ pretend then f1
+                        else hasSudo f2) . (== 0)
 
 hasSudo ∷ IO () -> IO ()
 hasSudo something = doesFileExist cosntSudoPath >>=

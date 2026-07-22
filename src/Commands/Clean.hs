@@ -5,7 +5,7 @@ module Commands.Clean
 import           Types
 import           Utils
 
-import qualified Data.Map         as M
+import           Portage.Config   (resolveDistDir, resolvePortageTmpDir)
 
 import           System.Directory
 
@@ -42,11 +42,10 @@ cleanM cs _ = ask >>= \env -> liftIO $ do
   depcleanIO
   when (cleanDirs cs) $
     readIORef (config env) >>= \pc -> do
-      let hlog     = logger env
-          makeConf = pcMakeConf pc
-          distDir  = makeConf M.! "DISTDIR"
-          tmpDir   = makeConf M.! "PORTAGE_TMPDIR"
-          verbose  = cleanVerbose cs
+      let hlog    = logger env
+          verbose = cleanVerbose cs
+      distDir <- resolveDistDir pc
+      tmpDir  <- resolvePortageTmpDir pc
       when verbose $ hlog ("Cleaning " ++ distDir)
       cleanIfExists distDir
       when verbose $ hlog ("Cleaning " ++ tmpDir)

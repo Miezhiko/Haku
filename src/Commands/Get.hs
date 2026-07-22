@@ -5,8 +5,6 @@ module Commands.Get
 import           Types
 import           Utils
 
-import           System.Posix.User (getRealUserID)
-
 data GetState
   = GetState
       { gpretend :: Bool
@@ -31,7 +29,6 @@ getOpts _ =
   , Option "v" ["verbose"]    (NoArg (\s -> s { gverbose = True }))   "verbose output"
   ]
 
-{- HLINT ignore "Redundant <$>" -}
 merge ∷ GetState -> [Atom] -> IO ()
 merge gs xs =
   let pretend = gpretend gs
@@ -43,10 +40,9 @@ merge gs xs =
         ++   ["-1" | goneshot gs]
         ++   ["-v" | gverbose gs]
         ++   ["--with-bdeps=y" | gbdeps gs]
-  in (== 0) <$> getRealUserID >>= \root ->
-    if root ∨ pretend
-      then rawAndIgnore "emerge" (opts ++ xs)
-      else hasSudo $ rawAndIgnore "sudo" ("emerge" : (opts ++ xs))
+  in isRootOrPretend pretend
+      (rawAndIgnore "emerge" (opts ++ xs))
+      (rawAndIgnore "sudo" ("emerge" : (opts ++ xs)))
 
 emerge ∷ GetState -> [Atom] -> PortageConfig -> IO ()
 emerge _ [] _     = putStrLn "specify atom!"

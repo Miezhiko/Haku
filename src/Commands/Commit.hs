@@ -16,13 +16,13 @@ import qualified Control.Exception  as Exception
 
 import           Data.Char          (isDigit)
 import           Data.List          (intercalate, isPrefixOf, isSuffixOf)
+import           Data.List.Split    (splitOn)
 import           Data.Maybe         (mapMaybe)
 
 import           System.Directory   (doesFileExist, getCurrentDirectory, getTemporaryDirectory,
                                      listDirectory, removeFile)
 import           System.Environment (lookupEnv, setEnv, unsetEnv)
-import           System.FilePath    (isPathSeparator, takeBaseName, takeDirectory, takeExtension,
-                                     (</>))
+import           System.FilePath    (takeBaseName, takeDirectory, takeExtension, (</>))
 import           System.Process     (callProcess)
 
 extractVersion ∷ FilePath -> Maybe String
@@ -30,17 +30,12 @@ extractVersion filename
   | takeExtension filename /= ".ebuild" = Nothing
   | otherwise =
       let base = takeBaseName filename
-          parts = splitOn '-' base
+          parts = splitOn "-" base
           findVersion [] = Nothing
           findVersion (x:xs)
             | any isDigit x = Just (intercalate "-" (x:xs))
             | otherwise     = findVersion xs
       in findVersion parts
-  where
-    splitOn ∷ Char -> String -> [String]
-    splitOn c s = case break (== c) s of
-                    (before, [])      -> [before]
-                    (before, _:after) -> before : splitOn c after
 
 parseVersionSafe ∷ String -> Maybe Version
 parseVersionSafe s = case parseVersion s of
@@ -55,10 +50,6 @@ getHighestVersion dir = do
     pure $ if null versions
            then Nothing
            else Just (maximum versions)
-
-dropTailingPathSeparator ∷ FilePath -> FilePath
-dropTailingPathSeparator path =
-  reverse ∘ dropWhile isPathSeparator ∘ reverse $ path
 
 checkEmptyMessage ∷ FilePath -> IO Bool
 checkEmptyMessage path = do
