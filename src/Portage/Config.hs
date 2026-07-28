@@ -3,6 +3,7 @@ module Portage.Config
   , loadPortageConfig
   , portageConfig
   , resolveDistDir
+  , resolveMainRepoPath
   , resolvePortageTmpDir
   , restoreConfig
   , storeConfig
