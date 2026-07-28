@@ -6,6 +6,7 @@ import           GHC.Generics                  (Generic)
 
 import           Data.Bifunctor
 import           Data.Binary
+import           Data.Char                     (isDigit)
 import           Data.List
 import           Data.List.NonEmpty            (nonEmpty)
 import           Data.Maybe                    (mapMaybe)
@@ -69,6 +70,16 @@ instance Ord Version where
 
 showVersion ∷ Version -> String
 showVersion (Version _ _ _ _ rep) = rep
+
+-- | Render a version without its revision suffix (e.g. "9999-r5" -> "9999"),
+--   for building '~' atoms that match any revision of that version -- the
+--   revision on a live (9999) ebuild can bump between a sync and a rebuild.
+showVersionNoRevision ∷ Version -> String
+showVersionNoRevision (Version _ _ _ 0 rep) = rep
+showVersionNoRevision (Version _ _ _ _ rep) =
+  case span isDigit (reverse rep) of
+    (ds, 'r':'-':rest) | not (null ds) -> reverse rest
+    _                                  -> rep
 
 data PackageVersion
   = PackageVersion

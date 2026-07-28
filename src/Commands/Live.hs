@@ -9,7 +9,7 @@ module Commands.Live
 import           Types
 import           Utils
 
-import           Portage.Config      (resolveDistDir)
+import           Portage.Config      (loadPortageConfig, resolveDistDir)
 
 import           Data.Foldable       (for_)
 import           Data.List
@@ -85,13 +85,15 @@ liveRebuild pvv a = isRoot (rawAndIgnore "emerge" opts)
 
        getOneVersion ∷ [PackageVersion] -> String
        getOneVersion []     = []
-       getOneVersion (pv:_) = show (pvVersion pv)
+       getOneVersion (pv:_) = showVersionNoRevision (pvVersion pv)
 
        packagesList ∷ [String]
        packagesList = map (\(p, vv) ->
                             case getOneVersion vv of
                              [] -> show p
-                             sv -> "=" ++ show p ++ "-" ++ sv
+                             -- '~' matches any revision: the exact revision
+                             -- on disk can bump between a sync and this run
+                             sv -> "~" ++ show p ++ "-" ++ sv
                           ) pvv
 
 checkForRemoteRepositoryHash ∷ String -> [String] -> IO (Maybe String)
@@ -247,9 +249,18 @@ liveUpdateIO rpc hlog lss filterPackages = readIORef rpc >>= \pc -> do
               for_ xs showLivePackage
             else liveRebuild xs $ liveAsk lss
 
+-- Haku's disk cache only gets refreshed when Shelter's tracked git repos
+-- change hash -- that says nothing about /var/db/pkg, so a package merged
+-- or rebuilt since the last full reload (via `uwu`, `get`, a plain emerge,
+-- etc.) can still show its old installed version here. Since this command
+-- lives and dies by which exact version is currently installed, force a
+-- full reload before deciding what needs a live rebuild, and persist it
+-- back so later commands benefit from the fresh data too.
 liveUpdate ∷ LiveState ~> m
-liveUpdate lss xs = ask >>= \env ->
-   liftIO $ liveUpdateIO (config env) (logger env) lss xs
+liveUpdate lss xs = ask >>= \env -> liftIO $ do
+  pc <- loadPortageConfig [UpdateMeta, PortageMeta, OverlayMeta, MiscMeta]
+  writeIORef (config env) pc { pcUpdateCache = True }
+  liveUpdateIO (config env) (logger env) lss xs
 
 liveCmd ∷ Command LiveState m
 liveCmd = Command
