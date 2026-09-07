@@ -26,7 +26,8 @@ updateRoot (rpc, upds) = do
   rawAndIgnore "emerge" [ "--sync" ]
   unless (updMinimal upds) $ do
     putStrLn "regenerating Gentoo cache..."
-    runIfExists "/usr/bin/egencache" "egencache" [ "--repo=gentoo", "--update" ]
+    jobs <- jobsArg
+    runIfExists "/usr/bin/egencache" "egencache" [ "--repo=gentoo", "--update", jobs ]
     runIfExists "/usr/bin/eix-update" "eix-update" 𝜀
   when (updStore upds) $ do
     pc <- loadPortageConfig [UpdateMeta, PortageMeta, OverlayMeta, MiscMeta]
@@ -44,7 +45,8 @@ updateSudo (rpc, upds) = do
   rawAndIgnore "sudo" [ "emerge", "--sync" ]
   unless (updMinimal upds) $ do
     putStrLn "regenerating Gentoo cache..."
-    runIfExists "/usr/bin/egencache" "sudo" [ "egencache", "--repo=gentoo", "--update" ]
+    jobs <- jobsArg
+    runIfExists "/usr/bin/egencache" "sudo" [ "egencache", "--repo=gentoo", "--update", jobs ]
     runIfExists "/usr/bin/eix-update" "sudo" [ "eix-update" ]
   when (updStore upds) $ do
     pc <- loadPortageConfig [UpdateMeta, PortageMeta, OverlayMeta, MiscMeta]

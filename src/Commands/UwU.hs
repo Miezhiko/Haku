@@ -52,10 +52,10 @@ hasGentooGithubRemote repoPath =
                             (_:url:_) -> isGentooGithubRemote url
                             _         -> False
 
-syncTreeCommands ∷ Bool -> [(String, [String])]
-syncTreeCommands True  = [ ("egencache", ["--repo=gentoo", "--update"])
-                          , ("eix-update", 𝜀) ]
-syncTreeCommands False = [ ("emerge", ["--sync"]) ]
+syncTreeCommands ∷ String -> Bool -> [(String, [String])]
+syncTreeCommands jobs True  = [ ("egencache", ["--repo=gentoo", "--update", jobs])
+                               , ("eix-update", 𝜀) ]
+syncTreeCommands _    False = [ ("emerge", ["--sync"]) ]
 
 runUpgradeScriptsRoot ∷ UwuState
                      -> Bool -- main tree is a github.com/gentoo/gentoo (or fork) checkout
@@ -70,7 +70,8 @@ runUpgradeScriptsRoot uws isGentooGitCheckout hlog = do
             else updateAll
   runIfExists "/usr/bin/snap" "snap" ["refresh"]
   hlog "<Green>syncing Gentoo tree..."
-  forM_ (syncTreeCommands isGentooGitCheckout) (uncurry rawAndIgnore)
+  jobs <- jobsArg
+  forM_ (syncTreeCommands jobs isGentooGitCheckout) (uncurry rawAndIgnore)
   rawAndIgnore "emerge" $ [ "-uDN", "@world"
                           , "--backtrack=100"
                           , "--with-bdeps=y"
@@ -88,7 +89,8 @@ runUpgradeScriptsSudo uws isGentooGitCheckout hlog = do
   runIfExists "/usr/bin/shelter" "sudo" ["shelter"]
   runIfExists "/usr/bin/snap" "sudo" ["snap", "refresh"]
   hlog "<Green>syncing Gentoo tree..."
-  forM_ (syncTreeCommands isGentooGitCheckout) $ \(cmd, args) ->
+  jobs <- jobsArg
+  forM_ (syncTreeCommands jobs isGentooGitCheckout) $ \(cmd, args) ->
     rawAndIgnore "sudo" (cmd : args)
   rawAndIgnore "sudo" $ [ "emerge", "-uDN", "@world"
                         , "--backtrack=100"

@@ -3,6 +3,7 @@ module Utils
   , hasSudo
   , isRoot
   , isRootOrPretend
+  , jobsArg
   , raw
   , rawAndIgnore
   , readIfSucc
@@ -15,6 +16,8 @@ import           Constants           (cosntSudoPath)
 import           Hacks               as ExportedUtils
 import           Portage.Utils       as ExportedUtils
 import           Prelude.Unicode
+
+import           GHC.Conc            (getNumProcessors)
 
 import           System.Directory    (doesFileExist)
 import           System.Exit
@@ -41,6 +44,11 @@ runIfExists ∷ FilePath -> String -> [String] -> IO ()
 runIfExists ξ λ α =
   doesFileExist ξ >>= \fe ->
     when fe $ void (rawSystem λ α)
+
+-- | A `--jobs=N` argument sized to the machine's processor count,
+--   for tools (egencache, ...) that can parallelize their own work.
+jobsArg ∷ IO String
+jobsArg = (("--jobs=" ++) ∘ show) <$> getNumProcessors
 
 readCheck     -- return whether command was success or not
    ∷ String   -- command
